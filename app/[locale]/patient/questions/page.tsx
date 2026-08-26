@@ -9,6 +9,7 @@ import { Card } from "@/components/ui/card";
 import { ArrowLeft, ArrowRight, AlertTriangle, Check, HelpCircle, PauseCircle, PlayCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { EngineQuestionDefinition, QuestionOption } from "@/lib/engine/types";
+import { EmergencyAlertModal } from "@/components/ui/patient/EmergencyAlertModal";
 
 export default function AdaptiveQuestionsFlowPage({
   params: { locale },
@@ -129,22 +130,13 @@ export default function AdaptiveQuestionsFlowPage({
     <div className="space-y-6">
       <ProgressStepper currentStep={4} />
 
-      {/* Red Flag Alert Banner */}
-      <AnimatePresence>
-        {redFlagBanner && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="p-4 rounded-2xl bg-rose-100 border-2 border-rose-400 text-rose-900 flex items-start gap-3 shadow-md"
-          >
-            <AlertTriangle className="h-6 w-6 text-rose-600 flex-shrink-0 mt-0.5" />
-            <div className="space-y-0.5">
-              <span className="font-extrabold text-sm uppercase">चिकित्सीय चेतावनी (Clinical Alert)</span>
-              <p className="text-sm font-semibold">{redFlagBanner}</p>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Red Flag Alert Modal Overlay */}
+      {redFlagBanner && (
+        <EmergencyAlertModal
+          description={redFlagBanner}
+          onDismiss={() => setRedFlagBanner(null)}
+        />
+      )}
 
       {currentQuestion && (
         <>
