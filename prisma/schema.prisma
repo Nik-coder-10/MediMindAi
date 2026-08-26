@@ -79,6 +79,15 @@ enum EntityType {
   AYUSH_FORMULATION
 }
 
+/// Question input types for adaptive engine
+enum QuestionType {
+  TEXT
+  SINGLE_CHOICE
+  MULTI_CHOICE
+  SCALE
+  YES_NO
+}
+
 /// Summary workflow review states
 enum SummaryStatus {
   DRAFT
@@ -110,7 +119,6 @@ enum AbhaStatus {
 // 1. CORE IDENTITY & USER MANAGEMENT
 // ==============================================================================
 
-/// Core user authentication, identity, and ABHA linkage entity
 model User {
   id                String    @id @default(uuid()) @db.Uuid
   role              Role      @default(PATIENT)
@@ -118,17 +126,14 @@ model User {
   phone             String?   @unique
   email             String?   @unique
   passwordHash      String?
-  preferredLanguage String    @default("en") // en, hi, mr, etc.
+  preferredLanguage String    @default("en")
   isActive          Boolean   @default(true)
   deletedAt         DateTime?
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 
-  // Profiles
   patientProfile    PatientProfile?
   doctorProfile     DoctorProfile?
-
-  // Relations
   auditLogs         AuditLog[]
 
   @@index([role])
@@ -138,7 +143,6 @@ model User {
   @@map("users")
 }
 
-/// Comprehensive patient demographic, clinical baseline, and emergency profile
 model PatientProfile {
   id                  String          @id @default(uuid()) @db.Uuid
   userId              String          @unique @db.Uuid
@@ -150,15 +154,14 @@ model PatientProfile {
   gender              Gender
   bloodGroup          String?
   address             String?
-  emergencyContact    Json?           @db.JsonB // { name, phone, relationship }
+  emergencyContact    Json?           @db.JsonB
   baselinePrakriti    DoshaDominance?
-  medicalHistory      Json?           @db.JsonB // { pastIllnesses, surgeries, chronicConditions, allergies }
+  medicalHistory      Json?           @db.JsonB
   
   deletedAt           DateTime?
   createdAt           DateTime        @default(now())
   updatedAt           DateTime        @updatedAt
 
-  // Relations
   clinicalSessions    ClinicalSession[]
   consentRecords      ConsentRecord[]
   timelineEvents      MedicalTimelineEvent[]
@@ -170,15 +173,14 @@ model PatientProfile {
   @@map("patient_profiles")
 }
 
-/// Ayush Clinical Practitioner & Medical Council Registry profile
 model DoctorProfile {
   id                  String          @id @default(uuid()) @db.Uuid
   userId              String          @unique @db.Uuid
   user                User            @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  registrationNumber  String          @unique // Council Reg No. (e.g. State Ayush Council / CCIM)
-  qualification       String          // e.g. BAMS, MD (Ayurveda), MS (Ayurveda)
-  specialization      String          // Kayachikitsa, Panchakarma, Shalya Tantra, etc.
+  registrationNumber  String          @unique
+  qualification       String
+  specialization      String
   department          String?
   hospitalAffiliation String?
   isActive            Boolean         @default(true)
@@ -186,7 +188,6 @@ model DoctorProfile {
   createdAt           DateTime        @default(now())
   updatedAt           DateTime        @updatedAt
 
-  // Relations
   clinicalSessions    ClinicalSession[]
 
   @@index([userId])
@@ -198,22 +199,21 @@ model DoctorProfile {
 // 2. ABDM CONSENT & REGULATORY GOVERNANCE
 // ==============================================================================
 
-/// ABDM-compliant electronic health data sharing consent record
 model ConsentRecord {
   id                String    @id @default(uuid()) @db.Uuid
   patientId         String    @db.Uuid
   patient           PatientProfile @relation(fields: [patientId], references: [id], onDelete: Cascade)
 
-  purpose           String    // Clinical consultation, Ayush research, Care management
+  purpose           String
   language          String    @default("hi")
-  audioConsentUrl   String?   // S3/Storage link for audio consent recording in patient's dialect
+  audioConsentUrl   String?
   grantedAt         DateTime  @default(now())
   revokedAt         DateTime?
   expiryDate        DateTime?
   version           String    @default("1.0")
   ipAddress         String?
   userAgent         String?
-  metadata          Json?     @db.JsonB // HIP/HIU identifiers, granular permission flags
+  metadata          Json?     @db.JsonB
 
   deletedAt         DateTime?
   createdAt         DateTime  @default(now())
@@ -226,10 +226,9 @@ model ConsentRecord {
 }
 
 // ==============================================================================
-// 3. CLINICAL SESSION & ADAPTIVE CONVERSATION ENGINE
+// 3. CLINICAL SESSION & ADAPTIVE ENGINE STATE MACHINE
 // ==============================================================================
 
-/// Active clinical case-taking encounter combining AI triage and doctor review
 model ClinicalSession {
   id                  String          @id @default(uuid()) @db.Uuid
   patientId           String          @db.Uuid
@@ -238,7 +237,7 @@ model ClinicalSession {
   doctor              DoctorProfile?  @relation(fields: [doctorId], references: [id], onDelete: SetNull)
 
   status              SessionStatus   @default(IN_PROGRESS)
-  language            String          @default("hi") // Language used in conversation
+  language            String          @default("hi")
   triagePriority      TriagePriority  @default(ROUTINE)
   startedAt           DateTime        @default(now())
   completedAt         DateTime?
@@ -249,10 +248,12 @@ model ClinicalSession {
   createdAt           DateTime        @default(now())
   updatedAt           DateTime        @updatedAt
 
-  // Relations
+  // Engine & conversation relations
   conversationTurns   ConversationTurn[]
   chiefComplaints     ChiefComplaint[]
   adaptiveAnswers     AdaptiveAnswer[]
+  patientAnswers      PatientAnswer[]
+  engineState         EngineState?
   redFlagEvents       RedFlagEvent[]
   medicalDocuments    MedicalDocument[]
   clinicalSummary     ClinicalSummary?
@@ -267,7 +268,69 @@ model ClinicalSession {
   @@map("clinical_sessions")
 }
 
-/// Granular conversation turn (Voice / Text) between Patient, AI Agent, or Doctor
+/// Adaptive Question Engine live state snapshot per session
+model EngineState {
+  id                  String          @id @default(uuid()) @db.Uuid
+  sessionId           String          @unique @db.Uuid
+  session             ClinicalSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  category            String          // CHEST_PAIN, HEADACHE, ABDOMINAL_PAIN, JOINT_PAIN, FEVER, GENERAL
+  currentNodeId       String?         // ID of the next pending question node
+  collectedFacts      Json            @default("{}") @db.JsonB // Structured facts (SOCRATES: site, onset, character, etc.)
+  questionHistory     Json            @default("[]") @db.JsonB // List of node IDs asked
+  questionCount       Int             @default(0)
+  maxQuestions        Int             @default(12)
+  triageLevel         TriagePriority  @default(ROUTINE)
+  isPaused            Boolean         @default(false)
+  completed           Boolean         @default(false)
+
+  updatedAt           DateTime        @updatedAt
+  createdAt           DateTime        @default(now())
+
+  @@index([sessionId])
+  @@index([category])
+  @@map("engine_states")
+}
+
+/// Standalone declarative Question Node for the clinical decision tree
+model QuestionNode {
+  id                  String          @id @default(uuid()) @db.Uuid
+  chiefComplaintCategory String       // CHEST_PAIN, HEADACHE, etc.
+  nodeCode            String          @unique // e.g. CP_SEVERITY, CP_RADIATION, HA_ONSET
+  questionText        String          @db.Text
+  questionTextHindi   String          @db.Text
+  questionType        QuestionType    @default(SINGLE_CHOICE)
+  options             Json?           @db.JsonB // Array of { value, labelHi, labelEn, score, metadata }
+  redFlagTriggers     Json?           @db.JsonB // Criteria triggering safety alert
+  nextNodeLogic       Json?           @db.JsonB // Conditional rules: { "ifValue": "severe", "goTo": "CP_EMERGENCY" }
+  clinicalDomain      String?         // SOCRATES_SEVERITY, AGNI, AMA, PRAKRITI, etc.
+
+  createdAt           DateTime        @default(now())
+  patientAnswers      PatientAnswer[]
+
+  @@index([chiefComplaintCategory])
+  @@index([nodeCode])
+  @@map("question_nodes")
+}
+
+/// Structured patient response to a specific QuestionNode
+model PatientAnswer {
+  id                  String          @id @default(uuid()) @db.Uuid
+  sessionId           String          @db.Uuid
+  session             ClinicalSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  questionNodeId      String?         @db.Uuid
+  questionNode        QuestionNode?   @relation(fields: [questionNodeId], references: [id], onDelete: SetNull)
+
+  nodeCode            String          // Denormalized code for quick reference
+  answerValue         Json            @db.JsonB // Structured answer payload { raw, value, confidence, isSkipped }
+  answeredAt          DateTime        @default(now())
+
+  @@index([sessionId])
+  @@index([questionNodeId])
+  @@index([nodeCode])
+  @@map("patient_answers")
+}
+
 model ConversationTurn {
   id                String          @id @default(uuid()) @db.Uuid
   sessionId         String          @db.Uuid
@@ -275,24 +338,23 @@ model ConversationTurn {
 
   role              TurnRole
   contentText       String          @db.Text
-  contentAudioUrl   String?         // URL of recorded speech audio segment
+  contentAudioUrl   String?
   timestamp         DateTime        @default(now())
-  metadata          Json?           @db.JsonB // { ASR_confidence, latency_ms, intent, sentiment, detected_language }
+  metadata          Json?           @db.JsonB
 
   @@index([sessionId])
   @@index([timestamp])
   @@map("conversation_turns")
 }
 
-/// Structured chief complaint reported by the patient
 model ChiefComplaint {
   id                String          @id @default(uuid()) @db.Uuid
   sessionId         String          @db.Uuid
   session           ClinicalSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
-  symptomName       String          // e.g. Shirashoola (Headache), Sandhishoola (Joint Pain)
-  duration          String          // e.g. "3 days", "2 weeks"
-  severity          String          // "Mild", "Moderate", "Severe"
+  symptomName       String
+  duration          String
+  severity          String
   location          String?
   aggravatingFactors String?
   relievingFactors  String?
@@ -304,17 +366,16 @@ model ChiefComplaint {
   @@map("chief_complaints")
 }
 
-/// Dynamically generated adaptive question response during AI case-taking
 model AdaptiveAnswer {
   id                String          @id @default(uuid()) @db.Uuid
   sessionId         String          @db.Uuid
   session           ClinicalSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
-  questionId        String          // Identifier from clinical question tree
+  questionId        String
   questionText      String          @db.Text
   answerText        String          @db.Text
   answerAudioUrl    String?
-  clinicalContext   String?         // Rationale / domain: Agni, Mala, Nidra, etc.
+  clinicalContext   String?
   confidence        Float?
   metadata          Json?           @db.JsonB
 
@@ -329,19 +390,18 @@ model AdaptiveAnswer {
 // 4. SAFETY & RED FLAG MONITORING
 // ==============================================================================
 
-/// Emergency / Critical safety trigger detected during patient interaction
 model RedFlagEvent {
   id                String          @id @default(uuid()) @db.Uuid
   sessionId         String          @db.Uuid
   session           ClinicalSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
-  ruleId            String          // e.g. RF_CHEST_PAIN, RF_ACUTE_BREATHLESSNESS
+  ruleId            String
   description       String          @db.Text
   severity          RedFlagSeverity @default(HIGH)
   triggeredAt       DateTime        @default(now())
   notified          Boolean         @default(false)
   notifiedAt        DateTime?
-  actionTaken       String?         @db.Text // Triage override, emergency alert dispatched
+  actionTaken       String?         @db.Text
 
   @@index([sessionId])
   @@index([severity])
@@ -353,14 +413,13 @@ model RedFlagEvent {
 // 5. MULTIMODAL MEDICAL DOCUMENTS & OCR EXTRACTION
 // ==============================================================================
 
-/// Ingested prior medical records, prescriptions, and lab investigations
 model MedicalDocument {
   id                String          @id @default(uuid()) @db.Uuid
   sessionId         String          @db.Uuid
   session           ClinicalSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
   type              DocumentType    @default(PRESCRIPTION)
-  originalFileUrl   String          // S3 / MinIO storage key or URL
+  originalFileUrl   String
   fileName          String
   mimeType          String
   fileSize          Int
@@ -369,7 +428,6 @@ model MedicalDocument {
   uploadedAt        DateTime        @default(now())
   deletedAt         DateTime?
 
-  // Relations
   extractedEntities ExtractedMedicalEntity[]
   timelineEvents    MedicalTimelineEvent[]
 
@@ -378,7 +436,6 @@ model MedicalDocument {
   @@map("medical_documents")
 }
 
-/// Machine-learned clinical entities parsed from OCR or transcripts
 model ExtractedMedicalEntity {
   id                String          @id @default(uuid()) @db.Uuid
   documentId        String          @db.Uuid
@@ -386,7 +443,7 @@ model ExtractedMedicalEntity {
 
   type              EntityType
   rawText           String
-  structuredData    Json            @db.JsonB // { name, dosage, frequency, route, duration, standardCode: { namaste, icd10, snomed } }
+  structuredData    Json            @db.JsonB
   confidence        Float           @default(1.0)
   isVerifiedByDoctor Boolean        @default(false)
 
@@ -397,7 +454,6 @@ model ExtractedMedicalEntity {
   @@map("extracted_medical_entities")
 }
 
-/// Chronological patient longitudinal medical timeline event
 model MedicalTimelineEvent {
   id                String          @id @default(uuid()) @db.Uuid
   patientId         String          @db.Uuid
@@ -408,7 +464,7 @@ model MedicalTimelineEvent {
   eventDate         DateTime
   title             String
   description       String?         @db.Text
-  category          String          // "DIAGNOSIS", "PRESCRIPTION", "PANCHAKARMA_PROCEDURE", "HOSPITALIZATION"
+  category          String
   metadata          Json?           @db.JsonB
 
   createdAt         DateTime        @default(now())
@@ -422,7 +478,6 @@ model MedicalTimelineEvent {
 // 6. CLINICAL SUMMARY & NOTES
 // ==============================================================================
 
-/// AI-generated and doctor-validated clinical consultation summary
 model ClinicalSummary {
   id                    String          @id @default(uuid()) @db.Uuid
   sessionId             String          @unique @db.Uuid
@@ -446,36 +501,29 @@ model ClinicalSummary {
 // 7. AYUSH ASSESSMENT (CHARAKA SAMHITA CLINICAL MODEL)
 // ==============================================================================
 
-/// Comprehensive Ayurvedic Pariksha: Dashavidha, Ashtavidha, & Samprapti Ghataka
 model AyurvedaAssessment {
   id                  String          @id @default(uuid()) @db.Uuid
   sessionId           String          @unique @db.Uuid
   session             ClinicalSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
-  // Prakriti & Vikriti
-  prakriti            DoshaDominance  // Inherent constitution
-  vikriti             DoshaDominance  // Current morbid state / Dosha disturbance
-  
-  // Dashavidha Pariksha (Charaka Vimanashana 8/94)
-  dushya              String?         // Rasa, Rakta, Mamsa, Meda, Asthi, Majja, Shukra
-  desha               String?         // Jangala, Anupa, Sadharana
-  bala                String?         // Pravara, Madhyama, Avara (Physical strength)
-  kala                String?         // Ritu (Season) & Chronological phase
-  anala               String?         // Sama, Vishama, Tikshna, Manda Agni (Digestive fire)
-  sara                String?         // Tissue excellence / Dhatu Sarata
-  samhanana           String?         // Body compactness & musculature
-  pramana             String?         // Anthropometric proportions
-  satmya              String?         // Habituation / Dietary adaptability
-  sattva              String?         // Mental endurance / Pravara, Madhyama, Avara
-  aharaShakti         String?         // Abhyavaharana & Jarana Shakti (Food intake & digestion)
-  vyayamaShakti       String?         // Physical endurance
-  vaya                String?         // Balya, Madhyama, Vriddhavastha
+  prakriti            DoshaDominance
+  vikriti             DoshaDominance
+  dushya              String?
+  desha               String?
+  bala                String?
+  kala                String?
+  anala               String?
+  sara                String?
+  samhanana           String?
+  pramana             String?
+  satmya              String?
+  sattva              String?
+  aharaShakti         String?
+  vyayamaShakti       String?
+  vaya                String?
 
-  // Ashtavidha Pariksha (Pulse, Tongue, Urine, Bowel, Voice, Touch, Eyes, Build)
-  ashtavidhaData      Json?           @db.JsonB // { nadi, mutra, mala, jihwa, shabda, sparsha, drik, akriti }
-
-  // Diet & Lifestyle factors
-  aharaVihara         Json?           @db.JsonB // Dietary habits (Rasa dominance, Viruddha Ahara), sleep patterns, exercise
+  ashtavidhaData      Json?           @db.JsonB
+  aharaVihara         Json?           @db.JsonB
   notes               String?         @db.Text
 
   createdAt           DateTime        @default(now())
@@ -491,14 +539,13 @@ model AyurvedaAssessment {
 // 8. AUDIT TRAILS & COMPLIANCE
 // ==============================================================================
 
-/// Immutable system & clinical data access audit trail
 model AuditLog {
   id                String    @id @default(uuid()) @db.Uuid
   actorId           String?   @db.Uuid
   actor             User?     @relation(fields: [actorId], references: [id], onDelete: SetNull)
 
-  action            String    // "SESSION_VIEW", "SUMMARY_SIGN", "CONSENT_REVOKE", "DOCUMENT_UPLOAD"
-  resourceType      String    // "ClinicalSession", "PatientProfile", "ConsentRecord"
+  action            String
+  resourceType      String
   resourceId        String?   @db.Uuid
   ipAddress         String?
   metadata          Json?     @db.JsonB
@@ -515,18 +562,17 @@ model AuditLog {
 // 9. ABDM & FHIR INTEROPERABILITY
 // ==============================================================================
 
-/// Ayushman Bharat Health Account (ABHA) Linkage
 model AbhaLink {
   id                String          @id @default(uuid()) @db.Uuid
   patientId         String          @unique @db.Uuid
   patient           PatientProfile  @relation(fields: [patientId], references: [id], onDelete: Cascade)
 
-  abhaNumber        String          @unique // 14-digit ABHA Number (e.g. 91-1234-5678-9012)
-  abhaAddress       String          @unique // username@abdm (e.g. rahul@sbx)
+  abhaNumber        String          @unique
+  abhaAddress       String          @unique
   status            AbhaStatus      @default(ACTIVE)
   kycVerified       Boolean         @default(true)
   linkedAt          DateTime        @default(now())
-  metadata          Json?           @db.JsonB // ABHA Card token, profile photo base64/url
+  metadata          Json?           @db.JsonB
 
   @@index([patientId])
   @@index([abhaNumber])
@@ -534,7 +580,6 @@ model AbhaLink {
   @@map("abha_links")
 }
 
-/// FHIR R4 Bundle / Resource repository for ABDM Health Information Exchange (HIE)
 model FhirResource {
   id                String          @id @default(uuid()) @db.Uuid
   patientId         String          @db.Uuid
@@ -542,8 +587,8 @@ model FhirResource {
   sessionId         String?         @db.Uuid
   session           ClinicalSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
 
-  resourceType      String          // "Bundle", "Patient", "Condition", "Encounter", "MedicationRequest", "Observation"
-  resourceJson      Json            @db.JsonB // Standard HL7/FHIR R4 JSON representation
+  resourceType      String
+  resourceJson      Json            @db.JsonB
   versionId         String          @default("1")
   lastUpdated       DateTime        @default(now())
 
