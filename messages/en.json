@@ -1,0 +1,35 @@
+{
+  "common": {
+    "appName": "AyurSetu - Ayush Case-Taking Platform",
+    "tagline": "Ministry of Ayush / AIIA Clinical E-Prescription & Prakriti Evaluation",
+    "language": "Language",
+    "login": "Login",
+    "logout": "Logout",
+    "dashboard": "Dashboard",
+    "save": "Save",
+    "cancel": "Cancel",
+    "submit": "Submit"
+  },
+  "doctor": {
+    "title": "Clinical Case Taking",
+    "newCase": "New Patient Consultation",
+    "prakritiAssessment": "Prakriti Assessment",
+    "ashtavidha": "Ashtavidha Pariksha",
+    "dashavidha": "Dashavidha Pariksha",
+    "nadi": "Nadi (Pulse)",
+    "jihwa": "Jihwa (Tongue)",
+    "mutra": "Mutra (Urine)",
+    "mala": "Mala (Bowel)",
+    "shabda": "Shabda (Voice)",
+    "sparsha": "Sparsha (Touch)",
+    "drik": "Drik (Eyes)",
+    "akriti": "Akriti (Build)",
+    "rx": "Prescription & Aushadha"
+  },
+  "patient": {
+    "title": "Patient Health Records (PHR)",
+    "abhaId": "ABHA Number",
+    "consents": "Consent Manager",
+    "reports": "EHR History & Diagnostic Reports"
+  }
+}

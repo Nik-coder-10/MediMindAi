@@ -1,0 +1,284 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  PATIENT
+  DOCTOR
+  ADMIN
+  AYUSH_RESEARCHER
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum DoshaDominance {
+  VATA
+  PITTA
+  KAPHA
+  VATA_PITTA
+  PITTA_KAPHA
+  VATA_KAPHA
+  SAMADOSHA
+}
+
+enum AgniType {
+  SAMA_AGNI
+  VISHAMA_AGNI
+  TIKSHNA_AGNI
+  MANDA_AGNI
+}
+
+enum KoshthaType {
+  MRIDU
+  MADHYAMA
+  KRURA
+}
+
+enum ConsentStatus {
+  REQUESTED
+  GRANTED
+  DENIED
+  REVOKED
+  EXPIRED
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  passwordHash  String?
+  role          Role      @default(PATIENT)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Ayush & ABDM profile links
+  abhaId        String?   @unique
+  abhaAddress   String?   @unique
+  patient       Patient?
+  doctor        Doctor?
+
+  accounts      Account[]
+  sessions      Session[]
+
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+model Patient {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  dateOfBirth DateTime
+  gender      Gender
+  contactNo   String?
+  address     String?
+
+  // ABDM / Ayush Identification
+  abhaNumber  String?  @unique
+  healthId    String?  @unique
+
+  // Relations
+  encounters  Encounter[]
+  prakriti    PrakritiAssessment?
+  consents    ConsentArtefact[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("patients")
+}
+
+model Doctor {
+  id             String      @id @default(cuid())
+  userId         String      @unique
+  user           User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  registrationNo String      @unique // Ayush Medical Council Reg No.
+  specialization String      // Ayurveda, Yoga, Unani, Siddha, Homeopathy
+  qualification  String
+  department     String?
+  
+  encounters     Encounter[]
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  @@map("doctors")
+}
+
+model Encounter {
+  id              String           @id @default(cuid())
+  patientId       String
+  patient         Patient          @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  doctorId        String
+  doctor          Doctor           @relation(fields: [doctorId], references: [id], onDelete: Restrict)
+  encounterDate   DateTime         @default(now())
+  chiefComplaints Json             // Structured complaint items with duration & severity
+  historyPresent  String?          @db.Text
+  historyPast     String?          @db.Text
+  historyFamily   String?          @db.Text
+
+  // Ayush Pariksha components
+  ashtavidha      AshtavidhaPariksha?
+  dashavidha      DashavidhaPariksha?
+  samprapti       Json?            // Nidana, Dosha, Dushya, Srotas, Agni, Ama details
+  
+  // Diagnosis & Prescription
+  ayushDiagnosis  String?          // Ayurvedic/Ayush disease naming (Vyadhi)
+  icd10Code       String?          // Standard cross-reference
+  namasteCode     String?          // National AYUSH Morbidity and Standardized Terminologies Electronic portal
+  prescriptions   Prescription[]
+  attachments     Attachment[]
+
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@map("encounters")
+}
+
+model PrakritiAssessment {
+  id             String         @id @default(cuid())
+  patientId      String         @unique
+  patient        Patient        @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  dominantDosha  DoshaDominance
+  vataScore      Float
+  pittaScore     Float
+  kaphaScore     Float
+  assessmentData Json           // Complete questionnaire answers & physical signs
+  assessedAt     DateTime       @default(now())
+
+  @@map("prakriti_assessments")
+}
+
+model AshtavidhaPariksha {
+  id          String    @id @default(cuid())
+  encounterId String    @unique
+  encounter   Encounter @relation(fields: [encounterId], references: [id], onDelete: Cascade)
+  
+  nadi        String?   // Pulse examination (Vata/Pitta/Kapha gati)
+  mutra       String?   // Urine examination
+  mala        String?   // Stool examination
+  jihwa       String?   // Tongue examination (Saama/Niraama)
+  shabda      String?   // Voice/Speech
+  sparsha     String?   // Touch/Skin temperature & texture
+  drik        String?   // Eyes/Vision
+  akriti      String?   // General build/Posture
+
+  @@map("ashtavidha_pariksha")
+}
+
+model DashavidhaPariksha {
+  id             String      @id @default(cuid())
+  encounterId    String      @unique
+  encounter      Encounter   @relation(fields: [encounterId], references: [id], onDelete: Cascade)
+  
+  dushya         String?     // Tissue elements involved
+  desha          String?     // Habitat & Geographical constitution
+  bala           String?     // Physical strength (Pravara, Madhyama, Avara)
+  kala           String?     // Season / Age phase
+  anala          AgniType?   // Digestive fire
+  prakriti       String?     // Inherent constitution
+  vayas          String?     // Chronological age
+  sattva         String?     // Mental endurance / Psyche
+  satmya         String?     // Adaptability / Habituation
+  aharaShakti    String?     // Food intake & digestive capacity
+  vyayamaShakti  String?     // Physical exercise capacity
+
+  @@map("dashavidha_pariksha")
+}
+
+model Prescription {
+  id            String    @id @default(cuid())
+  encounterId   String
+  encounter     Encounter @relation(fields: [encounterId], references: [id], onDelete: Cascade)
+  medicineName  String    // Classical or Proprietary Ayush Formulation (e.g. Triphala Churna)
+  formulation   String?   // Vati, Churna, Asava/Arishta, Taila, Ghrita
+  dosage        String    // e.g. 1 spoon, 500mg
+  frequency     String    // e.g. Twice daily after food (Vyanodana kala)
+  anupana       String?   // Vehicle (e.g., Warm Water, Honey, Ghee)
+  durationDays  Int
+  instructions  String?
+
+  createdAt     DateTime  @default(now())
+
+  @@map("prescriptions")
+}
+
+model Attachment {
+  id          String    @id @default(cuid())
+  encounterId String
+  encounter   Encounter @relation(fields: [encounterId], references: [id], onDelete: Cascade)
+  fileName    String
+  fileType    String    // mime-type: application/pdf, image/png, etc.
+  fileSize    Int
+  storageKey  String    // Path or S3 Object Key
+  ocrText     String?   @db.Text
+  createdAt   DateTime  @default(now())
+
+  @@map("attachments")
+}
+
+model ConsentArtefact {
+  id          String        @id @default(cuid())
+  consentId   String        @unique // ABDM Consent ID
+  patientId   String
+  patient     Patient       @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  requesterId String        // HIP or HIU ID
+  purpose     String
+  status      ConsentStatus @default(REQUESTED)
+  dateFrom    DateTime
+  dateTo      DateTime
+  expiryDate  DateTime
+  signature   String?       @db.Text
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@map("consent_artefacts")
+}
