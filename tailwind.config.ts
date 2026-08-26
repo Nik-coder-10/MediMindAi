@@ -11,12 +11,24 @@ const config: Config = {
   theme: {
     container: {
       center: true,
-      padding: "2rem",
+      padding: {
+        DEFAULT: "1rem",
+        sm: "1.5rem",
+        lg: "2rem",
+      },
       screens: {
         "2xl": "1400px",
       },
     },
     extend: {
+      minHeight: {
+        touch: "56px",
+        "touch-lg": "64px",
+      },
+      minWidth: {
+        touch: "56px",
+        "touch-lg": "64px",
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -51,35 +63,46 @@ const config: Config = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        // Ayush & Clinical Calm Palette
         ayush: {
-          green: "#2E7D32",
-          herbal: "#4CAF50",
-          gold: "#D4AF37",
-          ochre: "#C67D00",
-          slate: "#37474F",
-          vata: "#4A90E2",
-          pitta: "#E53935",
-          kapha: "#43A047",
+          green: "#1B5E20",
+          emerald: "#2E7D32",
+          mint: "#E8F5E9",
+          mintDark: "#C8E6C9",
+          gold: "#B78103",
+          goldLight: "#FFF8E1",
+          sky: "#E1F5FE",
+          skyDeep: "#0277BD",
+          slate: "#263238",
+          slateLight: "#ECEFF1",
         },
       },
+      fontSize: {
+        "touch-base": ["1.125rem", { lineHeight: "1.75rem" }], // 18px
+        "touch-lg": ["1.25rem", { lineHeight: "1.875rem" }],   // 20px
+        "touch-xl": ["1.5rem", { lineHeight: "2rem" }],        // 24px
+      },
       borderRadius: {
+        xl: "1rem",
+        "2xl": "1.25rem",
+        "3xl": "1.5rem",
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
       },
       keyframes: {
-        "accordion-down": {
-          from: { height: "0" },
-          to: { height: "var(--radix-accordion-content-height)" },
+        pulseMicro: {
+          "0%, 100%": { transform: "scale(1)" },
+          "50%": { transform: "scale(1.05)" },
         },
-        "accordion-up": {
-          from: { height: "var(--radix-accordion-content-height)" },
-          to: { height: "0" },
+        ripple: {
+          "0%": { transform: "scale(0.8)", opacity: "1" },
+          "100%": { transform: "scale(2.2)", opacity: "0" },
         },
       },
       animation: {
-        "accordion-down": "accordion-down 0.2s ease-out",
-        "accordion-up": "accordion-up 0.2s ease-out",
+        "pulse-subtle": "pulseMicro 2s ease-in-out infinite",
+        "ripple-glow": "ripple 1.8s cubic-bezier(0, 0.2, 0.8, 1) infinite",
       },
     },
   },

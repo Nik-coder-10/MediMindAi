@@ -4,68 +4,74 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
+    --background: 210 20% 98%;
     --foreground: 222.2 84% 4.9%;
     --card: 0 0% 100%;
     --card-foreground: 222.2 84% 4.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
-    --primary: 142 76% 36%;
-    --primary-foreground: 355.7 100% 97.3%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 142 76% 36%;
-    --radius: 0.5rem;
+    --primary: 134 61% 24%; /* #1B5E20 Ayush Forest Green */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 204 100% 97%; /* #E1F5FE Soft Sky */
+    --secondary-foreground: 201 98% 30%;
+    --muted: 210 25% 95%;
+    --muted-foreground: 215 16% 38%;
+    --accent: 138 76% 95%; /* #E8F5E9 Soft Mint */
+    --accent-foreground: 134 61% 20%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 214.3 28% 88%;
+    --input: 214.3 28% 88%;
+    --ring: 134 61% 24%;
+    --radius: 0.75rem;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 142 70% 50%;
-    --primary-foreground: 144.9 80.4% 10%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
+    --background: 224 71% 4%;
+    --foreground: 213 31% 91%;
+    --card: 224 71% 7%;
+    --card-foreground: 213 31% 91%;
+    --popover: 224 71% 7%;
+    --popover-foreground: 213 31% 91%;
+    --primary: 134 50% 45%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 215 28% 17%;
+    --secondary-foreground: 213 31% 91%;
+    --muted: 223 47% 11%;
+    --muted-foreground: 215.4 16.3% 66.9%;
+    --accent: 216 34% 17%;
     --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
+    --destructive: 0 63% 31%;
     --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 142 70% 50%;
+    --border: 216 34% 17%;
+    --input: 216 34% 17%;
+    --ring: 134 50% 45%;
   }
 
-  /* Strict WCAG 2.2 AA High Contrast Mode */
+  /* Strict WCAG 2.2 AAA High Contrast Mode */
   .high-contrast {
-    --background: 0 0% 0%;
-    --foreground: 0 0% 100%;
-    --card: 0 0% 0%;
-    --card-foreground: 0 0% 100%;
-    --primary: 60 100% 50%;
-    --primary-foreground: 0 0% 0%;
-    --border: 0 0% 100%;
-    --input: 0 0% 100%;
+    --background: 0 0% 0% !important;
+    --foreground: 0 0% 100% !important;
+    --card: 0 0% 5% !important;
+    --card-foreground: 0 0% 100% !important;
+    --primary: 60 100% 50% !important; /* Pure Yellow */
+    --primary-foreground: 0 0% 0% !important;
+    --secondary: 0 0% 15% !important;
+    --secondary-foreground: 0 0% 100% !important;
+    --muted: 0 0% 15% !important;
+    --muted-foreground: 0 0% 90% !important;
+    --accent: 60 100% 50% !important;
+    --accent-foreground: 0 0% 0% !important;
+    --border: 0 0% 100% !important;
+    --input: 0 0% 100% !important;
   }
 
   .text-size-large {
-    font-size: 1.125rem;
+    font-size: 1.25rem !important; /* 20px base */
   }
 
   .text-size-xl {
-    font-size: 1.25rem;
+    font-size: 1.4rem !important; /* 22.4px base */
   }
 }
 
@@ -74,11 +80,19 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground antialiased;
+    @apply bg-background text-foreground antialiased selection:bg-ayush-mintDark selection:text-ayush-green;
     font-feature-settings: "rlig" 1, "calt" 1;
+    touch-action: manipulation;
   }
-  /* WCAG Accessible large touch targets */
-  button, a, input, select, textarea {
-    @apply min-h-[44px];
+
+  /* Universal minimum 56px touch targets on interactive elements */
+  button,
+  a[role="button"],
+  input,
+  select,
+  textarea,
+  .touch-target {
+    min-height: 56px;
+    min-width: 56px;
   }
 }
