@@ -1,15 +1,30 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ProgressStepper } from "@/components/ui/patient/ProgressStepper";
 import { AudioPrompt } from "@/components/ui/patient/AudioPrompt";
 import { ExtraLargeButton } from "@/components/ui/patient/ExtraLargeButton";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { CheckCircle2, ArrowLeft, ArrowRight, ShieldCheck, Sparkles, Stethoscope, Clock, FileText, Pill, AlertTriangle, Calendar, Send } from "lucide-react";
-import { motion } from "framer-motion";
 import { MedicalTimelineView } from "@/components/ui/clinical/MedicalTimelineView";
-import { TimelineEventDTO } from "@/lib/services/timeline.service";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import {
+  CheckCircle2,
+  ArrowLeft,
+  ArrowRight,
+  ShieldCheck,
+  Sparkles,
+  Stethoscope,
+  Clock,
+  FileText,
+  Pill,
+  AlertTriangle,
+  Calendar,
+  Send,
+  Check,
+  User,
+  HeartHandshake,
+} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function PatientSummaryPreviewPage({
   params: { locale },
@@ -17,126 +32,192 @@ export default function PatientSummaryPreviewPage({
   params: { locale: string };
 }) {
   const router = useRouter();
+  const [submitting, setSubmitting] = useState(false);
+  const [submittedSuccess, setSubmittedSuccess] = useState(false);
 
   const summaryData = {
     patientName: "रमेश शर्मा (Ramesh Sharma)",
+    ageGender: "42 वर्ष / पुरुष (42Y / Male)",
     abhaId: "14-5542-8921-3410",
-    symptoms: ["घुटनों और कलाइयों में तेज दर्द (Severe Joint Pain)", "सुबह १ घंटे से ज्यादा जकड़न (Morning Stiffness)"],
-    digestiveAgni: "मंदाग्नि एवं भारी भोजन के बाद दर्द वृद्धि (Sluggish Agni with Ama)",
-    documents: "१ पर्ची जोड़ी गई (Prior Ayush Rx - Yogaraja Guggulu)",
-    triageLevel: "प्राथमिकता: डॉक्टर परामर्श तैयार (Ready for Doctor Consultation)",
+    chiefComplaint: "छाती में तेज भारीपन व दर्द (Severe Retrosternal Pressure)",
+    duration: "कल रात से (~14 घंटे)",
+    severity: "7 से 10 (अत्यधिक तेज)",
+    radiation: "बाएं हाथ व गर्दन में (Radiating to Left Arm)",
+    associated: "ठंडा पसीना व सांस फूलना (Diaphoresis & Dyspnea)",
+    ayushMode: "आयुर्वेद मोड (Ayurveda Clinical Mode Active)",
+    prakriti: "वात-कफ (Vata-Kapha)",
+    agni: "विषमाग्नि (Irregular Digestion)",
+    documents: "1 पर्ची अपलोड की गई (AIIA OPD Prescription)",
   };
 
-  const handleFinalSubmit = () => {
-    // Submit case to doctor queue and redirect to patient dashboard
-    router.push(`/${locale}/patient/patient-dashboard`);
+  const handleSubmitToDoctor = async () => {
+    setSubmitting(true);
+    try {
+      // In a real environment, marks session status as WAITING_FOR_DOCTOR
+      await new Promise((resolve) => setTimeout(resolve, 800));
+      setSubmittedSuccess(true);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-2xl mx-auto pb-12">
       <ProgressStepper currentStep={6} />
 
       <AudioPrompt
-        hindiText="आपके द्वारा दी गई जानकारी का सारांश तैयार है। डॉक्टर के पास भेजने के लिए 'केस जमा करें' दबाएं।"
-        text="Your case summary is ready. Tap 'Submit Case to Doctor' to send it to the clinical queue."
+        hindiText="यह आपके द्वारा दी गई जानकारी का सारांश है जो आपके डॉक्टर को दिखेगा। कृपया जांच लें और डॉक्टर को भेजें।"
+        text="This is a plain-language summary of your reported information. Please review and tap Submit to Doctor."
       />
 
-      <Card className="border-3 border-ayush-green shadow-lg rounded-3xl bg-white dark:bg-card overflow-hidden">
-        <CardHeader className="bg-ayush-mint/60 dark:bg-emerald-950/30 border-b p-6">
-          <div className="flex items-center justify-between">
-            <div className="space-y-1">
-              <span className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
-                <ShieldCheck className="h-4 w-4" /> ABHA आईडी सत्यापित
-              </span>
-              <CardTitle className="text-2xl font-extrabold text-foreground">
-                {summaryData.patientName}
-              </CardTitle>
+      <Card className="border-3 border-emerald-300 shadow-xl rounded-3xl bg-white dark:bg-card p-6 sm:p-8 space-y-6 text-left">
+        <div className="space-y-1 text-center">
+          <span className="text-xs font-extrabold px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full inline-flex items-center gap-1">
+            <Sparkles className="h-3.5 w-3.5" /> चरण ६ • परामर्श सारांश (Summary Review)
+          </span>
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground">
+            डॉक्टर को भेजी जाने वाली जानकारी
+          </h2>
+          <p className="text-xs sm:text-sm font-semibold text-muted-foreground">
+            This information will be presented directly to your attending physician.
+          </p>
+        </div>
+
+        {/* Patient Core Badge */}
+        <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 flex items-center justify-between">
+          <div className="space-y-0.5">
+            <span className="text-xs font-bold text-muted-foreground uppercase">रोगी विवरण (Patient)</span>
+            <div className="text-base font-extrabold text-foreground">{summaryData.patientName}</div>
+            <div className="text-xs font-semibold text-muted-foreground">
+              {summaryData.ageGender} • ABHA: {summaryData.abhaId}
             </div>
-            <span className="text-xs font-mono font-bold bg-white dark:bg-slate-900 px-3 py-1.5 rounded-lg border shadow-sm">
-              ABHA: {summaryData.abhaId}
-            </span>
           </div>
-        </CardHeader>
+          <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-emerald-200 text-emerald-900 flex items-center gap-1">
+            <ShieldCheck className="h-3.5 w-3.5" /> सहमति प्राप्त
+          </span>
+        </div>
 
-        <CardContent className="p-6 space-y-4">
-          <div className="p-4 rounded-2xl bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200 space-y-1">
-            <span className="text-xs font-extrabold text-ayush-green uppercase">मुख्य लक्षण (Reported Complaints):</span>
-            <ul className="list-disc list-inside text-base font-bold text-foreground">
-              {summaryData.symptoms.map((s, idx) => (
-                <li key={idx}>{s}</li>
-              ))}
-            </ul>
+        {/* Plain Language Summary Grid */}
+        <div className="space-y-3">
+          <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900 border space-y-1">
+            <span className="text-xs font-extrabold text-muted-foreground uppercase">१. मुख्य समस्या (Chief Problem):</span>
+            <p className="text-base font-extrabold text-foreground">{summaryData.chiefComplaint}</p>
+            <p className="text-xs font-semibold text-muted-foreground">अवधि: {summaryData.duration} • गंभीरता: {summaryData.severity}</p>
           </div>
 
-          <div className="p-4 rounded-2xl bg-amber-50/50 dark:bg-amber-950/20 border border-amber-200 space-y-1">
-            <span className="text-xs font-extrabold text-amber-800 dark:text-amber-200 uppercase">पाचन व अग्नि लक्षण (Agni & Metabolism):</span>
-            <p className="text-sm font-semibold text-foreground">{summaryData.digestiveAgni}</p>
+          <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900 border space-y-1">
+            <span className="text-xs font-extrabold text-muted-foreground uppercase">२. लक्षण व फैलाव (Symptoms & Spread):</span>
+            <p className="text-sm font-bold text-foreground">• दर्द का फैलाव: {summaryData.radiation}</p>
+            <p className="text-sm font-bold text-foreground">• अन्य परेशानी: {summaryData.associated}</p>
           </div>
 
-          <div className="p-4 rounded-2xl bg-blue-50/50 dark:bg-blue-950/20 border border-blue-200 space-y-1">
-            <span className="text-xs font-extrabold text-blue-800 dark:text-blue-200 uppercase">संलग्न दस्तावेज (Attached Documents):</span>
-            <p className="text-sm font-semibold text-foreground">{summaryData.documents}</p>
+          <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900 border space-y-1">
+            <span className="text-xs font-extrabold text-muted-foreground uppercase">३. आयुर्वेद प्रकृति व पाचन (Ayurveda Profile):</span>
+            <p className="text-sm font-bold text-foreground">• देहा प्रकृति: {summaryData.prakriti}</p>
+            <p className="text-sm font-bold text-foreground">• पाचन अग्नि: {summaryData.agni}</p>
           </div>
-        </CardContent>
-        {/* Longitudinal Medical Timeline */}
-        <Card className="border-2 border-emerald-200 p-6 rounded-3xl space-y-4">
-          <h3 className="font-extrabold text-lg text-foreground flex items-center gap-2">
-            <Calendar className="h-5 w-5 text-emerald-600" />
-            <span>चिकित्सीय इतिहास (Longitudinal Timeline)</span>
-          </h3>
+
+          <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900 border space-y-1">
+            <span className="text-xs font-extrabold text-muted-foreground uppercase">४. संलग्न दस्तावेज़ (Attached Records):</span>
+            <p className="text-sm font-bold text-foreground">{summaryData.documents}</p>
+          </div>
+        </div>
+
+        {/* Longitudinal Timeline Component */}
+        <div className="space-y-2 pt-2">
+          <span className="text-xs font-extrabold text-muted-foreground uppercase flex items-center gap-1">
+            <Calendar className="h-3.5 w-3.5 text-emerald-600" /> पिछला इतिहास (Past Medical Milestones):
+          </span>
           <MedicalTimelineView
             events={[
               {
                 id: "1",
                 patientId: "pat-demo",
                 eventDate: "2026-08-26",
-                title: "Ayush OPD Consultation (AIIA)",
-                description: "Diagnosed with Amavata (Saama Vata) & Amlapitta. Started Yogaraj Guggulu & Amritarishta.",
+                title: "आज का परामर्श (Today's Case-Taking)",
+                description: "छाती में दर्द व भारीपन (Chest discomfort intake).",
                 category: "DIAGNOSIS",
               },
               {
                 id: "2",
                 patientId: "pat-demo",
-                eventDate: "2026-08-26",
-                title: "Elevated ESR & HbA1c Lab Panel",
-                description: "HbA1c 6.8% (Pre-diabetic/High) and ESR 38 mm/hr (Elevated inflammation).",
-                category: "LAB",
-                isAbnormal: true,
-              },
-              {
-                id: "3",
-                patientId: "pat-demo",
                 eventDate: "2024-03-15",
-                title: "Metformin 500mg Initiated",
-                description: "Started Oral Hypoglycemic Agent for Impaired Fasting Glucose.",
+                title: "मेटफॉर्मिन दवा शुरू (Metformin 500mg)",
+                description: "ब्लड शुगर नियंत्रण हेतु (Blood sugar management).",
                 category: "MEDICATION",
               },
             ]}
           />
-        </Card>
+        </div>
+
+        {/* Action Controls */}
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t">
+          <ExtraLargeButton
+            variant="secondary"
+            size="default"
+            icon={<ArrowLeft className="h-5 w-5" />}
+            onClick={() => router.back()}
+          >
+            बदलाव करें (Edit)
+          </ExtraLargeButton>
+
+          <ExtraLargeButton
+            variant="primary"
+            size="large"
+            icon={<Send className="h-5 w-5" />}
+            onClick={handleSubmitToDoctor}
+            disabled={submitting}
+          >
+            {submitting ? "भेज रहे हैं..." : "डॉक्टर को भेजें (Submit to Doctor)"}
+          </ExtraLargeButton>
+        </div>
       </Card>
 
-      {/* Confirmation and Submit Controls */}
-      <div className="flex justify-between items-center pt-4">
-        <ExtraLargeButton
-          variant="secondary"
-          size="default"
-          icon={<ArrowLeft className="h-5 w-5" />}
-          onClick={() => router.back()}
-        >
-          पीछे (Back)
-        </ExtraLargeButton>
+      {/* Reassuring Submission Confirmation Modal */}
+      <AnimatePresence>
+        {submittedSuccess && (
+          <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="w-full max-w-md bg-white dark:bg-slate-900 border-4 border-emerald-500 rounded-3xl p-6 sm:p-8 space-y-6 text-center shadow-2xl"
+            >
+              <div className="w-20 h-20 mx-auto rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center shadow-inner">
+                <CheckCircle2 className="h-12 w-12" />
+              </div>
 
-        <ExtraLargeButton
-          variant="success"
-          size="giant"
-          className="shadow-xl"
-          icon={<Send className="h-6 w-6" />}
-          onClick={handleFinalSubmit}
-        >
-          केस डॉक्टर को भेजें (Submit Case)
-        </ExtraLargeButton>
-      </div>
+              <div className="space-y-2">
+                <span className="text-xs font-extrabold px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full uppercase">
+                  परामर्श सफलतापूर्वक दर्ज (Submitted)
+                </span>
+                <h3 className="text-2xl font-extrabold text-foreground">
+                  आपकी जानकारी डॉक्टर को भेज दी गई है
+                </h3>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Your case dossier is now live on the attending physician desk.
+                </p>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 text-center space-y-1">
+                <span className="text-xs font-bold text-muted-foreground uppercase">आपका टोकन नंबर (Token):</span>
+                <div className="text-2xl font-extrabold text-emerald-900 dark:text-emerald-200">#AIIA-104</div>
+                <p className="text-xs font-semibold text-emerald-700 flex items-center justify-center gap-1">
+                  <Clock className="h-3.5 w-3.5" /> अनुमानित प्रतीक्षा समय: 10-15 मिनट
+                </p>
+              </div>
+
+              <ExtraLargeButton
+                variant="primary"
+                size="large"
+                className="w-full"
+                onClick={() => router.push(`/${locale}/patient`)}
+              >
+                मुख्य पृष्ठ पर जाएं (Back to Home)
+              </ExtraLargeButton>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
