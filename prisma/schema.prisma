@@ -7,19 +7,87 @@ generator client {
   provider = "prisma-client-js"
 }
 
+// ==============================================================================
+// ENUMS
+// ==============================================================================
+
+/// System user authorization and Ayush care team roles
 enum Role {
   PATIENT
   DOCTOR
   ADMIN
-  AYUSH_RESEARCHER
+  NURSE
 }
 
+/// Biological & demographic gender
 enum Gender {
   MALE
   FEMALE
   OTHER
+  UNKNOWN
 }
 
+/// Clinical encounter lifecycle statuses
+enum SessionStatus {
+  SCHEDULED
+  IN_PROGRESS
+  WAITING_FOR_DOCTOR
+  COMPLETED
+  CANCELLED
+}
+
+/// Clinical triage urgency level
+enum TriagePriority {
+  ROUTINE
+  URGENT
+  EMERGENCY
+}
+
+/// Role of participant in conversation stream
+enum TurnRole {
+  PATIENT
+  AI
+  DOCTOR
+  SYSTEM
+}
+
+/// Safety triage severity
+enum RedFlagSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+/// Categories of ingested medical records
+enum DocumentType {
+  PRESCRIPTION
+  LAB
+  DISCHARGE
+  IMAGING
+  OTHER
+}
+
+/// Granular extracted clinical entities from multimodal OCR / NER
+enum EntityType {
+  MEDICATION
+  DIAGNOSIS
+  LAB
+  PROCEDURE
+  ALLERGY
+  VITAL
+  AYUSH_FORMULATION
+}
+
+/// Summary workflow review states
+enum SummaryStatus {
+  DRAFT
+  ACCEPTED
+  REJECTED
+  REVISED
+}
+
+/// Ayurvedic Dosha dominance categories
 enum DoshaDominance {
   VATA
   PITTA
@@ -30,255 +98,457 @@ enum DoshaDominance {
   SAMADOSHA
 }
 
-enum AgniType {
-  SAMA_AGNI
-  VISHAMA_AGNI
-  TIKSHNA_AGNI
-  MANDA_AGNI
+/// Status of Ayushman Bharat Health Account verification
+enum AbhaStatus {
+  ACTIVE
+  INACTIVE
+  PENDING_VERIFICATION
+  DEACTIVATED
 }
 
-enum KoshthaType {
-  MRIDU
-  MADHYAMA
-  KRURA
-}
+// ==============================================================================
+// 1. CORE IDENTITY & USER MANAGEMENT
+// ==============================================================================
 
-enum ConsentStatus {
-  REQUESTED
-  GRANTED
-  DENIED
-  REVOKED
-  EXPIRED
-}
-
+/// Core user authentication, identity, and ABHA linkage entity
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String?   @unique
-  emailVerified DateTime?
-  image         String?
-  passwordHash  String?
-  role          Role      @default(PATIENT)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id                String    @id @default(uuid()) @db.Uuid
+  role              Role      @default(PATIENT)
+  abhaId            String?   @unique
+  phone             String?   @unique
+  email             String?   @unique
+  passwordHash      String?
+  preferredLanguage String    @default("en") // en, hi, mr, etc.
+  isActive          Boolean   @default(true)
+  deletedAt         DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
-  // Ayush & ABDM profile links
-  abhaId        String?   @unique
-  abhaAddress   String?   @unique
-  patient       Patient?
-  doctor        Doctor?
+  // Profiles
+  patientProfile    PatientProfile?
+  doctorProfile     DoctorProfile?
 
-  accounts      Account[]
-  sessions      Session[]
+  // Relations
+  auditLogs         AuditLog[]
 
+  @@index([role])
+  @@index([abhaId])
+  @@index([phone])
+  @@index([email])
   @@map("users")
 }
 
-model Account {
-  id                String  @id @default(cuid())
-  userId            String
-  type              String
-  provider          String
-  providerAccountId String
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
-  expires_at        Int?
-  token_type        String?
-  scope             String?
-  id_token          String? @db.Text
-  session_state     String?
+/// Comprehensive patient demographic, clinical baseline, and emergency profile
+model PatientProfile {
+  id                  String          @id @default(uuid()) @db.Uuid
+  userId              String          @unique @db.Uuid
+  user                User            @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([provider, providerAccountId])
-  @@map("accounts")
-}
-
-model Session {
-  id           String   @id @default(cuid())
-  sessionToken String   @unique
-  userId       String
-  expires      DateTime
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("sessions")
-}
-
-model VerificationToken {
-  identifier String
-  token      String   @unique
-  expires    DateTime
-
-  @@unique([identifier, token])
-  @@map("verification_tokens")
-}
-
-model Patient {
-  id          String   @id @default(cuid())
-  userId      String   @unique
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  dateOfBirth DateTime
-  gender      Gender
-  contactNo   String?
-  address     String?
-
-  // ABDM / Ayush Identification
-  abhaNumber  String?  @unique
-  healthId    String?  @unique
+  firstName           String
+  lastName            String
+  dateOfBirth         DateTime
+  gender              Gender
+  bloodGroup          String?
+  address             String?
+  emergencyContact    Json?           @db.JsonB // { name, phone, relationship }
+  baselinePrakriti    DoshaDominance?
+  medicalHistory      Json?           @db.JsonB // { pastIllnesses, surgeries, chronicConditions, allergies }
+  
+  deletedAt           DateTime?
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
 
   // Relations
-  encounters  Encounter[]
-  prakriti    PrakritiAssessment?
-  consents    ConsentArtefact[]
+  clinicalSessions    ClinicalSession[]
+  consentRecords      ConsentRecord[]
+  timelineEvents      MedicalTimelineEvent[]
+  abhaLink            AbhaLink?
+  fhirResources       FhirResource[]
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@map("patients")
+  @@index([userId])
+  @@index([baselinePrakriti])
+  @@map("patient_profiles")
 }
 
-model Doctor {
-  id             String      @id @default(cuid())
-  userId         String      @unique
-  user           User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  registrationNo String      @unique // Ayush Medical Council Reg No.
-  specialization String      // Ayurveda, Yoga, Unani, Siddha, Homeopathy
-  qualification  String
-  department     String?
+/// Ayush Clinical Practitioner & Medical Council Registry profile
+model DoctorProfile {
+  id                  String          @id @default(uuid()) @db.Uuid
+  userId              String          @unique @db.Uuid
+  user                User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  registrationNumber  String          @unique // Council Reg No. (e.g. State Ayush Council / CCIM)
+  qualification       String          // e.g. BAMS, MD (Ayurveda), MS (Ayurveda)
+  specialization      String          // Kayachikitsa, Panchakarma, Shalya Tantra, etc.
+  department          String?
+  hospitalAffiliation String?
+  isActive            Boolean         @default(true)
+
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+
+  // Relations
+  clinicalSessions    ClinicalSession[]
+
+  @@index([userId])
+  @@index([registrationNumber])
+  @@map("doctor_profiles")
+}
+
+// ==============================================================================
+// 2. ABDM CONSENT & REGULATORY GOVERNANCE
+// ==============================================================================
+
+/// ABDM-compliant electronic health data sharing consent record
+model ConsentRecord {
+  id                String    @id @default(uuid()) @db.Uuid
+  patientId         String    @db.Uuid
+  patient           PatientProfile @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  purpose           String    // Clinical consultation, Ayush research, Care management
+  language          String    @default("hi")
+  audioConsentUrl   String?   // S3/Storage link for audio consent recording in patient's dialect
+  grantedAt         DateTime  @default(now())
+  revokedAt         DateTime?
+  expiryDate        DateTime?
+  version           String    @default("1.0")
+  ipAddress         String?
+  userAgent         String?
+  metadata          Json?     @db.JsonB // HIP/HIU identifiers, granular permission flags
+
+  deletedAt         DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([patientId])
+  @@index([grantedAt])
+  @@index([revokedAt])
+  @@map("consent_records")
+}
+
+// ==============================================================================
+// 3. CLINICAL SESSION & ADAPTIVE CONVERSATION ENGINE
+// ==============================================================================
+
+/// Active clinical case-taking encounter combining AI triage and doctor review
+model ClinicalSession {
+  id                  String          @id @default(uuid()) @db.Uuid
+  patientId           String          @db.Uuid
+  patient             PatientProfile  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  doctorId            String?         @db.Uuid
+  doctor              DoctorProfile?  @relation(fields: [doctorId], references: [id], onDelete: SetNull)
+
+  status              SessionStatus   @default(IN_PROGRESS)
+  language            String          @default("hi") // Language used in conversation
+  triagePriority      TriagePriority  @default(ROUTINE)
+  startedAt           DateTime        @default(now())
+  completedAt         DateTime?
+  redFlagTriggered    Boolean         @default(false)
+  notes               String?         @db.Text
+
+  deletedAt           DateTime?
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+
+  // Relations
+  conversationTurns   ConversationTurn[]
+  chiefComplaints     ChiefComplaint[]
+  adaptiveAnswers     AdaptiveAnswer[]
+  redFlagEvents       RedFlagEvent[]
+  medicalDocuments    MedicalDocument[]
+  clinicalSummary     ClinicalSummary?
+  ayurvedaAssessment  AyurvedaAssessment?
+  fhirResources       FhirResource[]
+
+  @@index([patientId])
+  @@index([doctorId])
+  @@index([status])
+  @@index([triagePriority])
+  @@index([redFlagTriggered])
+  @@map("clinical_sessions")
+}
+
+/// Granular conversation turn (Voice / Text) between Patient, AI Agent, or Doctor
+model ConversationTurn {
+  id                String          @id @default(uuid()) @db.Uuid
+  sessionId         String          @db.Uuid
+  session           ClinicalSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  role              TurnRole
+  contentText       String          @db.Text
+  contentAudioUrl   String?         // URL of recorded speech audio segment
+  timestamp         DateTime        @default(now())
+  metadata          Json?           @db.JsonB // { ASR_confidence, latency_ms, intent, sentiment, detected_language }
+
+  @@index([sessionId])
+  @@index([timestamp])
+  @@map("conversation_turns")
+}
+
+/// Structured chief complaint reported by the patient
+model ChiefComplaint {
+  id                String          @id @default(uuid()) @db.Uuid
+  sessionId         String          @db.Uuid
+  session           ClinicalSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  symptomName       String          // e.g. Shirashoola (Headache), Sandhishoola (Joint Pain)
+  duration          String          // e.g. "3 days", "2 weeks"
+  severity          String          // "Mild", "Moderate", "Severe"
+  location          String?
+  aggravatingFactors String?
+  relievingFactors  String?
+  metadata          Json?           @db.JsonB
+
+  createdAt         DateTime        @default(now())
+
+  @@index([sessionId])
+  @@map("chief_complaints")
+}
+
+/// Dynamically generated adaptive question response during AI case-taking
+model AdaptiveAnswer {
+  id                String          @id @default(uuid()) @db.Uuid
+  sessionId         String          @db.Uuid
+  session           ClinicalSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  questionId        String          // Identifier from clinical question tree
+  questionText      String          @db.Text
+  answerText        String          @db.Text
+  answerAudioUrl    String?
+  clinicalContext   String?         // Rationale / domain: Agni, Mala, Nidra, etc.
+  confidence        Float?
+  metadata          Json?           @db.JsonB
+
+  createdAt         DateTime        @default(now())
+
+  @@index([sessionId])
+  @@index([questionId])
+  @@map("adaptive_answers")
+}
+
+// ==============================================================================
+// 4. SAFETY & RED FLAG MONITORING
+// ==============================================================================
+
+/// Emergency / Critical safety trigger detected during patient interaction
+model RedFlagEvent {
+  id                String          @id @default(uuid()) @db.Uuid
+  sessionId         String          @db.Uuid
+  session           ClinicalSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  ruleId            String          // e.g. RF_CHEST_PAIN, RF_ACUTE_BREATHLESSNESS
+  description       String          @db.Text
+  severity          RedFlagSeverity @default(HIGH)
+  triggeredAt       DateTime        @default(now())
+  notified          Boolean         @default(false)
+  notifiedAt        DateTime?
+  actionTaken       String?         @db.Text // Triage override, emergency alert dispatched
+
+  @@index([sessionId])
+  @@index([severity])
+  @@index([notified])
+  @@map("red_flag_events")
+}
+
+// ==============================================================================
+// 5. MULTIMODAL MEDICAL DOCUMENTS & OCR EXTRACTION
+// ==============================================================================
+
+/// Ingested prior medical records, prescriptions, and lab investigations
+model MedicalDocument {
+  id                String          @id @default(uuid()) @db.Uuid
+  sessionId         String          @db.Uuid
+  session           ClinicalSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  type              DocumentType    @default(PRESCRIPTION)
+  originalFileUrl   String          // S3 / MinIO storage key or URL
+  fileName          String
+  mimeType          String
+  fileSize          Int
+  ocrRawText        String?         @db.Text
+  language          String?         @default("en")
+  uploadedAt        DateTime        @default(now())
+  deletedAt         DateTime?
+
+  // Relations
+  extractedEntities ExtractedMedicalEntity[]
+  timelineEvents    MedicalTimelineEvent[]
+
+  @@index([sessionId])
+  @@index([type])
+  @@map("medical_documents")
+}
+
+/// Machine-learned clinical entities parsed from OCR or transcripts
+model ExtractedMedicalEntity {
+  id                String          @id @default(uuid()) @db.Uuid
+  documentId        String          @db.Uuid
+  document          MedicalDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  type              EntityType
+  rawText           String
+  structuredData    Json            @db.JsonB // { name, dosage, frequency, route, duration, standardCode: { namaste, icd10, snomed } }
+  confidence        Float           @default(1.0)
+  isVerifiedByDoctor Boolean        @default(false)
+
+  createdAt         DateTime        @default(now())
+
+  @@index([documentId])
+  @@index([type])
+  @@map("extracted_medical_entities")
+}
+
+/// Chronological patient longitudinal medical timeline event
+model MedicalTimelineEvent {
+  id                String          @id @default(uuid()) @db.Uuid
+  patientId         String          @db.Uuid
+  patient           PatientProfile  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  sourceDocumentId  String?         @db.Uuid
+  sourceDocument    MedicalDocument? @relation(fields: [sourceDocumentId], references: [id], onDelete: SetNull)
+
+  eventDate         DateTime
+  title             String
+  description       String?         @db.Text
+  category          String          // "DIAGNOSIS", "PRESCRIPTION", "PANCHAKARMA_PROCEDURE", "HOSPITALIZATION"
+  metadata          Json?           @db.JsonB
+
+  createdAt         DateTime        @default(now())
+
+  @@index([patientId])
+  @@index([eventDate])
+  @@map("medical_timeline_events")
+}
+
+// ==============================================================================
+// 6. CLINICAL SUMMARY & NOTES
+// ==============================================================================
+
+/// AI-generated and doctor-validated clinical consultation summary
+model ClinicalSummary {
+  id                    String          @id @default(uuid()) @db.Uuid
+  sessionId             String          @unique @db.Uuid
+  session               ClinicalSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  aiGeneratedMarkdown   String          @db.Text
+  doctorEditedMarkdown  String?         @db.Text
+  status                SummaryStatus   @default(DRAFT)
+  version               Int             @default(1)
+  reviewedAt            DateTime?
+
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+
+  @@index([sessionId])
+  @@index([status])
+  @@map("clinical_summaries")
+}
+
+// ==============================================================================
+// 7. AYUSH ASSESSMENT (CHARAKA SAMHITA CLINICAL MODEL)
+// ==============================================================================
+
+/// Comprehensive Ayurvedic Pariksha: Dashavidha, Ashtavidha, & Samprapti Ghataka
+model AyurvedaAssessment {
+  id                  String          @id @default(uuid()) @db.Uuid
+  sessionId           String          @unique @db.Uuid
+  session             ClinicalSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  // Prakriti & Vikriti
+  prakriti            DoshaDominance  // Inherent constitution
+  vikriti             DoshaDominance  // Current morbid state / Dosha disturbance
   
-  encounters     Encounter[]
-  createdAt      DateTime    @default(now())
-  updatedAt      DateTime    @updatedAt
+  // Dashavidha Pariksha (Charaka Vimanashana 8/94)
+  dushya              String?         // Rasa, Rakta, Mamsa, Meda, Asthi, Majja, Shukra
+  desha               String?         // Jangala, Anupa, Sadharana
+  bala                String?         // Pravara, Madhyama, Avara (Physical strength)
+  kala                String?         // Ritu (Season) & Chronological phase
+  anala               String?         // Sama, Vishama, Tikshna, Manda Agni (Digestive fire)
+  sara                String?         // Tissue excellence / Dhatu Sarata
+  samhanana           String?         // Body compactness & musculature
+  pramana             String?         // Anthropometric proportions
+  satmya              String?         // Habituation / Dietary adaptability
+  sattva              String?         // Mental endurance / Pravara, Madhyama, Avara
+  aharaShakti         String?         // Abhyavaharana & Jarana Shakti (Food intake & digestion)
+  vyayamaShakti       String?         // Physical endurance
+  vaya                String?         // Balya, Madhyama, Vriddhavastha
 
-  @@map("doctors")
+  // Ashtavidha Pariksha (Pulse, Tongue, Urine, Bowel, Voice, Touch, Eyes, Build)
+  ashtavidhaData      Json?           @db.JsonB // { nadi, mutra, mala, jihwa, shabda, sparsha, drik, akriti }
+
+  // Diet & Lifestyle factors
+  aharaVihara         Json?           @db.JsonB // Dietary habits (Rasa dominance, Viruddha Ahara), sleep patterns, exercise
+  notes               String?         @db.Text
+
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+
+  @@index([sessionId])
+  @@index([prakriti])
+  @@index([vikriti])
+  @@map("ayurveda_assessments")
 }
 
-model Encounter {
-  id              String           @id @default(cuid())
-  patientId       String
-  patient         Patient          @relation(fields: [patientId], references: [id], onDelete: Cascade)
-  doctorId        String
-  doctor          Doctor           @relation(fields: [doctorId], references: [id], onDelete: Restrict)
-  encounterDate   DateTime         @default(now())
-  chiefComplaints Json             // Structured complaint items with duration & severity
-  historyPresent  String?          @db.Text
-  historyPast     String?          @db.Text
-  historyFamily   String?          @db.Text
+// ==============================================================================
+// 8. AUDIT TRAILS & COMPLIANCE
+// ==============================================================================
 
-  // Ayush Pariksha components
-  ashtavidha      AshtavidhaPariksha?
-  dashavidha      DashavidhaPariksha?
-  samprapti       Json?            // Nidana, Dosha, Dushya, Srotas, Agni, Ama details
-  
-  // Diagnosis & Prescription
-  ayushDiagnosis  String?          // Ayurvedic/Ayush disease naming (Vyadhi)
-  icd10Code       String?          // Standard cross-reference
-  namasteCode     String?          // National AYUSH Morbidity and Standardized Terminologies Electronic portal
-  prescriptions   Prescription[]
-  attachments     Attachment[]
+/// Immutable system & clinical data access audit trail
+model AuditLog {
+  id                String    @id @default(uuid()) @db.Uuid
+  actorId           String?   @db.Uuid
+  actor             User?     @relation(fields: [actorId], references: [id], onDelete: SetNull)
 
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
+  action            String    // "SESSION_VIEW", "SUMMARY_SIGN", "CONSENT_REVOKE", "DOCUMENT_UPLOAD"
+  resourceType      String    // "ClinicalSession", "PatientProfile", "ConsentRecord"
+  resourceId        String?   @db.Uuid
+  ipAddress         String?
+  metadata          Json?     @db.JsonB
+  timestamp         DateTime  @default(now())
 
-  @@map("encounters")
+  @@index([actorId])
+  @@index([resourceType, resourceId])
+  @@index([action])
+  @@index([timestamp])
+  @@map("audit_logs")
 }
 
-model PrakritiAssessment {
-  id             String         @id @default(cuid())
-  patientId      String         @unique
-  patient        Patient        @relation(fields: [patientId], references: [id], onDelete: Cascade)
-  dominantDosha  DoshaDominance
-  vataScore      Float
-  pittaScore     Float
-  kaphaScore     Float
-  assessmentData Json           // Complete questionnaire answers & physical signs
-  assessedAt     DateTime       @default(now())
+// ==============================================================================
+// 9. ABDM & FHIR INTEROPERABILITY
+// ==============================================================================
 
-  @@map("prakriti_assessments")
+/// Ayushman Bharat Health Account (ABHA) Linkage
+model AbhaLink {
+  id                String          @id @default(uuid()) @db.Uuid
+  patientId         String          @unique @db.Uuid
+  patient           PatientProfile  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+
+  abhaNumber        String          @unique // 14-digit ABHA Number (e.g. 91-1234-5678-9012)
+  abhaAddress       String          @unique // username@abdm (e.g. rahul@sbx)
+  status            AbhaStatus      @default(ACTIVE)
+  kycVerified       Boolean         @default(true)
+  linkedAt          DateTime        @default(now())
+  metadata          Json?           @db.JsonB // ABHA Card token, profile photo base64/url
+
+  @@index([patientId])
+  @@index([abhaNumber])
+  @@index([abhaAddress])
+  @@map("abha_links")
 }
 
-model AshtavidhaPariksha {
-  id          String    @id @default(cuid())
-  encounterId String    @unique
-  encounter   Encounter @relation(fields: [encounterId], references: [id], onDelete: Cascade)
-  
-  nadi        String?   // Pulse examination (Vata/Pitta/Kapha gati)
-  mutra       String?   // Urine examination
-  mala        String?   // Stool examination
-  jihwa       String?   // Tongue examination (Saama/Niraama)
-  shabda      String?   // Voice/Speech
-  sparsha     String?   // Touch/Skin temperature & texture
-  drik        String?   // Eyes/Vision
-  akriti      String?   // General build/Posture
+/// FHIR R4 Bundle / Resource repository for ABDM Health Information Exchange (HIE)
+model FhirResource {
+  id                String          @id @default(uuid()) @db.Uuid
+  patientId         String          @db.Uuid
+  patient           PatientProfile  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  sessionId         String?         @db.Uuid
+  session           ClinicalSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
 
-  @@map("ashtavidha_pariksha")
-}
+  resourceType      String          // "Bundle", "Patient", "Condition", "Encounter", "MedicationRequest", "Observation"
+  resourceJson      Json            @db.JsonB // Standard HL7/FHIR R4 JSON representation
+  versionId         String          @default("1")
+  lastUpdated       DateTime        @default(now())
 
-model DashavidhaPariksha {
-  id             String      @id @default(cuid())
-  encounterId    String      @unique
-  encounter      Encounter   @relation(fields: [encounterId], references: [id], onDelete: Cascade)
-  
-  dushya         String?     // Tissue elements involved
-  desha          String?     // Habitat & Geographical constitution
-  bala           String?     // Physical strength (Pravara, Madhyama, Avara)
-  kala           String?     // Season / Age phase
-  anala          AgniType?   // Digestive fire
-  prakriti       String?     // Inherent constitution
-  vayas          String?     // Chronological age
-  sattva         String?     // Mental endurance / Psyche
-  satmya         String?     // Adaptability / Habituation
-  aharaShakti    String?     // Food intake & digestive capacity
-  vyayamaShakti  String?     // Physical exercise capacity
-
-  @@map("dashavidha_pariksha")
-}
-
-model Prescription {
-  id            String    @id @default(cuid())
-  encounterId   String
-  encounter     Encounter @relation(fields: [encounterId], references: [id], onDelete: Cascade)
-  medicineName  String    // Classical or Proprietary Ayush Formulation (e.g. Triphala Churna)
-  formulation   String?   // Vati, Churna, Asava/Arishta, Taila, Ghrita
-  dosage        String    // e.g. 1 spoon, 500mg
-  frequency     String    // e.g. Twice daily after food (Vyanodana kala)
-  anupana       String?   // Vehicle (e.g., Warm Water, Honey, Ghee)
-  durationDays  Int
-  instructions  String?
-
-  createdAt     DateTime  @default(now())
-
-  @@map("prescriptions")
-}
-
-model Attachment {
-  id          String    @id @default(cuid())
-  encounterId String
-  encounter   Encounter @relation(fields: [encounterId], references: [id], onDelete: Cascade)
-  fileName    String
-  fileType    String    // mime-type: application/pdf, image/png, etc.
-  fileSize    Int
-  storageKey  String    // Path or S3 Object Key
-  ocrText     String?   @db.Text
-  createdAt   DateTime  @default(now())
-
-  @@map("attachments")
-}
-
-model ConsentArtefact {
-  id          String        @id @default(cuid())
-  consentId   String        @unique // ABDM Consent ID
-  patientId   String
-  patient     Patient       @relation(fields: [patientId], references: [id], onDelete: Cascade)
-  requesterId String        // HIP or HIU ID
-  purpose     String
-  status      ConsentStatus @default(REQUESTED)
-  dateFrom    DateTime
-  dateTo      DateTime
-  expiryDate  DateTime
-  signature   String?       @db.Text
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-
-  @@map("consent_artefacts")
+  @@index([patientId])
+  @@index([sessionId])
+  @@index([resourceType])
+  @@map("fhir_resources")
 }
