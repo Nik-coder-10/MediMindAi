@@ -1,82 +1,118 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { AudioPrompt } from "@/components/ui/patient/AudioPrompt";
 import { ExtraLargeButton } from "@/components/ui/patient/ExtraLargeButton";
-import { IconButton } from "@/components/ui/patient/IconButton";
-import { Card, CardContent } from "@/components/ui/card";
-import { PlayCircle, ShieldCheck, FileText, Stethoscope, ArrowRight, UserCheck } from "lucide-react";
+import { AudioPrompt } from "@/components/ui/patient/AudioPrompt";
+import { Card } from "@/components/ui/card";
+import { Stethoscope, Sparkles, ArrowRight, ShieldCheck, HeartPulse, User, Flower2 } from "lucide-react";
+import { motion } from "framer-motion";
 
-export default function PatientHomePage({
+export default function PatientLauncherPage({
   params: { locale },
 }: {
   params: { locale: string };
 }) {
   const router = useRouter();
+  const [selectedMode, setSelectedMode] = useState<"GENERAL" | "AYURVEDA">("AYURVEDA");
+
+  const handleStart = () => {
+    router.push(`/${locale}/patient/consent?mode=${selectedMode}`);
+  };
 
   return (
-    <div className="space-y-8">
-      {/* Audio-First Greeting */}
+    <div className="space-y-8 text-center max-w-xl mx-auto py-4">
       <AudioPrompt
-        hindiText="नमस्ते! अपना नया चिकित्सीय परामर्श शुरू करने के लिए नीचे हरा बटन दबाएं।"
-        text="Hello! Tap the green button below to start your clinical consultation."
+        hindiText="आयुर्वेद व सामान्य चिकित्सा परामर्श में आपका स्वागत है। कृपया अपनी परामर्श पद्धति चुनें।"
+        text="Welcome to AyurSetu clinical consultation. Please select your preferred consultation mode."
       />
 
-      {/* Hero Action Launcher */}
-      <Card className="border-3 border-ayush-emerald/30 shadow-lg bg-gradient-to-br from-white via-ayush-mint/20 to-emerald-50/40 dark:from-slate-900 dark:to-emerald-950/20 rounded-3xl p-6 sm:p-8 text-center space-y-6">
-        <div className="w-20 h-20 mx-auto rounded-3xl bg-ayush-green text-white flex items-center justify-center text-4xl shadow-xl">
-          🏥
-        </div>
+      <div className="space-y-3">
+        <span className="text-xs font-extrabold px-4 py-1.5 bg-emerald-100 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 rounded-full inline-flex items-center gap-1.5 shadow-xs border border-emerald-300">
+          <Sparkles className="h-4 w-4 text-emerald-600" /> SIH 2026 • अखिल भारतीय आयुर्वेद संस्थान (AIIA)
+        </span>
+        <h1 className="text-3xl sm:text-4xl font-extrabold text-foreground tracking-tight">
+          रोगी परामर्श सेवा (Patient Case-Taking)
+        </h1>
+        <p className="text-sm sm:text-base text-muted-foreground font-medium">
+          Choose your clinical consultation mode to begin your adaptive case-taking.
+        </p>
+      </div>
 
-        <div className="space-y-2">
-          <h1 className="text-3xl sm:text-4xl font-extrabold text-foreground tracking-tight">
-            नया परामर्श शुरू करें
-          </h1>
-          <p className="text-lg font-medium text-muted-foreground">
-            Start New Ayush Case-Taking Consultation
-          </p>
-        </div>
+      {/* Mode Selection Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-left pt-2">
+        {/* Ayurveda Mode */}
+        <motion.button
+          whileTap={{ scale: 0.96 }}
+          type="button"
+          onClick={() => setSelectedMode("AYURVEDA")}
+          className={`p-5 rounded-3xl border-3 transition-all flex flex-col justify-between shadow-sm relative ${
+            selectedMode === "AYURVEDA"
+              ? "bg-emerald-50/80 border-ayush-green ring-4 ring-emerald-300 dark:bg-emerald-950/30"
+              : "bg-card border-input hover:border-emerald-400"
+          }`}
+        >
+          <div className="space-y-3">
+            <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-800 flex items-center justify-center shadow-inner">
+              <Flower2 className="h-6 w-6" />
+            </div>
+            <div>
+              <span className="text-xs font-bold text-emerald-800 uppercase block">मंत्रालय अनुशंसित</span>
+              <h3 className="text-lg font-extrabold text-foreground">आयुर्वेद परामर्श (AYUSH)</h3>
+              <p className="text-xs text-muted-foreground font-medium mt-1">
+                दशविध परीक्षा, प्रकृति-विकृति व अग्नि-दोष आधारित समग्र इतिहास।
+              </p>
+            </div>
+          </div>
+          {selectedMode === "AYURVEDA" && (
+            <div className="mt-4 flex items-center gap-1 text-xs font-extrabold text-emerald-700">
+              <ShieldCheck className="h-4 w-4" /> चयनित (Active Mode)
+            </div>
+          )}
+        </motion.button>
 
-        <div className="pt-2 max-w-md mx-auto">
-          <ExtraLargeButton
-            variant="primary"
-            size="giant"
-            className="w-full"
-            icon={<ArrowRight className="h-7 w-7" />}
-            onClick={() => router.push(`/${locale}/patient/language`)}
-          >
-            शुरू करें (Start Now)
-          </ExtraLargeButton>
-        </div>
-      </Card>
+        {/* General Clinical Mode */}
+        <motion.button
+          whileTap={{ scale: 0.96 }}
+          type="button"
+          onClick={() => setSelectedMode("GENERAL")}
+          className={`p-5 rounded-3xl border-3 transition-all flex flex-col justify-between shadow-sm relative ${
+            selectedMode === "GENERAL"
+              ? "bg-emerald-50/80 border-ayush-green ring-4 ring-emerald-300 dark:bg-emerald-950/30"
+              : "bg-card border-input hover:border-emerald-400"
+          }`}
+        >
+          <div className="space-y-3">
+            <div className="w-12 h-12 rounded-2xl bg-blue-100 text-blue-800 flex items-center justify-center shadow-inner">
+              <Stethoscope className="h-6 w-6" />
+            </div>
+            <div>
+              <span className="text-xs font-bold text-blue-800 uppercase block">Modern Clinical</span>
+              <h3 className="text-lg font-extrabold text-foreground">सामान्य चिकित्सा (General)</h3>
+              <p className="text-xs text-muted-foreground font-medium mt-1">
+                Standard SOCRATES pain history, symptom triage, and medical records.
+              </p>
+            </div>
+          </div>
+          {selectedMode === "GENERAL" && (
+            <div className="mt-4 flex items-center gap-1 text-xs font-extrabold text-emerald-700">
+              <ShieldCheck className="h-4 w-4" /> चयनित (Active Mode)
+            </div>
+          )}
+        </motion.button>
+      </div>
 
-      {/* Direct Feature Access Grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <IconButton
-          icon={<ShieldCheck className="h-8 w-8 text-emerald-700" />}
-          label="सहमति कार्ड"
-          sublabel="Consent Form"
-          onClick={() => router.push(`/${locale}/patient/consent`)}
-        />
-        <IconButton
-          icon={<Stethoscope className="h-8 w-8 text-blue-700" />}
-          label="लक्षण बताएं"
-          sublabel="Complaints"
-          onClick={() => router.push(`/${locale}/patient/complaint`)}
-        />
-        <IconButton
-          icon={<FileText className="h-8 w-8 text-amber-700" />}
-          label="पर्ची अपलोड"
-          sublabel="Scan Documents"
-          onClick={() => router.push(`/${locale}/patient/documents`)}
-        />
-        <IconButton
-          icon={<UserCheck className="h-8 w-8 text-purple-700" />}
-          label="केस सारांश"
-          sublabel="Case Summary"
-          onClick={() => router.push(`/${locale}/patient/summary-preview`)}
-        />
+      {/* Primary Action Button */}
+      <div className="pt-4">
+        <ExtraLargeButton
+          variant="primary"
+          size="large"
+          className="w-full shadow-xl"
+          icon={<ArrowRight className="h-6 w-6" />}
+          onClick={handleStart}
+        >
+          परामर्श शुरू करें (Start Consultation)
+        </ExtraLargeButton>
       </div>
     </div>
   );
