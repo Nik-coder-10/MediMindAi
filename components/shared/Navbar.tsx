@@ -43,6 +43,9 @@ export function Navbar({ locale }: { locale: string }) {
             <Eye className="h-4 w-4" />
             <span className="hidden sm:inline">{highContrast ? "Normal" : "High Contrast"}</span>
           </Button>
+          <Button variant="outline" size="sm" asChild>
+            <Link href={`/${locale}/login`}>Login</Link>
+          </Button>
           <Button variant="ayush" size="sm" asChild>
             <Link href={`/${locale}/doctor/consultation`}>Start Case</Link>
           </Button>
