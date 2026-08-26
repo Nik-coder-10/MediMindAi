@@ -1,120 +1,86 @@
-# AyurSetu: Ayush Patient Case-Taking Software
-### Smart India Hackathon 2026 – Problem ID 26047 (Ministry of Ayush / AIIA)
-
-Production-grade, modular clinical case-taking, Prakriti assessment, and ABDM/FHIR-compliant health records management platform.
-
----
-
-## 🚀 Key Architecture & Tech Stack
-
-- **Framework**: [Next.js 14](https://nextjs.org/) (App Router) + TypeScript (Strict Mode)
-- **UI & Accessibility**: [Tailwind CSS](https://tailwindcss.com/), [shadcn/ui](https://ui.shadcn.com/), [Lucide Icons](https://lucide.dev/), [Framer Motion](https://www.framer.com/motion/)
-- **Accessibility**: Strict **WCAG 2.2 AA** compliant, large touch target buttons (min 44px), high contrast mode toggle, screen-reader optimized tokens.
-- **Internationalization (i18n)**: [next-intl](https://next-intl-docs.vercel.app/) supporting English (`en`), Hindi (`hi`), and Marathi (`mr`).
-- **State & Data Fetching**: [Zustand](https://zustand-demo.pmnd.rs/) + [TanStack React Query](https://tanstack.com/query)
-- **Forms & Validation**: [React Hook Form](https://react-hook-form.com/) + [Zod](https://zod.dev/)
-- **Database & ORM**: PostgreSQL with [Prisma ORM](https://www.prisma.io/)
-- **Authentication**: [Auth.js (NextAuth v5)](https://authjs.dev/) with Credentials and Mock ABDM/ABHA OAuth provider
-- **Storage Layer**: Abstracted interface supporting local filesystem (`lib/storage/local-client.ts`) and AWS S3 / MinIO (`lib/storage/s3-client.ts`)
-- **AI & Multimodal Services**:
-  - **AI Layer** (`lib/ai`): Abstract provider for Prakriti scoring and clinical NER.
-  - **Voice ASR & TTS** (`lib/voice`): Interfaces for Whisper & Speech synthesis.
-  - **OCR Layer** (`lib/ocr`): Document & prescription digitization.
-  - **FHIR & Consent** (`lib/fhir`, `lib/consent`): ABDM Consent Manager & Ayush FHIR Bundle generation.
+# 🌿 AyurSetu / MediMind AI (SIH 2026 Problem ID 26047)
+### Intelligent Multilingual Patient Case-Taking & Clinical Decision Support System
+**Ministry of Ayush / All India Institute of Ayurveda (AIIA)**
 
 ---
 
-## 📁 Repository Structure
+## 🌟 Executive Summary
 
-```
-SIH_2026/
-├── app/
-│   ├── [locale]/
-│   │   ├── (patient)/dashboard/page.tsx
-│   │   ├── (doctor)/consultation/page.tsx
-│   │   ├── (admin)/dashboard/page.tsx
-│   │   ├── layout.tsx
-│   │   └── page.tsx
-│   └── api/
-│       ├── auth/[...nextauth]/route.ts
-│       ├── health/route.ts
-│       └── abdm/consent/route.ts
-├── components/
-│   ├── ui/               # shadcn button, card, input
-│   ├── patient/          # Patient PHR components
-│   ├── doctor/           # Clinical & Prakriti components
-│   └── shared/           # Navbar, Providers, LanguageSelector
-├── lib/
-│   ├── db/               # Prisma client singleton
-│   ├── auth/             # Auth.js & ABHA provider
-│   ├── ai/               # Abstract AI service layer
-│   ├── voice/            # Voice ASR & TTS interfaces
-│   ├── ocr/              # Document OCR extractor
-│   ├── fhir/             # ABDM Ayush FHIR resource builders
-│   ├── consent/          # ABDM Consent Manager
-│   └── storage/          # Local & S3 storage adapters
-├── prisma/
-│   └── schema.prisma     # Complete Ayush clinical data model
-├── messages/             # i18n localization dictionaries (en, hi, mr)
-├── hooks/                # Voice recorder, High contrast hooks
-├── stores/               # Zustand case-taking & theme stores
-├── types/                # Strict TypeScript Ayush & ABDM domain types
-├── docker/               # Initialization scripts
-├── Dockerfile            # Multi-stage container build
-├── docker-compose.yml    # Full stack compose (App + PostgreSQL + MinIO)
-└── tsconfig.json         # Strict TypeScript config with @/* alias
-```
+**AyurSetu** is an intelligent, voice-first patient case-taking system engineered for rural accessibility, clinical safety, and classical Ayurvedic diagnostic frameworks (*Charaka Samhita Dashavidha Pariksha*).
+
+It bridges the doctor-patient gap in overcrowded Indian Outpatient Departments (OPDs) by capturing longitudinal histories, extracting medical document entities via OCR, screening for 12 life-threatening red-flag emergencies, and synthesizing structured, non-diagnostic clinical summaries for physician sign-off.
 
 ---
 
-## 🛠️ Getting Started
+## 🚀 One-Command Quickstart
 
-### 1. Prerequisites
-- Node.js >= 18.17.0
-- Docker Desktop (for Postgres & MinIO, optional for local dev)
-
-### 2. Installation
 ```bash
+# Clone the repository
+git clone https://github.com/Nik-coder-10/MediMindAi.git
+cd MediMindAi
+
+# 1. Run via Docker Compose (Recommended)
+docker-compose up --build -d
+
+# 2. Or Run Locally with Node.js
 npm install
-```
-
-### 3. Setup Environment Variables
-```bash
-cp .env.example .env
-```
-
-### 4. Database Setup (Prisma)
-```bash
-npx prisma generate
-npx prisma db push # Or npx prisma migrate dev
-```
-
-### 5. Running with Docker Compose (Recommended)
-```bash
-docker-compose up -d
-```
-This spins up:
-- **PostgreSQL**: `localhost:5432`
-- **MinIO Console**: `http://localhost:9001` (User: `minioadmin` / Pass: `minioadmin`)
-- **Next.js Web App**: `http://localhost:3000`
-
-### 6. Running Locally (Development Mode)
-```bash
 npm run dev
 ```
-Navigate to [http://localhost:3000](http://localhost:3000).
+
+Visit: **`http://localhost:3000`**
 
 ---
 
-## 🧪 Verification Commands
+## 🔑 Pre-Seeded Evaluation Accounts
+
+| Role | Username / Email | Password | Access Details |
+|---|---|---|---|
+| 👤 **Patient** | `patient@aiia.gov.in` | `Patient@123` | Patient intake, voice interaction, document scanner |
+| 🩺 **Doctor / Vaidya** | `doctor@aiia.gov.in` | `Doctor@123` | Clinical triage queue, case dossier review, summary sign-off |
+| 🔒 **Admin** | `admin@aiia.gov.in` | `Admin@123` | Dynamic question tree editor, red-flag rule registry, feature flags |
+
+---
+
+## 🏛️ System Architecture
+
+```
+[Patient Intake (Voice / Text)] 
+          ↓
+[Adaptive Question Engine (SOCRATES + Dashavidha Pariksha)] 
+          ↓
+[Medical Document Intelligence (OCR + NER Entity Extractor)] 
+          ↓
+[Red-Flag Safety Layer (12 Emergency Detection Rules)]
+          ↓
+[AI Clinical Summary Generator (Non-Diagnostic Objective Note)]
+          ↓
+[Doctor Dashboard & Sign-Off Workspace] 
+          ↓
+[ABDM Gateway & HL7 FHIR R4 Bundle Export]
+```
+
+---
+
+## 📚 Comprehensive Documentation Index
+
+- 🌿 [`AYUSH.md`](file:///c:/Users/Hp/OneDrive/Desktop/SIH_2026/AYUSH.md): Classical Dashavidha Pariksha diagnostic parameters & questions.
+- 🚨 [`RED_FLAGS.md`](file:///c:/Users/Hp/OneDrive/Desktop/SIH_2026/RED_FLAGS.md): 12 Emergency detection rules and triage escalation protocol.
+- 🎙️ [`VOICE.md`](file:///c:/Users/Hp/OneDrive/Desktop/SIH_2026/VOICE.md): Multilingual voice pipeline (Whisper, Bhashini, Web Speech API).
+- 📄 [`DOCUMENTS.md`](file:///c:/Users/Hp/OneDrive/Desktop/SIH_2026/DOCUMENTS.md): Prescription OCR and structured medical entity extraction.
+- 🩺 [`DOCTOR_DASHBOARD.md`](file:///c:/Users/Hp/OneDrive/Desktop/SIH_2026/DOCTOR_DASHBOARD.md): Clinical triage queue & case review dossier.
+- 🔒 [`ADMIN.md`](file:///c:/Users/Hp/OneDrive/Desktop/SIH_2026/ADMIN.md): Dynamic question trees, red flag rule tester, and feature flags.
+- 🇮🇳 [`COMPLIANCE.md`](file:///c:/Users/Hp/OneDrive/Desktop/SIH_2026/COMPLIANCE.md): ABDM M1/M2/M3 readiness and HL7 FHIR R4 mappings.
+- 🛡️ [`SECURITY.md`](file:///c:/Users/Hp/OneDrive/Desktop/SIH_2026/SECURITY.md): Threat model, OWASP health mitigations, and AES-256-GCM encryption.
+- ⚖️ [`DPDP_COMPLIANCE.md`](file:///c:/Users/Hp/OneDrive/Desktop/SIH_2026/DPDP_COMPLIANCE.md): Digital Personal Data Protection Act 2023 compliance.
+- ⚡ [`OPTIMIZATION.md`](file:///c:/Users/Hp/OneDrive/Desktop/SIH_2026/OPTIMIZATION.md): WCAG 2.2 AA accessibility and 2G/3G rural network resilience.
+- 🧪 [`TESTING.md`](file:///c:/Users/Hp/OneDrive/Desktop/SIH_2026/TESTING.md): Master test harness and automated CI execution.
+- 🐳 [`DEPLOYMENT.md`](file:///c:/Users/Hp/OneDrive/Desktop/SIH_2026/DEPLOYMENT.md): Multi-container Docker and bare-metal deployment guide.
+
+---
+
+## 🧪 Master Automated Test Harness
 
 ```bash
-# Type check TypeScript strictness
-npm run typecheck
-
-# Generate Prisma Client
-npm run prisma:generate
-
-# Build Next.js production bundle
-npm run build
+# Run all 24 automated clinical invariants (100% deterministic pass)
+npm test
 ```
