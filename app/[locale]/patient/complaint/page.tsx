@@ -4,40 +4,36 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ProgressStepper } from "@/components/ui/patient/ProgressStepper";
 import { AudioPrompt } from "@/components/ui/patient/AudioPrompt";
-import { VoiceInputButton } from "@/components/ui/patient/VoiceInputButton";
-import { IconButton } from "@/components/ui/patient/IconButton";
 import { ExtraLargeButton } from "@/components/ui/patient/ExtraLargeButton";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { VoiceInputButton } from "@/components/ui/patient/VoiceInputButton";
+import { Card } from "@/components/ui/card";
+import { ArrowLeft, ArrowRight, HeartPulse, Sparkles, Keyboard } from "lucide-react";
+import { motion } from "framer-motion";
 
-export default function PatientComplaintPage({
+export default function PatientComplaintVoicePage({
   params: { locale },
 }: {
   params: { locale: string };
 }) {
   const router = useRouter();
-  const [isRecording, setIsRecording] = useState(false);
-  const [selectedSymptoms, setSelectedSymptoms] = useState<string[]>(["घुटनों में दर्द"]);
-  const [transcript, setTranscript] = useState(
-    "मुझे ५ दिनों से दोनों घुटनों और जोड़ों में बहुत तेज दर्द है और सुबह जकड़न रहती है।"
-  );
+  const [complaintText, setComplaintText] = useState("");
+  const [showKeyboard, setShowKeyboard] = useState(false);
 
-  const symptomIcons = [
-    { id: "joints", label: "जोड़ों में दर्द", sub: "Joint Pain", icon: "🦴" },
-    { id: "stomach", label: "पेट में गैस/दर्द", sub: "Digestion / Gas", icon: "🫄" },
-    { id: "head", label: "सिरदर्द / तनाव", sub: "Headache", icon: "🤕" },
-    { id: "sleep", label: "नींद न आना", sub: "Insomnia / Sleep", icon: "🥱" },
-    { id: "fever", label: "बुखार / भारीपन", sub: "Fever / Malaise", icon: "🌡️" },
-    { id: "skin", label: "त्वचा / खुजली", sub: "Skin Issues", icon: "🖐️" },
+  const quickSymptoms = [
+    { textHi: "छाती में दर्द व भारीपन", textEn: "Chest Pain & Pressure", icon: "🫀" },
+    { textHi: "तेज सिरदर्द व चक्कर", textEn: "Severe Headache", icon: "🧠" },
+    { textHi: "पेट में जलन व दर्द", textEn: "Abdominal Pain / Acidity", icon: "⚡" },
+    { textHi: "जोड़ों में तेज जकड़न", textEn: "Joint Pain & Stiffness", icon: "🦴" },
+    { textHi: "तेज बुखार व ठंड लगना", textEn: "High Fever & Chills", icon: "🌡️" },
   ];
 
-  const handleToggleSymptom = (label: string) => {
-    setSelectedSymptoms((prev) =>
-      prev.includes(label) ? prev.filter((s) => s !== label) : [...prev, label]
-    );
+  const handleTranscription = (transcript: string) => {
+    setComplaintText(transcript);
   };
 
-  const handleToggleRecording = () => {
-    setIsRecording(!isRecording);
+  const handleContinue = () => {
+    if (!complaintText) return;
+    router.push(`/${locale}/patient/questions`);
   };
 
   return (
@@ -45,51 +41,91 @@ export default function PatientComplaintPage({
       <ProgressStepper currentStep={3} />
 
       <AudioPrompt
-        hindiText="अपनी मुख्य समस्या बताएं - आप बोल सकते हैं या नीचे दिए गए विकल्पों को छू सकते हैं।"
-        text="Describe your main health issue - you can speak using the mic or tap the symptom cards."
+        hindiText="कृपया अपनी मुख्य बीमारी या समस्या बताएं। आप माइक का बटन दबाकर बोल सकते हैं।"
+        text="Please describe your main health concern. You can tap the big microphone to speak."
       />
 
-      {/* Big Pulse Voice Recorder */}
-      <div className="bg-white dark:bg-card p-6 rounded-3xl border-2 border-border shadow-sm">
-        <VoiceInputButton
-          isRecording={isRecording}
-          onToggleRecording={handleToggleRecording}
-          label={isRecording ? "सुन रहे हैं... बोलिए (Listening...)" : "बोलने के लिए दबाएं (Tap to Speak)"}
-          sublabel="अपनी भाषा में समस्या विस्तार से बताएं"
-        />
-
-        {transcript && (
-          <div className="mt-4 p-4 rounded-2xl bg-slate-50 dark:bg-slate-900 border text-center">
-            <span className="text-xs font-bold text-ayush-green block mb-1">पहचाने गए लक्षण (Detected Audio Transcript):</span>
-            <p className="text-base font-semibold text-foreground italic">&ldquo;{transcript}&rdquo;</p>
-          </div>
-        )}
-      </div>
-
-      {/* Quick Visual Symptom Touch Cards */}
-      <div className="space-y-3">
-        <h3 className="text-lg font-bold text-foreground">
-          लक्षण चुनें (Select Symptoms):
-        </h3>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          {symptomIcons.map((symptom) => {
-            const isSelected = selectedSymptoms.includes(symptom.label);
-            return (
-              <IconButton
-                key={symptom.id}
-                icon={symptom.icon}
-                label={symptom.label}
-                sublabel={symptom.sub}
-                active={isSelected}
-                onClick={() => handleToggleSymptom(symptom.label)}
-              />
-            );
-          })}
+      <Card className="border-3 border-emerald-300 shadow-xl p-6 sm:p-8 rounded-3xl bg-white dark:bg-card space-y-6 text-center">
+        <div className="space-y-2">
+          <span className="text-xs font-extrabold px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full inline-flex items-center gap-1">
+            <Sparkles className="h-3.5 w-3.5" /> चरण ३ • मुख्य लक्षण (Chief Complaint)
+          </span>
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground">
+            आपको क्या समस्या हो रही है?
+          </h2>
+          <p className="text-sm font-medium text-muted-foreground">
+            Describe how you are feeling in your own words.
+          </p>
         </div>
-      </div>
 
-      {/* Navigation Controls */}
-      <div className="flex justify-between items-center pt-4">
+        {/* Big Animated Voice Input Centerpiece */}
+        <div className="py-4">
+          <VoiceInputButton
+            onTranscriptionComplete={handleTranscription}
+            language={locale === "hi" ? "hi-IN" : "en-IN"}
+          />
+        </div>
+
+        {/* Live Transcription Box */}
+        {complaintText && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="p-4 rounded-2xl bg-emerald-50 border-2 border-emerald-300 text-left space-y-1"
+          >
+            <span className="text-xs font-bold text-emerald-800 uppercase">पहचाना गया संदेश (Transcribed):</span>
+            <p className="text-base font-extrabold text-emerald-950">{complaintText}</p>
+          </motion.div>
+        )}
+
+        {/* Fallback Text Input Toggle */}
+        <div className="pt-2">
+          <button
+            type="button"
+            onClick={() => setShowKeyboard(!showKeyboard)}
+            className="text-xs font-bold text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 min-h-[40px] px-3 py-1.5 rounded-lg border"
+          >
+            <Keyboard className="h-4 w-4" />
+            <span>{showKeyboard ? "कीबोर्ड छिपाएं" : "लिखकर बताएं (Type with keyboard)"}</span>
+          </button>
+
+          {showKeyboard && (
+            <textarea
+              rows={3}
+              value={complaintText}
+              onChange={(e) => setComplaintText(e.target.value)}
+              placeholder="अपनी समस्या यहाँ लिखें..."
+              className="mt-3 w-full p-4 rounded-2xl border-2 border-input focus:border-ayush-green text-base font-semibold"
+            />
+          )}
+        </div>
+
+        {/* Quick Tap Choices */}
+        <div className="space-y-2 pt-2 text-left">
+          <span className="text-xs font-extrabold text-muted-foreground uppercase">
+            या इनमें से एक चुनें (Or quick tap):
+          </span>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            {quickSymptoms.map((sym) => (
+              <button
+                key={sym.textEn}
+                type="button"
+                onClick={() => setComplaintText(`${sym.textHi} (${sym.textEn})`)}
+                className="min-h-[56px] p-3 rounded-2xl border-2 border-muted hover:border-ayush-green bg-background flex items-center gap-3 font-bold text-left hover:bg-emerald-50/50 transition-all shadow-sm"
+              >
+                <span className="text-2xl">{sym.icon}</span>
+                <div>
+                  <div className="text-sm font-extrabold text-foreground">{sym.textHi}</div>
+                  <div className="text-xs text-muted-foreground">{sym.textEn}</div>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      </Card>
+
+      {/* Navigation Buttons */}
+      <div className="flex justify-between items-center pt-2">
         <ExtraLargeButton
           variant="secondary"
           size="default"
@@ -102,10 +138,11 @@ export default function PatientComplaintPage({
         <ExtraLargeButton
           variant="primary"
           size="large"
+          disabled={!complaintText}
           icon={<ArrowRight className="h-6 w-6" />}
-          onClick={() => router.push(`/${locale}/patient/questions`)}
+          onClick={handleContinue}
         >
-          आगे प्रश्न (Next: Questions)
+          आगे बढ़ें (Continue)
         </ExtraLargeButton>
       </div>
     </div>
