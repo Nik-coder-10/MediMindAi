@@ -6,7 +6,10 @@ import { ProgressStepper } from "@/components/ui/patient/ProgressStepper";
 import { AudioPrompt } from "@/components/ui/patient/AudioPrompt";
 import { ExtraLargeButton } from "@/components/ui/patient/ExtraLargeButton";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { CheckCircle2, ShieldCheck, HeartPulse, Stethoscope, ArrowLeft, Send } from "lucide-react";
+import { CheckCircle2, ArrowLeft, ArrowRight, ShieldCheck, Sparkles, Stethoscope, Clock, FileText, Pill, AlertTriangle, Calendar, Send } from "lucide-react";
+import { motion } from "framer-motion";
+import { MedicalTimelineView } from "@/components/ui/clinical/MedicalTimelineView";
+import { TimelineEventDTO } from "@/lib/services/timeline.service";
 
 export default function PatientSummaryPreviewPage({
   params: { locale },
@@ -75,9 +78,45 @@ export default function PatientSummaryPreviewPage({
             <p className="text-sm font-semibold text-foreground">{summaryData.documents}</p>
           </div>
         </CardContent>
+        {/* Longitudinal Medical Timeline */}
+        <Card className="border-2 border-emerald-200 p-6 rounded-3xl space-y-4">
+          <h3 className="font-extrabold text-lg text-foreground flex items-center gap-2">
+            <Calendar className="h-5 w-5 text-emerald-600" />
+            <span>चिकित्सीय इतिहास (Longitudinal Timeline)</span>
+          </h3>
+          <MedicalTimelineView
+            events={[
+              {
+                id: "1",
+                patientId: "pat-demo",
+                eventDate: "2026-08-26",
+                title: "Ayush OPD Consultation (AIIA)",
+                description: "Diagnosed with Amavata (Saama Vata) & Amlapitta. Started Yogaraj Guggulu & Amritarishta.",
+                category: "DIAGNOSIS",
+              },
+              {
+                id: "2",
+                patientId: "pat-demo",
+                eventDate: "2026-08-26",
+                title: "Elevated ESR & HbA1c Lab Panel",
+                description: "HbA1c 6.8% (Pre-diabetic/High) and ESR 38 mm/hr (Elevated inflammation).",
+                category: "LAB",
+                isAbnormal: true,
+              },
+              {
+                id: "3",
+                patientId: "pat-demo",
+                eventDate: "2024-03-15",
+                title: "Metformin 500mg Initiated",
+                description: "Started Oral Hypoglycemic Agent for Impaired Fasting Glucose.",
+                category: "MEDICATION",
+              },
+            ]}
+          />
+        </Card>
       </Card>
 
-      {/* Navigation */}
+      {/* Confirmation and Submit Controls */}
       <div className="flex justify-between items-center pt-4">
         <ExtraLargeButton
           variant="secondary"
