@@ -1,0 +1,17 @@
+{
+  "name": "आयुर्सेतु (AyurSetu) - AIIA Patient Case-Taking",
+  "short_name": "AyurSetu",
+  "description": "Intelligent multilingual clinical case-taking and Dashavidha Pariksha system for AIIA & Ministry of Ayush.",
+  "start_url": "/patient",
+  "display": "standalone",
+  "background_color": "#fdfbf7",
+  "theme_color": "#1b4332",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    }
+  ]
+}
