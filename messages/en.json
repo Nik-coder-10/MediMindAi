@@ -1,35 +1,37 @@
 {
   "common": {
-    "appName": "AyurSetu - Ayush Case-Taking Platform",
-    "tagline": "Ministry of Ayush / AIIA Clinical E-Prescription & Prakriti Evaluation",
-    "language": "Language",
-    "login": "Login",
-    "logout": "Logout",
-    "dashboard": "Dashboard",
+    "appName": "AyurSetu",
+    "tagline": "All India Institute of Ayurveda (AIIA) • Patient Consultation Portal",
+    "next": "Next",
+    "back": "Back",
+    "submit": "Submit to Doctor",
+    "loading": "Loading...",
     "save": "Save",
+    "edit": "Edit",
     "cancel": "Cancel",
-    "submit": "Submit"
-  },
-  "doctor": {
-    "title": "Clinical Case Taking",
-    "newCase": "New Patient Consultation",
-    "prakritiAssessment": "Prakriti Assessment",
-    "ashtavidha": "Ashtavidha Pariksha",
-    "dashavidha": "Dashavidha Pariksha",
-    "nadi": "Nadi (Pulse)",
-    "jihwa": "Jihwa (Tongue)",
-    "mutra": "Mutra (Urine)",
-    "mala": "Mala (Bowel)",
-    "shabda": "Shabda (Voice)",
-    "sparsha": "Sparsha (Touch)",
-    "drik": "Drik (Eyes)",
-    "akriti": "Akriti (Build)",
-    "rx": "Prescription & Aushadha"
+    "online": "Online Reconnected",
+    "offline": "Offline Mode (Data Saved Locally)"
   },
   "patient": {
-    "title": "Patient Health Records (PHR)",
-    "abhaId": "ABHA Number",
-    "consents": "Consent Manager",
-    "reports": "EHR History & Diagnostic Reports"
+    "welcome": "Welcome to Patient Consultation Portal",
+    "chooseLanguage": "Please Select Your Language",
+    "chooseMode": "Select Consultation Mode",
+    "ayushMode": "Ayurveda / AYUSH Mode",
+    "ayushDesc": "Classical Dashavidha Pariksha, Prakriti, Agni, and Dosha dynamics.",
+    "generalMode": "General Clinical Mode",
+    "generalDesc": "Standard SOCRATES pain history and symptom triage.",
+    "voicePrompt": "Tap the mic and speak your symptoms",
+    "listening": "Listening...",
+    "processing": "Processing speech...",
+    "summaryTitle": "Information to be sent to Doctor",
+    "summaryDesc": "This plain-language dossier will be delivered directly to your physician.",
+    "tokenAssigned": "Your OPD Token Number",
+    "estimatedWait": "Estimated Wait Time: 10-15 Minutes"
+  },
+  "emergency": {
+    "title": "Possible Emergency Signs Detected",
+    "desc": "The symptoms reported may require immediate clinical attention.",
+    "call108": "Call 108 Emergency Helpline",
+    "consultStaff": "Alert On-Duty Hospital Staff"
   }
 }
