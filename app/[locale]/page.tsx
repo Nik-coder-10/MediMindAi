@@ -23,11 +23,20 @@ export default function HomePage({
           A high-performance, accessible, ABDM-ready platform integrating Ashtavidha & Dashavidha Pariksha, AI Prakriti inference, and multilingual voice case records.
         </p>
         <div className="flex justify-center gap-4 pt-4">
-          <Button variant="ayush" size="lg" asChild>
-            <Link href={`/${locale}/doctor/consultation`}>Doctor Consultation</Link>
+          <Button variant="ayush" size="lg" asChild className="h-12 px-6 text-base font-bold">
+            <Link href={`/${locale}/patient`}>
+              <span>🎙️ रोगी परामर्श (Patient Intake)</span>
+            </Link>
           </Button>
-          <Button variant="outline" size="lg" asChild>
-            <Link href={`/${locale}/patient/patient-dashboard`}>Patient PHR Portal</Link>
+          <Button variant="outline" size="lg" asChild className="h-12 px-6 text-base font-bold">
+            <Link href={`/${locale}/doctor`}>
+              <span>🩺 डॉक्टर डैशबोर्ड (Doctor Desk)</span>
+            </Link>
+          </Button>
+          <Button variant="ghost" size="lg" asChild className="h-12 px-4 text-sm font-semibold">
+            <Link href={`/${locale}/admin-dashboard`}>
+              <span>⚙️ एडमिन कंसोल (Admin)</span>
+            </Link>
           </Button>
         </div>
       </section>
