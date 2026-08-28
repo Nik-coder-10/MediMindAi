@@ -6,10 +6,11 @@ import { ProgressStepper } from "@/components/ui/patient/ProgressStepper";
 import { AudioPrompt } from "@/components/ui/patient/AudioPrompt";
 import { ExtraLargeButton } from "@/components/ui/patient/ExtraLargeButton";
 import { Card } from "@/components/ui/card";
-import { ArrowLeft, ArrowRight, AlertTriangle, Check, HelpCircle, PauseCircle, PlayCircle } from "lucide-react";
+import { ArrowLeft, ArrowRight, AlertTriangle, Check, HelpCircle, PauseCircle, PlayCircle, Volume2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { EngineQuestionDefinition, QuestionOption } from "@/lib/engine/types";
 import { EmergencyAlertModal } from "@/components/ui/patient/EmergencyAlertModal";
+import { speakWithIndianVoice } from "@/lib/voice/tts";
 
 export default function AdaptiveQuestionsFlowPage({
   params: { locale },
@@ -18,18 +19,77 @@ export default function AdaptiveQuestionsFlowPage({
 }) {
   const router = useRouter();
   const [sessionId] = useState<string>("sess-demo-001");
-  const [currentQuestion, setCurrentQuestion] = useState<EngineQuestionDefinition | null>(null);
+  const [currentQuestion, setCurrentQuestion] = useState<EngineQuestionDefinition | null>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const saved = sessionStorage.getItem("ayursetu_current_question");
+        if (saved) return JSON.parse(saved);
+      } catch {}
+    }
+    return {
+      nodeCode: "CP_SEVERITY",
+      chiefComplaintCategory: "CHEST_PAIN",
+      clinicalDomain: "SOCRATES_SEVERITY",
+      questionText: "On a scale of 1 to 10, how severe is your chest pain?",
+      questionTextHindi: "१ से १० के पैमाने पर, आपकी छाती का दर्द कितना तीव्र है?",
+      questionType: "SINGLE_CHOICE",
+      options: [
+        { value: "MILD_1_3", labelHi: "हल्का (१ से ३)", labelEn: "Mild (1-3)" },
+        { value: "MODERATE_4_6", labelHi: "मध्यम (४ से ६)", labelEn: "Moderate (4-6)" },
+        { value: "SEVERE_7_10", labelHi: "अत्यधिक तेज (७ से १०)", labelEn: "Severe (7-10)" },
+      ],
+    };
+  });
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [isPaused, setIsPaused] = useState(false);
   const [redFlagBanner, setRedFlagBanner] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [stepNumber, setStepNumber] = useState(1);
+  const [playingOptionAudio, setPlayingOptionAudio] = useState<string | null>(null);
 
-  // Initial question load
+  const handleSpeakOptionAudio = (
+    e: React.MouseEvent,
+    text: string,
+    lang: "hi" | "en",
+    optionKey: string
+  ) => {
+    e.stopPropagation();
+
+    if (playingOptionAudio === optionKey) {
+      if (typeof window !== "undefined" && "speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+      }
+      setPlayingOptionAudio(null);
+      return;
+    }
+
+    setPlayingOptionAudio(optionKey);
+    speakWithIndianVoice(
+      text,
+      lang,
+      () => setPlayingOptionAudio(null),
+      () => setPlayingOptionAudio(null)
+    );
+  };
+
+  // Resume or sync question load without clearing UI
   useEffect(() => {
     async function initEngine() {
-      setLoading(true);
       try {
+        const currentRes = await fetch(`/api/patient/conversation/current?sessionId=${sessionId}`);
+        const currentData = await currentRes.json();
+
+        if (currentData.data?.question) {
+          setCurrentQuestion(currentData.data.question);
+          if (typeof window !== "undefined") {
+            sessionStorage.setItem("ayursetu_current_question", JSON.stringify(currentData.data.question));
+          }
+          if (currentData.data.state?.questionCount) {
+            setStepNumber(currentData.data.state.questionCount + 1);
+          }
+          return;
+        }
+
         const res = await fetch("/api/patient/session/start", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -41,24 +101,12 @@ export default function AdaptiveQuestionsFlowPage({
         const data = await res.json();
         if (data.data?.firstQuestion) {
           setCurrentQuestion(data.data.firstQuestion);
+          if (typeof window !== "undefined") {
+            sessionStorage.setItem("ayursetu_current_question", JSON.stringify(data.data.firstQuestion));
+          }
         }
       } catch {
-        // Fallback default node
-        setCurrentQuestion({
-          nodeCode: "CP_SEVERITY",
-          chiefComplaintCategory: "CHEST_PAIN",
-          clinicalDomain: "SOCRATES_SEVERITY",
-          questionText: "On a scale of 1 to 10, how severe is your chest pain?",
-          questionTextHindi: "१ से १० के पैमाने पर, आपकी छाती का दर्द कितना तीव्र है?",
-          questionType: "SINGLE_CHOICE",
-          options: [
-            { value: "MILD_1_3", labelHi: "हल्का (१ से ३)", labelEn: "Mild (1-3)" },
-            { value: "MODERATE_4_6", labelHi: "मध्यम (४ से ६)", labelEn: "Moderate (4-6)" },
-            { value: "SEVERE_7_10", labelHi: "अत्यधिक तेज (७ से १०)", labelEn: "Severe (7-10)" },
-          ],
-        });
-      } finally {
-        setLoading(false);
+        // Fallback default node stays in state
       }
     }
 
@@ -91,6 +139,9 @@ export default function AdaptiveQuestionsFlowPage({
 
       if (data.data?.nextQuestion) {
         setCurrentQuestion(data.data.nextQuestion);
+        if (typeof window !== "undefined") {
+          sessionStorage.setItem("ayursetu_current_question", JSON.stringify(data.data.nextQuestion));
+        }
         setSelectedAnswer(null);
         setStepNumber((prev) => prev + 1);
       } else {
@@ -102,6 +153,8 @@ export default function AdaptiveQuestionsFlowPage({
       setLoading(false);
     }
   };
+
+
 
   if (isPaused) {
     return (
@@ -141,9 +194,11 @@ export default function AdaptiveQuestionsFlowPage({
       {currentQuestion && (
         <>
           <AudioPrompt
+            locale={locale}
             hindiText={currentQuestion.questionTextHindi}
             text={currentQuestion.questionText}
           />
+
 
           <Card className="border-3 border-emerald-300 shadow-md p-6 sm:p-8 rounded-3xl bg-white dark:bg-card space-y-6 text-center">
             <div className="flex items-center justify-between">
@@ -161,58 +216,106 @@ export default function AdaptiveQuestionsFlowPage({
             </div>
 
             <div className="space-y-2">
-              <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground leading-snug">
-                {currentQuestion.questionTextHindi}
-              </h2>
-              <p className="text-base text-muted-foreground font-medium">
-                {currentQuestion.questionText}
-              </p>
+              {locale === "hi" ? (
+                <>
+                  <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground leading-snug">
+                    {currentQuestion.questionTextHindi}
+                  </h2>
+                  <p className="text-base text-muted-foreground font-medium">
+                    {currentQuestion.questionText}
+                  </p>
+                </>
+              ) : (
+                <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground leading-snug">
+                  {currentQuestion.questionText}
+                </h2>
+              )}
             </div>
 
-            {/* Answer Options */}
+            {/* Answer Options with Single Clean Audio Button in Centralized Language */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-xl mx-auto pt-2">
               {currentQuestion.options?.map((opt) => {
                 const isSelected = selectedAnswer === opt.value;
+                const isPlayingThis = playingOptionAudio === opt.value;
+                const activeLabel = locale === "hi" ? opt.labelHi : opt.labelEn;
+                const subtitle = locale === "hi" ? opt.labelEn : "";
+
                 return (
-                  <motion.button
+                  <motion.div
                     key={opt.value}
-                    whileTap={{ scale: 0.96 }}
-                    type="button"
+                    whileTap={{ scale: 0.98 }}
                     onClick={() => handleSelectOption(opt)}
-                    className={`min-h-[64px] p-4 rounded-2xl border-3 flex items-center justify-between text-left font-bold transition-all shadow-sm ${
+                    className={`min-h-[72px] p-4 rounded-2xl border-3 flex items-center justify-between text-left font-bold transition-all shadow-sm cursor-pointer ${
                       isSelected
                         ? "bg-ayush-mint border-ayush-green text-ayush-green ring-4 ring-emerald-300 shadow-md"
                         : "bg-background border-input hover:border-ayush-emerald text-foreground"
                     }`}
                   >
-                    <div>
-                      <div className="text-base font-extrabold">{opt.labelHi}</div>
-                      <div className="text-xs text-muted-foreground">{opt.labelEn}</div>
+                    <div className="flex-1 pr-2">
+                      <div className="text-base font-extrabold text-foreground">{activeLabel}</div>
+                      {subtitle && <div className="text-xs text-muted-foreground font-semibold">{subtitle}</div>}
                     </div>
-                    {isSelected && (
-                      <div className="w-7 h-7 rounded-full bg-ayush-green text-white flex items-center justify-center">
-                        <Check className="h-4 w-4 stroke-[3]" />
-                      </div>
-                    )}
-                  </motion.button>
+
+                    {/* Single Speaker Button Playing in Centralized Language & Selection Check */}
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        type="button"
+                        onClick={(e) => handleSpeakOptionAudio(e, activeLabel, locale === "hi" ? "hi" : "en", opt.value)}
+                        title={locale === "hi" ? "विकल्प सुनें (Listen in Hindi)" : "Listen option in English"}
+                        className={`w-10 h-10 rounded-xl flex items-center justify-center text-xs font-bold transition-all border ${
+                          isPlayingThis
+                            ? "bg-emerald-600 text-white animate-pulse"
+                            : "bg-emerald-50 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-200 border-emerald-300 hover:bg-emerald-100"
+                        }`}
+                      >
+                        <Volume2 className="h-4.5 w-4.5" />
+                      </button>
+
+                      {isSelected ? (
+                        <div className="w-8 h-8 rounded-full bg-ayush-green text-white flex items-center justify-center shadow-xs">
+                          <Check className="h-4 w-4 stroke-[3]" />
+                        </div>
+                      ) : (
+                        <div className="w-8 h-8 rounded-full border-2 border-slate-300 dark:border-slate-700" />
+                      )}
+                    </div>
+                  </motion.div>
                 );
               })}
             </div>
 
-            {/* "I don't know / Skip" Option */}
-            <div className="pt-2">
+            {/* "I don't know / Skip" Option with Single Speaker Button */}
+            <div className="pt-2 flex items-center justify-center gap-2">
               <button
                 type="button"
                 onClick={() => {
                   setSelectedAnswer("NOT_SURE");
                   handleNextQuestion();
                 }}
-                className="text-sm font-bold text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 min-h-[44px] px-3 py-1.5 rounded-lg border"
+                className="text-sm font-bold text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 min-h-[44px] px-4 py-2 rounded-xl border bg-card"
               >
                 <HelpCircle className="h-4 w-4" />
-                <span>स्पष्ट नहीं है / छोड़ें (Not sure / Skip)</span>
+                <span>{locale === "hi" ? "स्पष्ट नहीं है / छोड़ें (Not sure / Skip)" : "Not sure / Skip"}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={(e) =>
+                  handleSpeakOptionAudio(
+                    e,
+                    locale === "hi" ? "स्पष्ट नहीं है, छोड़ें" : "Not sure, Skip question",
+                    locale === "hi" ? "hi" : "en",
+                    "skip-opt"
+                  )
+                }
+                title="Listen option"
+                className="w-10 h-10 rounded-xl border border-emerald-300 bg-emerald-50 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-200 flex items-center justify-center"
+              >
+                <Volume2 className="h-4.5 w-4.5" />
               </button>
             </div>
+
+
           </Card>
         </>
       )}

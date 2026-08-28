@@ -5,6 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { ExtraLargeButton } from "@/components/ui/patient/ExtraLargeButton";
 import {
   ShieldAlert,
+
   Settings,
   HelpCircle,
   Activity,
@@ -19,14 +20,22 @@ import {
   Globe,
   Loader2,
   Save,
+  LogIn,
+  Building,
 } from "lucide-react";
 import { motion } from "framer-motion";
+import { useAuthStore } from "@/stores/use-auth-store";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
 
 export default function AdminClinicalConfigPage({
   params: { locale },
 }: {
   params: { locale: string };
 }) {
+  const router = useRouter();
+  const { isAuthenticated, user, loginAsAdmin } = useAuthStore();
+  const [mounted, setMounted] = useState(false);
   const [activeTab, setActiveTab] = useState<"QUESTIONS" | "RULES" | "SETTINGS" | "ANALYTICS">("QUESTIONS");
   const [nodes, setNodes] = useState<any[]>([]);
   const [rules, setRules] = useState<any[]>([]);
@@ -38,6 +47,12 @@ export default function AdminClinicalConfigPage({
   });
   const [loading, setLoading] = useState(false);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const isAdmin = isAuthenticated && user?.role === "ADMIN";
 
   // New Node Form State
   const [newNodeCategory, setNewNodeCategory] = useState("CHEST_PAIN");
@@ -61,8 +76,71 @@ export default function AdminClinicalConfigPage({
   };
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    if (mounted && isAdmin) {
+      fetchData();
+    }
+  }, [mounted, isAdmin]);
+
+  if (!mounted) {
+    return <div className="min-h-[80vh] flex items-center justify-center p-4" />;
+  }
+
+
+  // Ministry Admin Authentication Gate
+  if (!isAdmin) {
+    return (
+      <div className="min-h-[80vh] flex items-center justify-center p-4">
+        <Card className="max-w-md w-full p-6 sm:p-8 rounded-3xl border-2 border-amber-400 space-y-5 text-center shadow-xl bg-card">
+          <div className="w-14 h-14 bg-amber-100 dark:bg-amber-950 text-amber-700 rounded-full flex items-center justify-center mx-auto text-2xl">
+            🏛️
+          </div>
+          <div className="space-y-1.5">
+            <h2 className="text-xl font-black text-foreground">प्रशासक लॉगिन आवश्यक (Ministry Admin Required)</h2>
+            <p className="text-xs text-muted-foreground font-semibold">
+              The clinical engine manager, red-flag safety rulebook, and national health analytics require authorized Ministry of Ayush Admin credentials.
+            </p>
+          </div>
+
+          <div className="space-y-2 pt-2">
+            <Button
+              className="w-full font-extrabold min-h-[46px] flex items-center justify-center gap-2 bg-amber-700 hover:bg-amber-800 text-white"
+              onClick={() => router.push(`/${locale}/login?role=admin`)}
+            >
+              <LogIn className="h-4 w-4" />
+              <span>Login as Ministry / Admin</span>
+            </Button>
+
+            <Button
+              variant="outline"
+              className="w-full text-xs font-bold border-amber-300 bg-amber-50/50 dark:bg-amber-950/20"
+              onClick={() => {
+                loginAsAdmin({
+                  name: "Dr. S. K. Narayanan (Joint Director)",
+                  adminEmployeeId: "AYUSH-GOV-ID-2026-881",
+                  adminMinistryDept: "Ministry of Ayush, Govt. of India",
+                  adminDesignation: "National Nodal Officer & Clinical Admin",
+                });
+              }}
+            >
+              <span>⚡ Quick Demo Login (Ministry Admin • Nodal Officer)</span>
+            </Button>
+
+            <div className="pt-2 border-t text-2xs text-muted-foreground">
+              <span>Looking for doctor consultation desk? </span>
+              <button
+                type="button"
+                onClick={() => router.push(`/${locale}/doctor`)}
+                className="text-blue-700 font-bold underline"
+              >
+                Go to Doctor Portal →
+              </button>
+            </div>
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
 
   const handleCreateNode = async (e: React.FormEvent) => {
     e.preventDefault();

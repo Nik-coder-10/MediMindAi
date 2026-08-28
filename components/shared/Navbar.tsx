@@ -5,11 +5,12 @@ import Link from "next/link";
 import { LanguageSelector } from "./LanguageSelector";
 import { useThemeStore } from "@/stores/use-theme-store";
 import { Button } from "@/components/ui/button";
-import { Stethoscope, User, ShieldCheck, Eye, SunMedium, Moon } from "lucide-react";
-
+import { Stethoscope, User, ShieldCheck, Eye, SunMedium, Moon, LogIn, LogOut } from "lucide-react";
+import { useAuthStore } from "@/stores/use-auth-store";
 
 export function Navbar({ locale }: { locale: string }) {
   const { contrastMode, cycleContrastMode } = useThemeStore();
+  const { isAuthenticated, user, logout } = useAuthStore();
 
   const contrastLabels = {
     normal: { label: "Normal", icon: <Eye className="h-4 w-4 text-emerald-700" />, badge: "Standard" },
@@ -50,9 +51,7 @@ export function Navbar({ locale }: { locale: string }) {
           </nav>
         </div>
 
-
-
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-2.5">
           <LanguageSelector currentLocale={locale} />
           <Button
             variant="outline"
@@ -65,10 +64,34 @@ export function Navbar({ locale }: { locale: string }) {
             {contrastLabels.icon}
             <span className="hidden sm:inline">{contrastLabels.label}</span>
           </Button>
-          <Button variant="outline" size="sm" asChild className="min-h-[38px] font-semibold">
-            <Link href={`/${locale}/login`}>Login</Link>
-          </Button>
-          <Button variant="ayush" size="sm" asChild className="min-h-[38px] font-bold">
+
+          {isAuthenticated && user ? (
+            <div className="flex items-center gap-2">
+              <div className="hidden lg:flex flex-col text-right">
+                <span className="text-xs font-extrabold text-foreground truncate max-w-[140px]">{user.name}</span>
+                <span className="text-3xs font-bold text-muted-foreground font-mono">
+                  {user.role === "PATIENT" ? `ABHA: ${user.abhaId || "Linked"}` : user.role === "DOCTOR" ? user.doctorRegNumber || "MD (Ayu)" : "Ministry Admin"}
+                </span>
+              </div>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={logout}
+                title="Log out of session"
+                className="min-h-[38px] text-xs font-extrabold text-rose-600 border-rose-200 hover:bg-rose-50 dark:hover:bg-rose-950/30 flex items-center gap-1"
+              >
+                <LogOut className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Logout</span>
+              </Button>
+            </div>
+          ) : (
+            <Button variant="outline" size="sm" asChild className="min-h-[38px] font-bold">
+              <Link href={`/${locale}/login`}>Login</Link>
+            </Button>
+          )}
+
+          <Button variant="ayush" size="sm" asChild className="min-h-[38px] font-extrabold">
             <Link href={`/${locale}/patient`}>Start Case</Link>
           </Button>
         </div>
@@ -76,4 +99,5 @@ export function Navbar({ locale }: { locale: string }) {
     </header>
   );
 }
+
 
