@@ -2,8 +2,9 @@ import { NextRequest } from "next/server";
 import { z } from "zod";
 import { apiSuccess, apiError } from "@/lib/api/response";
 import { DocumentService } from "@/lib/services/document.service";
-import { OCRService } from "@/lib/ocr/ocr.service";
+import { OCRService, MedicalEntityExtractor } from "@/lib/ocr/ocr.service";
 import { AuditService } from "@/lib/services/audit.service";
+import { prisma } from "@/lib/db/prisma";
 
 export async function POST(req: NextRequest) {
   try {
@@ -48,6 +49,31 @@ export async function POST(req: NextRequest) {
         extractedLabsCount: entities.labResults.length,
       },
     });
+
+    // 4. Persist extracted entities + timeline events (Storage step)
+    try {
+      const docId = (document as any)?.id as string | undefined;
+      const realDoc = docId ? await prisma.medicalDocument.findUnique({ where: { id: docId } }) : null;
+      if (realDoc) {
+        const entityRecords = MedicalEntityExtractor.toEntityRecords(realDoc.id, entities);
+        if (entityRecords.length > 0) {
+          await prisma.extractedMedicalEntity.createMany({ data: entityRecords as any });
+        }
+        const session = await prisma.clinicalSession.findUnique({
+          where: { id: realDoc.sessionId },
+          select: { patientId: true },
+        });
+        if (session) {
+          const timelineEvents = MedicalEntityExtractor.toTimelineEvents(realDoc.id, session.patientId, entities);
+          if (timelineEvents.length > 0) {
+            await prisma.medicalTimelineEvent.createMany({ data: timelineEvents as any });
+          }
+        }
+      }
+    } catch (persistErr) {
+      // Persistence is best-effort; never break the upload response.
+      console.error("Document entity persistence skipped:", persistErr);
+    }
 
     return apiSuccess(
       {
