@@ -21,6 +21,12 @@ export default function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // If user previously had /mr cached in browser URL, redirect gracefully to /en
+  if (pathname === "/mr" || pathname.startsWith("/mr/")) {
+    const newPath = pathname.replace(/^\/mr/, "/en");
+    return NextResponse.redirect(new URL(newPath, request.url));
+  }
+
   return intlMiddleware(request);
 }
 
