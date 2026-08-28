@@ -38,6 +38,16 @@ const nextConfig = {
       ],
     },
   ],
+
+  webpack: (config, { dev }) => {
+    if (dev) {
+      config.cache = {
+        type: "filesystem",
+        allowCollectingMemory: true,
+      };
+    }
+    return config;
+  },
 };
 
 export default withNextIntl(nextConfig);
