@@ -280,7 +280,7 @@ export const COMPREHENSIVE_QUESTION_REGISTRY: Record<string, EngineQuestionDefin
   },
 
   // ==============================================================================
-  // 6. GENERAL / OTHER TREE (SYSTEMIC SIGNS & ANAPHYLAXIS)
+  // 6. GENERAL / SYSTEMIC INTAKE & LIFESTYLE QUERIES
   // ==============================================================================
   GEN_ALLERGY: {
     nodeCode: "GEN_ALLERGY",
@@ -301,15 +301,148 @@ export const COMPREHENSIVE_QUESTION_REGISTRY: Record<string, EngineQuestionDefin
     nodeCode: "GEN_DURATION",
     chiefComplaintCategory: "GENERAL",
     clinicalDomain: "GENERAL_DURATION",
-    questionText: "How long have you been having this problem?",
-    questionTextHindi: "यह समस्या आपको कितने समय से है?",
+    questionText: "How long have you been experiencing this problem?",
+    questionTextHindi: "यह मुख्य समस्या आपको कितने समय से हो रही है?",
     questionType: "SINGLE_CHOICE",
     options: [
-      { value: "DAYS", labelHi: "कुछ दिनों से (Few days)", labelEn: "Few days" },
-      { value: "MONTHS", labelHi: "महीनों से (Months)", labelEn: "Months" },
+      { value: "HOURS_1_24", labelHi: "आज ही शुरू हुआ (Within last 24 hours)", labelEn: "Within 24 hours" },
+      { value: "DAYS_1_7", labelHi: "कुछ दिनों से (1 to 7 days)", labelEn: "1 to 7 days" },
+      { value: "WEEKS_1_4", labelHi: "कुछ हफ्तों से (1 to 4 weeks)", labelEn: "1 to 4 weeks" },
+      { value: "CHRONIC_MONTHS", labelHi: "महीनों या लंबे समय से (Over a month)", labelEn: "More than a month" },
+    ],
+    nextRules: [{ targetNodeCode: "GEN_CHRONIC_CONDITIONS" }],
+  },
+
+  // NEW GENERAL QUERY 1: Chronic Comorbidities (Diabetes / Hypertension / Thyroid)
+  GEN_CHRONIC_CONDITIONS: {
+    nodeCode: "GEN_CHRONIC_CONDITIONS",
+    chiefComplaintCategory: "GENERAL",
+    clinicalDomain: "PAST_MEDICAL_HISTORY",
+    questionText: "Do you have any existing chronic conditions like High Blood Pressure, Diabetes, or Thyroid?",
+    questionTextHindi: "क्या आपको पहले से उच्च रक्तचाप (BP), मधुमेह (शुगर) या थायरॉयड जैसी कोई पुरानी बीमारी है?",
+    questionType: "SINGLE_CHOICE",
+    options: [
+      { value: "DIABETES_HTN", labelHi: "हाँ, बीपी या शुगर की समस्या है (Diabetes / High BP)", labelEn: "Diabetes or Hypertension" },
+      { value: "THYROID_HEART", labelHi: "थायरॉयड या हृदय संबंधी समस्या (Thyroid / Cardiac History)", labelEn: "Thyroid or Cardiac" },
+      { value: "MULTIPLE_CHRONIC", labelHi: "एक से अधिक पुरानी बीमारियां (Multiple chronic conditions)", labelEn: "Multiple chronic conditions" },
+      { value: "NONE", labelHi: "नहीं, कोई पुरानी बीमारी नहीं (None / Healthy past)", labelEn: "None reported" },
+    ],
+    nextRules: [{ targetNodeCode: "GEN_MEDICATION_ALLERGY" }],
+  },
+
+  // NEW GENERAL QUERY 2: Known Drug & Food Allergies
+  GEN_MEDICATION_ALLERGY: {
+    nodeCode: "GEN_MEDICATION_ALLERGY",
+    chiefComplaintCategory: "GENERAL",
+    clinicalDomain: "ALLERGY_SAFETY",
+    questionText: "Do you have any known allergies to specific medicines (like Penicillin, Sulfa) or foods?",
+    questionTextHindi: "क्या आपको किसी दवा (जैसे पेनिसिलिन, सल्फा) या विशेष खाद्य पदार्थ से कोई एलर्जी है?",
+    questionType: "SINGLE_CHOICE",
+    options: [
+      { value: "DRUG_ALLERGY_YES", labelHi: "हाँ, किसी खास दवा से एलर्जी है (Yes, Drug allergy)", labelEn: "Yes, Medication allergy" },
+      { value: "FOOD_ALLERGY_YES", labelHi: "हाँ, खाद्य एलर्जी है (Yes, Food allergy)", labelEn: "Yes, Food allergy" },
+      { value: "NO_KNOWN_ALLERGIES", labelHi: "नहीं, कोई एलर्जी नहीं है (NKDA - No Known Allergies)", labelEn: "No Known Drug Allergies (NKDA)" },
+    ],
+    nextRules: [{ targetNodeCode: "GEN_DIGESTION_APPETITE" }],
+  },
+
+  // NEW GENERAL QUERY 3: Appetite & Digestion (Agni status)
+  GEN_DIGESTION_APPETITE: {
+    nodeCode: "GEN_DIGESTION_APPETITE",
+    chiefComplaintCategory: "GENERAL",
+    clinicalDomain: "AGNI_APPETITE_EVALUATION",
+    questionText: "How is your daily appetite and digestion?",
+    questionTextHindi: "आपकी रोजाना की भूख और खाना पचने की स्थिति कैसी रहती है?",
+    questionType: "SINGLE_CHOICE",
+    options: [
+      { value: "NORMAL_HEALTHY", labelHi: "सामान्य व संतुलित भूख (Normal & healthy digestion)", labelEn: "Normal & healthy" },
+      { value: "LOSS_OF_APPETITE", labelHi: "भूख में कमी व अरुचि (Loss of appetite / Anorexia)", labelEn: "Loss of appetite" },
+      { value: "ACIDITY_BLOATING", labelHi: "गैस, अफरा व खट्टी डकारें (Acidity, gas & bloating)", labelEn: "Acidity & bloating" },
+      { value: "IRREGULAR", labelHi: "कभी बहुत ज्यादा, कभी बिल्कुल नहीं (Irregular appetite)", labelEn: "Irregular appetite" },
+    ],
+    nextRules: [{ targetNodeCode: "GEN_SLEEP_FATIGUE" }],
+  },
+
+  // NEW GENERAL QUERY 4: Sleep Quality & Energy (Nidra & Ojas)
+  GEN_SLEEP_FATIGUE: {
+    nodeCode: "GEN_SLEEP_FATIGUE",
+    chiefComplaintCategory: "GENERAL",
+    clinicalDomain: "SLEEP_ENERGY_ASSESSMENT",
+    questionText: "How has your sleep quality and daytime energy been recently?",
+    questionTextHindi: "हाल ही में आपकी रात की नींद और दिन की ऊर्जा (स्फूर्ति) कैसी रही है?",
+    questionType: "SINGLE_CHOICE",
+    options: [
+      { value: "SOUND_RESTFUL", labelHi: "गहरी व आरामदायक नींद, दिनभर स्फूर्ति (Sound sleep & energetic)", labelEn: "Sound sleep & energetic" },
+      { value: "POOR_DISTURBED", labelHi: "बार-बार नींद टूटना व बेचैनी (Disturbed / Insomnia)", labelEn: "Disturbed sleep / Insomnia" },
+      { value: "EXCESSIVE_FATIGUE", labelHi: "दिनभर अत्यधिक थकान व कमजोरी (Chronic fatigue / Lethargy)", labelEn: "Chronic fatigue & weakness" },
+    ],
+    nextRules: [{ targetNodeCode: "GEN_WATER_INTAKE" }],
+  },
+
+  // NEW GENERAL QUERY 5: Daily Hydration & Urination (Mutra & Udaka)
+  GEN_WATER_INTAKE: {
+    nodeCode: "GEN_WATER_INTAKE",
+    chiefComplaintCategory: "GENERAL",
+    clinicalDomain: "HYDRATION_URINARY_HEALTH",
+    questionText: "How much water do you drink daily and is there any burning during urination?",
+    questionTextHindi: "आप रोजाना लगभग कितना पानी पीते हैं और क्या पेशाब में कोई जलन या दर्द होता है?",
+    questionType: "SINGLE_CHOICE",
+    options: [
+      { value: "ADEQUATE_NO_BURNING", labelHi: "२ से ३ लीटर, पेशाब में कोई जलन नहीं (Adequate water, no burning)", labelEn: "2-3 Litres, normal urination" },
+      { value: "BURNING_MICTURITION", labelHi: "पेशाब में जलन या बार-बार जाना (Burning sensation / Dysuria)", labelEn: "Burning sensation during urination" },
+      { value: "LOW_WATER_INTAKE", labelHi: "दिनभर में १ लीटर से भी कम पानी (Very low fluid intake)", labelEn: "Less than 1 Litre daily" },
+    ],
+    nextRules: [{ targetNodeCode: "GEN_BOWEL_REGULARITY" }],
+  },
+
+  // NEW GENERAL QUERY 6: Bowel Regularity (Koshtha & Mala)
+  GEN_BOWEL_REGULARITY: {
+    nodeCode: "GEN_BOWEL_REGULARITY",
+    chiefComplaintCategory: "GENERAL",
+    clinicalDomain: "BOWEL_HEALTH",
+    questionText: "Do you experience regular bowel movements or suffer from constipation / loose stools?",
+    questionTextHindi: "क्या आपका पेट रोजाना नियमित साफ होता है या कब्जियत / दस्त की समस्या रहती है?",
+    questionType: "SINGLE_CHOICE",
+    options: [
+      { value: "REGULAR_DAILY", labelHi: "रोजाना सुबह आसानी से साफ (Regular clean bowel daily)", labelEn: "Regular daily movements" },
+      { value: "CHRONIC_CONSTIPATION", labelHi: "कड़ा मल या २-३ दिन में साफ होना (Constipation / Hard stool)", labelEn: "Constipation / Hard stools" },
+      { value: "LOOSE_FREQUENT", labelHi: "बार-बार पतला दस्त आना (Loose frequent stools)", labelEn: "Loose / Frequent stools" },
+    ],
+    nextRules: [{ targetNodeCode: "GEN_PHYSICAL_ACTIVITY" }],
+  },
+
+  // NEW GENERAL QUERY 7: Physical Activity & Sedentary Habit
+  GEN_PHYSICAL_ACTIVITY: {
+    nodeCode: "GEN_PHYSICAL_ACTIVITY",
+    chiefComplaintCategory: "GENERAL",
+    clinicalDomain: "LIFESTYLE_EXERCISE",
+    questionText: "What is your typical daily physical activity or exercise routine?",
+    questionTextHindi: "आपकी दैनिक शारीरिक गतिविधि या व्यायाम की दिनचर्या कैसी है?",
+    questionType: "SINGLE_CHOICE",
+    options: [
+      { value: "REGULAR_WALK_EXERCISE", labelHi: "रोजाना ३० मिनट टहलना या योग (Daily walking / Yoga)", labelEn: "Daily walking or exercise (>30 mins)" },
+      { value: "MODERATE_HOUSEHOLD", labelHi: "घर का सामान्य काम (Moderate household chores)", labelEn: "Moderate daily routine" },
+      { value: "SEDENTARY_DESK", labelHi: "अधिकांश समय बैठकर काम करना (Sedentary / Desk job)", labelEn: "Mostly sitting / Sedentary" },
+    ],
+    nextRules: [{ targetNodeCode: "GEN_STRESS_MENTAL" }],
+  },
+
+  // NEW GENERAL QUERY 8: Stress & Emotional Balance (Manasika Bhavas)
+  GEN_STRESS_MENTAL: {
+    nodeCode: "GEN_STRESS_MENTAL",
+    chiefComplaintCategory: "GENERAL",
+    clinicalDomain: "MENTAL_WELLBEING",
+    questionText: "How would you describe your current stress or anxiety levels?",
+    questionTextHindi: "आप अपने वर्तमान मानसिक तनाव या चिंता के स्तर को कैसा बताएंगे?",
+    questionType: "SINGLE_CHOICE",
+    options: [
+      { value: "MILD_MANAGED", labelHi: "शांत व सामान्य (Calm & well-managed)", labelEn: "Calm & manageable" },
+      { value: "MODERATE_STRESS", labelHi: "काम या पारिवारिक तनाव (Moderate daily stress)", labelEn: "Moderate work/family stress" },
+      { value: "HIGH_ANXIETY", labelHi: "अत्यधिक तनाव, घबराहट या चिंता (High stress & anxiety)", labelEn: "Severe stress / Anxiety" },
     ],
     nextRules: [],
   },
+
 };
 
 export class ComprehensiveQuestionProvider implements QuestionProvider {
