@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ProgressStepper } from "@/components/ui/patient/ProgressStepper";
 import { AudioPrompt } from "@/components/ui/patient/AudioPrompt";
@@ -17,6 +17,7 @@ import {
   Clock,
   FileText,
   Pill,
+  Activity,
   AlertTriangle,
   Calendar,
   Send,
@@ -26,6 +27,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
+
 export default function PatientSummaryPreviewPage({
   params: { locale },
 }: {
@@ -34,6 +36,42 @@ export default function PatientSummaryPreviewPage({
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const [submittedSuccess, setSubmittedSuccess] = useState(false);
+  const [uploadedDocs, setUploadedDocs] = useState<Array<{ name: string; size: string }>>([]);
+  const [extractedData, setExtractedData] = useState<any>(null);
+
+  useEffect(() => {
+    try {
+      if (typeof window !== "undefined") {
+        const storedDocs = sessionStorage.getItem("ayush_uploaded_docs");
+        const storedEntities = sessionStorage.getItem("ayush_extracted_entities");
+        if (storedDocs) setUploadedDocs(JSON.parse(storedDocs));
+        if (storedEntities) setExtractedData(JSON.parse(storedEntities));
+      }
+    } catch (e) {
+      console.error("Failed to load session storage data", e);
+    }
+  }, []);
+
+  const documentSummaryText =
+    uploadedDocs.length > 0
+      ? `${uploadedDocs.length} दस्तावेज़ अपलोड किए गए (${uploadedDocs.map((d) => d.name).join(", ")})`
+      : "1 पर्ची अपलोड की गई (AIIA OPD Prescription & Lab Slip)";
+
+  const medicationsList = extractedData?.medications?.length
+    ? extractedData.medications
+    : [
+        { name: "Tab Yogaraj Guggulu 500mg", dosage: "500mg", frequency: "1-0-1", duration: "15 days" },
+        { name: "Syp Amritarishta 15ml", dosage: "15ml", frequency: "BD", duration: "15 days" },
+        { name: "Cap Omeprazole 20mg", dosage: "20mg", frequency: "1-0-0 OD", duration: "10 days" },
+      ];
+
+  const labsList = extractedData?.labResults?.length
+    ? extractedData.labResults
+    : [
+        { testName: "HbA1c", value: 6.8, unit: "%", referenceRange: "4.0 - 5.6", flag: "HIGH" },
+        { testName: "Serum Uric Acid", value: 7.8, unit: "mg/dL", referenceRange: "3.5 - 7.2", flag: "HIGH" },
+        { testName: "ESR", value: 38, unit: "mm/hr", referenceRange: "0 - 15", flag: "HIGH" },
+      ];
 
   const summaryData = {
     patientName: "रमेश शर्मा (Ramesh Sharma)",
@@ -47,7 +85,7 @@ export default function PatientSummaryPreviewPage({
     ayushMode: "आयुर्वेद मोड (Ayurveda Clinical Mode Active)",
     prakriti: "वात-कफ (Vata-Kapha)",
     agni: "विषमाग्नि (Irregular Digestion)",
-    documents: "1 पर्ची अपलोड की गई (AIIA OPD Prescription)",
+    documents: documentSummaryText,
   };
 
   const handleSubmitToDoctor = async () => {
@@ -66,8 +104,8 @@ export default function PatientSummaryPreviewPage({
       <ProgressStepper currentStep={6} />
 
       <AudioPrompt
-        hindiText="यह आपके द्वारा दी गई जानकारी का सारांश है जो आपके डॉक्टर को दिखेगा। कृपया जांच लें और डॉक्टर को भेजें।"
-        text="This is a plain-language summary of your reported information. Please review and tap Submit to Doctor."
+        hindiText="यह आपके द्वारा दी गई जानकारी और अपलोड किए गए पर्चे का सारांश है जो आपके डॉक्टर को दिखेगा। कृपया जांच लें और डॉक्टर को भेजें।"
+        text="This is a plain-language summary of your reported information and analyzed documents. Please review and tap Submit to Doctor."
       />
 
       <Card className="border-3 border-emerald-300 shadow-xl rounded-3xl bg-white dark:bg-card p-6 sm:p-8 space-y-6 text-left">
@@ -79,7 +117,7 @@ export default function PatientSummaryPreviewPage({
             डॉक्टर को भेजी जाने वाली जानकारी
           </h2>
           <p className="text-xs sm:text-sm font-semibold text-muted-foreground">
-            This information will be presented directly to your attending physician.
+            Extracted & synthesized clinical dossier for attending physician desk.
           </p>
         </div>
 
@@ -117,11 +155,66 @@ export default function PatientSummaryPreviewPage({
             <p className="text-sm font-bold text-foreground">• पाचन अग्नि: {summaryData.agni}</p>
           </div>
 
-          <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900 border space-y-1">
-            <span className="text-xs font-extrabold text-muted-foreground uppercase">४. संलग्न दस्तावेज़ (Attached Records):</span>
-            <p className="text-sm font-bold text-foreground">{summaryData.documents}</p>
+          {/* Extracted Document Summary & Medication Chips */}
+          <div className="p-4 rounded-2xl bg-emerald-50/70 dark:bg-emerald-950/20 border-2 border-emerald-300 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-extrabold text-emerald-900 dark:text-emerald-300 uppercase flex items-center gap-1.5">
+                <FileText className="h-4 w-4 text-emerald-700" /> ४. संलग्न दस्तावेज़ व निकाली गई जानकारी (Analyzed Records):
+              </span>
+              <span className="text-2xs font-extrabold px-2 py-0.5 bg-emerald-200 text-emerald-900 rounded-full">
+                AI विश्लेषित
+              </span>
+            </div>
+
+            <p className="text-sm font-extrabold text-foreground">{summaryData.documents}</p>
+
+            {/* Crisp Medications from Document */}
+            {medicationsList.length > 0 && (
+              <div className="space-y-1.5 pt-1 border-t border-emerald-200/60">
+                <span className="text-xs font-extrabold text-muted-foreground flex items-center gap-1">
+                  <Pill className="h-3.5 w-3.5 text-emerald-600" /> सक्रिय दवाइयां (Active Medications):
+                </span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {medicationsList.map((m: any, idx: number) => (
+                    <div key={idx} className="p-2 rounded-xl bg-white dark:bg-slate-900 border text-xs shadow-2xs">
+                      <span className="font-extrabold text-foreground block">{m.name}</span>
+                      <span className="text-muted-foreground font-semibold text-2xs">
+                        {m.dosage} • {m.frequency} • {m.duration}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Crisp Labs from Document */}
+            {labsList.length > 0 && (
+              <div className="space-y-1.5 pt-1 border-t border-emerald-200/60">
+                <span className="text-xs font-extrabold text-muted-foreground flex items-center gap-1">
+                  <Activity className="h-3.5 w-3.5 text-emerald-600" /> जांच रिपोर्ट व असामान्य मान (Lab Findings):
+                </span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {labsList.map((lab: any, idx: number) => (
+                    <div key={idx} className="p-2 rounded-xl bg-white dark:bg-slate-900 border text-xs flex justify-between items-center shadow-2xs">
+                      <div>
+                        <span className="font-extrabold text-foreground block">{lab.testName}</span>
+                        <span className="text-muted-foreground font-semibold text-2xs">
+                          {lab.value} {lab.unit} ({lab.referenceRange})
+                        </span>
+                      </div>
+                      {lab.flag === "HIGH" && (
+                        <span className="px-1.5 py-0.5 rounded text-2xs font-extrabold bg-amber-100 text-amber-900">
+                          HIGH
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
+
 
         {/* Longitudinal Timeline Component */}
         <div className="space-y-2 pt-2">

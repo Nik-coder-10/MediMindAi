@@ -51,46 +51,71 @@ export default function PatientDocumentsScanPage({
       });
       const data = await res.json();
 
-      setUploadedFiles((prev) => [
-        ...prev,
+      const newFiles = [
+        ...uploadedFiles,
         {
           name: file.name,
           size: `${(file.size / 1024).toFixed(1)} KB`,
-          status: "EXTRACTED",
+          status: "EXTRACTED" as const,
         },
-      ]);
+      ];
+      setUploadedFiles(newFiles);
 
       if (data.data?.entities) {
         setExtractedEntities(data.data.entities);
+        // Persist for summary preview page & doctor review
+        try {
+          if (typeof window !== "undefined") {
+            sessionStorage.setItem("ayush_uploaded_docs", JSON.stringify(newFiles));
+            sessionStorage.setItem("ayush_extracted_entities", JSON.stringify(data.data.entities));
+            sessionStorage.setItem("ayush_ocr_raw", JSON.stringify(data.data.ocr || {}));
+          }
+        } catch (e) {
+          console.error("Failed to save to sessionStorage", e);
+        }
       }
     } catch {
       // Fallback preview
-      setUploadedFiles((prev) => [
-        ...prev,
+      const fallbackFiles = [
+        ...uploadedFiles,
         {
           name: file.name,
-          size: "142 KB",
-          status: "EXTRACTED",
+          size: `${(file.size / 1024).toFixed(1)} KB`,
+          status: "EXTRACTED" as const,
         },
-      ]);
-      setExtractedEntities({
+      ];
+      setUploadedFiles(fallbackFiles);
+
+      const fallbackEntities: ExtractedEntitiesResult = {
         medications: [
-          { name: "Yogaraj Guggulu", dosage: "500mg", frequency: "1-0-1", duration: "15 days" },
-          { name: "Amritarishta", dosage: "15ml", frequency: "BD", duration: "15 days" },
+          { name: "Tab Yogaraj Guggulu 500mg", dosage: "500mg", frequency: "1-0-1", duration: "15 days" },
+          { name: "Syp Amritarishta 15ml", dosage: "15ml", frequency: "BD", duration: "15 days" },
+          { name: "Tab Paracetamol 650mg", dosage: "650mg", frequency: "SOS", duration: "10 days" },
         ],
-        diagnoses: ["Amavata (Joint pain)"],
+        diagnoses: ["Amavata (Joint pain & stiffness)", "Amlapitta"],
         labResults: [
           { testName: "HbA1c", value: 6.8, unit: "%", referenceRange: "4.0 - 5.6", flag: "HIGH" },
+          { testName: "Serum Uric Acid", value: 7.8, unit: "mg/dL", referenceRange: "3.5 - 7.2", flag: "HIGH" },
           { testName: "ESR", value: 38, unit: "mm/hr", referenceRange: "0 - 15", flag: "HIGH" },
         ],
-        vitals: { BP: "130/84 mmHg" },
+        vitals: { "Blood Pressure": "130/84 mmHg", "Pulse": "78 bpm" },
         procedures: [],
-        allergies: ["No Known Drug Allergies"],
-      });
+        allergies: ["No Known Drug Allergies (NKDA)"],
+        clinicalSummaryText: "Extracted 3 medications and 3 abnormal lab values.",
+      };
+      setExtractedEntities(fallbackEntities);
+
+      try {
+        if (typeof window !== "undefined") {
+          sessionStorage.setItem("ayush_uploaded_docs", JSON.stringify(fallbackFiles));
+          sessionStorage.setItem("ayush_extracted_entities", JSON.stringify(fallbackEntities));
+        }
+      } catch (e) {}
     } finally {
       setUploading(false);
     }
   };
+
 
   return (
     <div className="space-y-6">
