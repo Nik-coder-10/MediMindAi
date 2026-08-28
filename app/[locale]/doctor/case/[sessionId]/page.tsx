@@ -149,7 +149,14 @@ export default function IndividualDoctorCaseViewPage({
     );
   }
 
-  const patient = caseData?.patient || { firstName: "Ramesh", lastName: "Sharma", age: 42, gender: "MALE", bloodGroup: "B+", abhaId: "14-5542-8921-3410" };
+  const patient = caseData?.patient || {
+    firstName: "अज्ञात",
+    lastName: "रोगी (Unknown Patient)",
+    age: 0,
+    gender: "UNKNOWN",
+    bloodGroup: "N/A",
+    abhaId: "N/A",
+  };
   const isEmergency = caseData?.encounter?.triagePriority === "EMERGENCY";
 
   return (
