@@ -38,19 +38,9 @@ export default function PatientShellLayout({
             </div>
           </Link>
 
-          {/* Action Tools: Language, Contrast, Emergency */}
+          {/* Action Tools: Language & Logout */}
           <div className="flex items-center gap-2">
             <PatientLanguageSwitcher currentLocale={locale} />
-
-            <button
-              type="button"
-              onClick={toggleHighContrast}
-              aria-label="Toggle High Contrast Mode"
-              className="min-h-[48px] min-w-[48px] px-3 rounded-xl border-2 border-border bg-background hover:bg-muted font-bold text-xs flex items-center gap-1.5 shadow-sm"
-            >
-              <Eye className="h-4 w-4" />
-              <span className="hidden sm:inline">{highContrast ? "Normal" : "High Contrast"}</span>
-            </button>
 
             <button
               type="button"

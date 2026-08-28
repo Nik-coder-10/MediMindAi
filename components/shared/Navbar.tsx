@@ -19,35 +19,35 @@ export function Navbar({ locale }: { locale: string }) {
             <span>AyurSetu</span>
           </Link>
           <nav className="hidden md:flex gap-6 text-sm font-medium">
-            <Link href={`/${locale}/doctor/consultation`} className="flex items-center gap-1 hover:text-primary">
-              <Stethoscope className="h-4 w-4" /> Doctor Consultation
+            <Link href={`/${locale}/doctor`} className="flex items-center gap-1.5 hover:text-primary transition-colors">
+              <Stethoscope className="h-4 w-4 text-emerald-600" /> Doctor Consultation
             </Link>
-            <Link href={`/${locale}/patient/patient-dashboard`} className="flex items-center gap-1 hover:text-primary">
-              <User className="h-4 w-4" /> Patient PHR
+            <Link href={`/${locale}/patient`} className="flex items-center gap-1.5 hover:text-primary transition-colors">
+              <User className="h-4 w-4 text-emerald-600" /> Patient PHR
             </Link>
-            <Link href={`/${locale}/admin/admin-dashboard`} className="flex items-center gap-1 hover:text-primary">
-              <ShieldCheck className="h-4 w-4" /> Admin & AYUSH
+            <Link href={`/${locale}/admin-dashboard`} className="flex items-center gap-1.5 hover:text-primary transition-colors">
+              <ShieldCheck className="h-4 w-4 text-emerald-600" /> Admin & AYUSH
             </Link>
           </nav>
         </div>
 
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-3">
           <LanguageSelector currentLocale={locale} />
           <Button
             variant="outline"
             size="sm"
             onClick={toggleHighContrast}
             aria-label="Toggle High Contrast Mode"
-            className="flex items-center gap-1"
+            className="flex items-center gap-1.5 min-h-[38px]"
           >
-            <Eye className="h-4 w-4" />
-            <span className="hidden sm:inline">{highContrast ? "Normal" : "High Contrast"}</span>
+            <Eye className="h-4 w-4 text-emerald-700" />
+            <span className="hidden sm:inline font-semibold">{highContrast ? "Normal" : "High Contrast"}</span>
           </Button>
-          <Button variant="outline" size="sm" asChild>
+          <Button variant="outline" size="sm" asChild className="min-h-[38px] font-semibold">
             <Link href={`/${locale}/login`}>Login</Link>
           </Button>
-          <Button variant="ayush" size="sm" asChild>
-            <Link href={`/${locale}/doctor/consultation`}>Start Case</Link>
+          <Button variant="ayush" size="sm" asChild className="min-h-[38px] font-bold">
+            <Link href={`/${locale}/patient`}>Start Case</Link>
           </Button>
         </div>
       </div>
