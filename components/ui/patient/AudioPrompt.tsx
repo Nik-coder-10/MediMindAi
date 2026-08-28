@@ -80,7 +80,7 @@ export function AudioPrompt({
       <div className="flex-1 space-y-1">
         <div className="flex items-center gap-1.5 text-xs font-bold text-ayush-green uppercase tracking-wide">
           <Sparkles className="h-3.5 w-3.5" />
-          <span>आवाज में निर्देश (Audio Guidance)</span>
+          <span>{hindiText ? "आवाज में निर्देश (Audio Guidance)" : "Audio Guidance"}</span>
         </div>
         {hindiText && (
           <p className="text-xl font-bold text-foreground leading-snug">
