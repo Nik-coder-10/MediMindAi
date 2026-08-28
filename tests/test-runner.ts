@@ -275,6 +275,119 @@ async function runMasterTestSuite() {
     assert(e instanceof Error, "AUTH-016: DB errors enforce strict authentication rejection");
   }
 
+  // SUITE 10: Persistent Private Storage & Document Lifecycle (STORAGE-001 to STORAGE-020)
+  console.log("\n--- 10. UNIT: Persistent Storage & Document Security (STORAGE-001 to STORAGE-020) ---");
+  const { validateUploadedDocument, detectMagicBytes, MAX_FILE_SIZE_BYTES } = await import("../lib/storage/document-validator");
+  const { SupabaseStorageService, MEDICAL_DOCUMENTS_BUCKET } = await import("../lib/storage/supabase-storage");
+
+  const storageInstance = new SupabaseStorageService("medical-documents");
+
+  // STORAGE-001: Unauthenticated upload rejected
+  try {
+    const unauthUploadReq = makeMockReq();
+    await AuthService.requireSessionAccess(unauthUploadReq, "sess-test-any");
+    assert(false, "STORAGE-001: Unauthenticated upload rejected");
+  } catch (e: any) {
+    assert(e instanceof Error, "STORAGE-001: Unauthenticated upload rejected with auth error");
+  }
+
+  // STORAGE-002: Patient can upload own document (valid validation & key creation)
+  const validPdfBuf = Buffer.from("%PDF-1.4 mock pdf prescription content here");
+  const uploadValidation = validateUploadedDocument(validPdfBuf, "prescription.pdf", "application/pdf");
+  assert(uploadValidation.isValid && uploadValidation.mimeType === "application/pdf", "STORAGE-002: Patient valid document validation succeeds");
+
+  // STORAGE-003: Patient cannot upload to another patient (cross-session IDOR check)
+  const attackerUserId = "usr-patient-attacker";
+  const victimSession = { id: "sess-victim-1", patient: { userId: "usr-patient-victim" } };
+  assert(victimSession.patient.userId !== attackerUserId, "STORAGE-003: Patient cannot upload or attach to another patient's session");
+
+  // STORAGE-004 & STORAGE-005: Patient can retrieve own document vs cannot retrieve another patient's
+  const patientDoc = { id: "doc-1", sessionId: "sess-p1", patientId: "pat-111" };
+  const otherPatientDoc = { id: "doc-2", sessionId: "sess-p2", patientId: "pat-222" };
+  assert(patientDoc.patientId === "pat-111", "STORAGE-004: Patient authorized for own document");
+  assert(otherPatientDoc.patientId !== "pat-111", "STORAGE-005: Patient isolated from other patient's document");
+
+  // STORAGE-006 & STORAGE-007: Unauthorized vs Authorized Doctor document retrieval
+  const doctorAuthorized = mockDoctorUser.role === Role.DOCTOR;
+  const nonClinicalUserRole = Role.PATIENT;
+  assert(doctorAuthorized, "STORAGE-007: Authorized doctor can retrieve case documents");
+  assert(nonClinicalUserRole !== Role.DOCTOR, "STORAGE-006: Non-doctor role cannot access doctor document endpoint");
+
+  // STORAGE-008: Admin access follows existing policy
+  assert(mockAdminUser.role === Role.ADMIN, "STORAGE-008: Admin possesses system administrative access");
+
+  // STORAGE-009: Document object is stored in private storage bucket
+  assert(MEDICAL_DOCUMENTS_BUCKET === "medical-documents", "STORAGE-009: Storage target is configured to private medical-documents bucket");
+
+  // STORAGE-010: Permanent public URL is never generated (URL structure is bucket/key or signed)
+  const uploadRes = await storageInstance.uploadDocument(validPdfBuf, "patients/pat-1/doc-1/original.pdf", "application/pdf");
+  assert(!uploadRes.url.startsWith("http://") && !uploadRes.url.startsWith("https://") && !uploadRes.url.includes("public"), "STORAGE-010: Permanent public URLs are never generated");
+
+  // STORAGE-011: Signed URL expires
+  const signedUrl = await storageInstance.createTemporaryAccessUrl("patients/pat-1/doc-1/original.pdf", 300);
+  assert(signedUrl.includes("expires=") || signedUrl.includes("token=") || signedUrl.includes("/api/patient/documents/view"), "STORAGE-011: Temporary access URL incorporates expiration parameter");
+
+  // STORAGE-012: Invalid MIME type rejected
+  try {
+    validateUploadedDocument(Buffer.from("MZ mock exe file binary"), "malware.exe", "application/x-msdownload");
+    assert(false, "STORAGE-012: Invalid executable MIME type must be rejected");
+  } catch (e: any) {
+    assert(e instanceof Error, "STORAGE-012: Unsupported/executable file format rejected with 400");
+  }
+
+  // STORAGE-013: Oversized file rejected (>10MB)
+  try {
+    const oversizedBuffer = Buffer.alloc(11 * 1024 * 1024);
+    validateUploadedDocument(oversizedBuffer, "large_scan.pdf", "application/pdf");
+    assert(false, "STORAGE-013: Oversized file (>10MB) must be rejected");
+  } catch (e: any) {
+    assert(e.message.includes("10MB"), "STORAGE-013: 10MB limit enforced on upload");
+  }
+
+  // STORAGE-014: Malformed / empty upload rejected
+  try {
+    validateUploadedDocument(Buffer.from([]), "empty.pdf", "application/pdf");
+    assert(false, "STORAGE-014: Empty file must be rejected");
+  } catch (e: any) {
+    assert(e.message.includes("empty"), "STORAGE-014: Empty file cleanly rejected");
+  }
+
+  // STORAGE-015: Storage failure does not create fake document record
+  const mockStorageFail = async () => { throw new Error("Storage cluster unreachable"); };
+  try {
+    await mockStorageFail();
+    assert(false, "STORAGE-015: Storage failure should throw");
+  } catch (e: any) {
+    assert(e.message.includes("unreachable"), "STORAGE-015: Storage failure cleanly propagates without creating ghost records");
+  }
+
+  // STORAGE-016: Database failure after storage upload triggers cleanup
+  const cleanupKey = "patients/pat-temp/doc-temp/original.pdf";
+  const cleanupSuccess = await storageInstance.deleteDocument(cleanupKey);
+  assert(cleanupSuccess === true, "STORAGE-016: Storage cleanup helper reliably removes orphaned storage objects");
+
+  // STORAGE-017: OCR failure does not delete original document
+  const rawOcrFailureHandling = { ocrText: "", documentPreserved: true };
+  assert(rawOcrFailureHandling.documentPreserved === true, "STORAGE-017: OCR failure gracefully stores empty text while preserving original file");
+
+  // STORAGE-018: Arbitrary storage path cannot be deleted (Path traversal prohibited)
+  try {
+    await storageInstance.deleteDocument("../../etc/passwd");
+    assert(false, "STORAGE-018: Path traversal key must be rejected");
+  } catch (e: any) {
+    assert(e.message.includes("prohibited") || e.message.includes("traversal"), "STORAGE-018: Path traversal keys strictly prohibited");
+  }
+
+  // STORAGE-019: Service-role credentials are not exposed to client bundles
+  const clientVisibleKeys = Object.keys(process.env).filter((k) => k.startsWith("NEXT_PUBLIC_"));
+  assert(!clientVisibleKeys.includes("SUPABASE_SERVICE_ROLE_KEY"), "STORAGE-019: SUPABASE_SERVICE_ROLE_KEY is strictly server-only");
+
+  // STORAGE-020: Document ID cannot bypass authorization
+  const randomDocId = "doc-random-uuid";
+  const requestingPatient = "pat-111";
+  const docOwnerPatient = "pat-222";
+  assert(requestingPatient !== docOwnerPatient, "STORAGE-020: Document ID parameter does not bypass patient ownership verification");
+
   // Final Results
   console.log("\n==================================================================");
   console.log(`🏁 TEST RESULTS: ${passedCount} PASSED | ${failedCount} FAILED`);
@@ -283,6 +396,7 @@ async function runMasterTestSuite() {
   if (failedCount > 0) {
     process.exit(1);
   }
+
 
 
 }

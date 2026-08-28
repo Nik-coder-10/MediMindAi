@@ -114,17 +114,29 @@ export async function GET(
         sattva: session.ayurvedaAssessment.sattva,
         bala: session.ayurvedaAssessment.bala,
       } : null,
-      documents: session.medicalDocuments.map((doc: any) => ({
-        id: doc.id,
-        fileName: doc.fileName,
-        type: doc.type,
-        uploadedAt: doc.uploadedAt.toISOString(),
-        medications: doc.extractedEntities.filter((e: any) => e.type === "MEDICATION").map((m: any) => ({
-          name: m.structuredData?.normalisedName || m.rawText,
-          frequency: m.structuredData?.frequency || "",
-          duration: m.structuredData?.duration || "",
-        })),
-      })),
+      documents: await Promise.all(
+        session.medicalDocuments.map(async (doc: any) => {
+          let temporaryAccessUrl = "";
+          if (doc.originalFileUrl && !doc.originalFileUrl.startsWith("/uploads/")) {
+            const objectKey = doc.originalFileUrl.replace(/^medical-documents\//, "");
+            const { supabaseStorage } = await import("@/lib/storage/supabase-storage");
+            temporaryAccessUrl = await supabaseStorage.createTemporaryAccessUrl(objectKey, 300);
+          }
+          return {
+            id: doc.id,
+            fileName: doc.fileName,
+            type: doc.type,
+            uploadedAt: doc.uploadedAt.toISOString(),
+            temporaryAccessUrl,
+            medications: doc.extractedEntities.filter((e: any) => e.type === "MEDICATION").map((m: any) => ({
+              name: m.structuredData?.normalisedName || m.rawText,
+              frequency: m.structuredData?.frequency || "",
+              duration: m.structuredData?.duration || "",
+            })),
+          };
+        })
+      ),
+
       consent: session.patient?.consentRecords?.[0] ? {
         status: "ACTIVE",
         grantedAt: session.patient.consentRecords[0].grantedAt.toISOString(),

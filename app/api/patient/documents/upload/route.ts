@@ -1,5 +1,4 @@
 import { NextRequest } from "next/server";
-import { z } from "zod";
 import { apiSuccess, apiError } from "@/lib/api/response";
 import { DocumentService } from "@/lib/services/document.service";
 import { OCRService, MedicalEntityExtractor } from "@/lib/ocr/ocr.service";
@@ -7,8 +6,14 @@ import { AuditService } from "@/lib/services/audit.service";
 import { prisma } from "@/lib/db/prisma";
 import { AuthService } from "@/lib/auth/auth-guard";
 import { AppError } from "@/lib/api/errors";
+import { supabaseStorage } from "@/lib/storage/supabase-storage";
+import { validateUploadedDocument } from "@/lib/storage/document-validator";
+import crypto from "crypto";
+
+export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
+
   try {
     const formData = await req.formData();
     const file = formData.get("file") as File | null;
@@ -19,76 +24,104 @@ export async function POST(req: NextRequest) {
       throw AppError.badRequest("sessionId is required for document upload.");
     }
 
-    const { user } = await AuthService.requireSessionAccess(req, sessionId);
+    // 1. Authenticate and authorize session access (Phase 3 Guard)
+    const { user, session } = await AuthService.requireSessionAccess(req, sessionId);
 
-
-    let fileName = file ? file.name : "prescription_scan.pdf";
-    let mimeType = file ? file.type : "application/pdf";
-    let fileSize = file ? file.size : 102400;
-    let fileBuffer = Buffer.from([]);
-
-    if (file) {
-      const bytes = await file.arrayBuffer();
-      fileBuffer = Buffer.from(bytes);
+    if (!file) {
+      throw AppError.badRequest("No file uploaded.");
     }
 
-    // 1. Process OCR & Entity Extraction
-    const { ocr, entities } = await OCRService.processDocument(fileBuffer, mimeType);
+    const fileName = file.name || "medical_record.pdf";
+    const declaredMimeType = file.type || "application/pdf";
+    const bytes = await file.arrayBuffer();
+    const fileBuffer = Buffer.from(bytes);
 
-    // 2. Register Document in DB
-    const originalFileUrl = `/uploads/documents/${Date.now()}_${fileName}`;
-    const document = await DocumentService.registerDocument({
-      sessionId,
-      type: documentType,
-      originalFileUrl,
-      fileName,
-      mimeType,
-      fileSize,
-      ocrRawText: ocr.rawText,
-    });
+    // 2. Validate file format, magic bytes, and size limits (10MB)
+    const validation = validateUploadedDocument(fileBuffer, fileName, declaredMimeType);
+    const mimeType = validation.mimeType;
+    const fileSize = fileBuffer.length;
 
-    // 3. Audit Log
+    // 3. Generate server-side deterministic UUIDs & safe object key
+    const documentId = crypto.randomUUID();
+    const patientId = session.patientId || user.patientProfile?.id || "anonymous-patient";
+    const sanitizedExt = validation.extension || ".pdf";
+    const storageKey = `patients/${patientId}/${documentId}/original${sanitizedExt}`;
+
+    // 4. Upload to Private Supabase Storage bucket
+    const uploadResult = await supabaseStorage.uploadDocument(fileBuffer, storageKey, mimeType);
+
+    // 5. Process OCR & Entity Extraction in-memory
+    let ocrResult: any = { rawText: "", confidence: 0 };
+    let entitiesResult: any = { medications: [], labResults: [], diagnoses: [], vitals: {}, procedures: [], allergies: [] };
+
+    try {
+      const { ocr, entities } = await OCRService.processDocument(fileBuffer, mimeType);
+      ocrResult = ocr;
+      entitiesResult = entities;
+    } catch (ocrErr) {
+      console.warn("OCR processing encountered warning (preserving original file):", ocrErr);
+    }
+
+    // 6. Register Document in DB with persistent storage reference
+    const originalFileUrl = uploadResult.url;
+    let document: any = null;
+
+    try {
+      document = await DocumentService.registerDocument({
+        id: documentId,
+        sessionId,
+        type: documentType,
+        originalFileUrl,
+        fileName,
+        mimeType,
+        fileSize,
+        ocrRawText: ocrResult.rawText,
+      });
+    } catch (dbErr) {
+      // Storage cleanup if DB registration fails
+      await supabaseStorage.deleteDocument(storageKey);
+      throw dbErr;
+    }
+
+    // 7. Audit Log (No PHI / content logged)
     await AuditService.log({
       action: "DOCUMENT_UPLOAD_AND_OCR",
       resourceType: "MedicalDocument",
-      resourceId: (document as any)?.id || "doc-mock-001",
+      resourceId: documentId,
       metadata: {
-        fileName,
-        extractedMedicationsCount: entities.medications.length,
-        extractedLabsCount: entities.labResults.length,
+        documentType,
+        fileSize,
+        mimeType,
+        extractedMedicationsCount: entitiesResult.medications?.length || 0,
+        extractedLabsCount: entitiesResult.labResults?.length || 0,
       },
     });
 
-    // 4. Persist extracted entities + timeline events (Storage step)
+    // 8. Persist extracted entities + timeline events
     try {
-      const docId = (document as any)?.id as string | undefined;
-      const realDoc = docId ? await prisma.medicalDocument.findUnique({ where: { id: docId } }) : null;
-      if (realDoc) {
-        const entityRecords = MedicalEntityExtractor.toEntityRecords(realDoc.id, entities);
-        if (entityRecords.length > 0) {
-          await prisma.extractedMedicalEntity.createMany({ data: entityRecords as any });
-        }
-        const session = await prisma.clinicalSession.findUnique({
-          where: { id: realDoc.sessionId },
-          select: { patientId: true },
-        });
-        if (session) {
-          const timelineEvents = MedicalEntityExtractor.toTimelineEvents(realDoc.id, session.patientId, entities);
-          if (timelineEvents.length > 0) {
-            await prisma.medicalTimelineEvent.createMany({ data: timelineEvents as any });
-          }
-        }
+      const entityRecords = MedicalEntityExtractor.toEntityRecords(documentId, entitiesResult);
+      if (entityRecords.length > 0) {
+        await prisma.extractedMedicalEntity.createMany({ data: entityRecords as any });
+      }
+      const timelineEvents = MedicalEntityExtractor.toTimelineEvents(documentId, patientId, entitiesResult);
+      if (timelineEvents.length > 0) {
+        await prisma.medicalTimelineEvent.createMany({ data: timelineEvents as any });
       }
     } catch (persistErr) {
-      // Persistence is best-effort; never break the upload response.
-      console.error("Document entity persistence skipped:", persistErr);
+      console.warn("Document entity persistence skipped:", persistErr);
     }
+
+    // 9. Generate temporary access URL for immediate preview
+    const temporaryAccessUrl = await supabaseStorage.createTemporaryAccessUrl(storageKey, 300);
 
     return apiSuccess(
       {
-        document,
-        ocr,
-        entities,
+        document: {
+          ...document,
+          temporaryAccessUrl,
+        },
+        ocr: ocrResult,
+        entities: entitiesResult,
       },
       201
     );
@@ -96,3 +129,4 @@ export async function POST(req: NextRequest) {
     return apiError(error);
   }
 }
+
