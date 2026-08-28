@@ -1,13 +1,13 @@
 export const ConsentTemplates = {
   hi: {
-    title: "डिजिटल स्वास्थ्य परामर्श एवं डेटा सहमति (ABDM)",
+    title: "डिजिटल आयुष क्लिनिकल परामर्श एवं डेटा सहमति (ABDM)",
     explanation:
-      "आयुर्वेद सेतु प्लेटफॉर्म पर आपका स्वागत है। इस परामर्श के दौरान आपकी समस्याओं का इतिहास, आवाज रिकॉर्डिंग, पिछली पर्चियां और औषध विवरण सुरक्षित रूप से दर्ज किया जाएगा। यह डेटा आपके डॉक्टर के साथ परामर्श और आभा (ABHA) हेल्थ रिकॉर्ड में सुरक्षित आदान-प्रदान के लिए उपयोग किया जाएगा।",
+      "आयुर्सेतु प्लेटफॉर्म पर आपका स्वागत है। इस परामर्श के दौरान आपके लक्षणों का विवरण, आवाज रिकॉर्डिंग, पूर्व चिकित्सीय पर्चे और आयुष परीक्षा डेटा सुरक्षित रूप से दर्ज किया जाएगा। यह डेटा आपके परामर्शदाता वैद्य के साथ साझा करने और आयुष्मान भारत डिजिटल मिशन (ABDM) हेल्थ लॉकर में सुरक्षित रिकॉर्ड लिंकेज के लिए उपयोग किया जाएगा।",
     purposes: {
-      HISTORY_TAKING: "आयुष केस-टेकिंग और प्रकृति मूल्यांकन (Case-taking & Prakriti assessment)",
-      DOCUMENT_OCR: "पूर्व चिकित्सीय पर्ची व जांच रिपोर्ट स्कैनिंग (Prescription & Report OCR)",
-      DOCTOR_SHARING: "परामर्शदाता वैद्य के साथ डेटा साझा करना (Sharing with Consulting Doctor)",
-      ABDM_EXCHANGE: "आयुष्मान भारत डिजिटल मिशन (ABDM) रिकॉर्ड लिंकेज",
+      HISTORY_TAKING: "आयुष केस-टेकिंग और प्रकृति मूल्यांकन",
+      DOCUMENT_OCR: "पूर्व चिकित्सीय पर्ची व जांच रिपोर्ट स्कैनिंग",
+      DOCTOR_SHARING: "परामर्शदाता वैद्य/चिकित्सक के साथ डेटा साझा करना",
+      ABDM_EXCHANGE: "आयुष्मान भारत डिजिटल मिशन (ABDM) हेल्थ रिकॉर्ड लिंकेज",
     },
     audioUrl: "/audio/consent-explanation-hi.mp3",
     acceptButton: "मैं सहमत हूँ और सहमति देता हूँ (I Agree & Grant Consent)",
@@ -27,26 +27,12 @@ export const ConsentTemplates = {
     acceptButton: "I Understand & Grant Consent",
     revokeButton: "Revoke Consent",
   },
-  mr: {
-    title: "डिजिटल आयुष वैद्यकीय सल्लामसलत व डेटा संमती (ABDM)",
-    explanation:
-      "आयुर्सेतु प्रणालीमध्ये आपले स्वागत आहे. या सल्लामसलतीदरम्यान आपला वैद्यकीय इतिहास, आवाजातील तक्रारी, जुने वैद्यकीय नमुने व प्रकृती तपासणी माहिती सुरक्षितपणे जतन केली जाईल. हे आपल्या प्रकृती मूल्यांकनासाठी आणि डॉक्टरांशी तसेच आभा (ABHA) प्रणालीमध्ये सुरक्षित देवाणघेवाणीसाठी वापरले जाईल.",
-    purposes: {
-      HISTORY_TAKING: "आयुष केस-टेकिंग आणि प्रकृती मूल्यांकन (Case-taking & Prakriti assessment)",
-      DOCUMENT_OCR: "जुनी प्रिस्क्रिप्शन व लॅब तपासणी स्कॅनिंग (Prescription & Report OCR)",
-      DOCTOR_SHARING: "तपासणी करणाऱ्या वैद्यांसोबत माहितीची देवाणघेवाण (Sharing with Consulting Doctor)",
-      ABDM_EXCHANGE: "आयुष्मान भारत डिजिटल मिशन (ABDM) रेकॉर्ड लिंकेज",
-    },
-    audioUrl: "/audio/consent-explanation-mr.mp3",
-    acceptButton: "मी सहमत आहे आणि संमती देत आहे (I Agree & Grant Consent)",
-    revokeButton: "संमती मागे घ्या (Revoke Consent)",
-  },
 };
 
 export interface ConsentRequestDTO {
   patientId: string;
   purposes: string[];
-  language: "en" | "hi" | "mr";
+  language: "en" | "hi";
   ipAddress?: string;
   userAgent?: string;
 }

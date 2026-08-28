@@ -23,7 +23,6 @@ export function LanguageSelector({ currentLocale }: { currentLocale: string }) {
   const languageLabels: Record<string, string> = {
     en: "English",
     hi: "हिंदी (Hindi)",
-    mr: "मराठी (Marathi)",
   };
 
   return (
