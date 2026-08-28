@@ -4,9 +4,16 @@ import { AyurvedaAssessmentService } from "../lib/services/ayurveda.service";
 import { FhirService } from "../lib/fhir/fhir.service";
 
 export async function seedDemoShowcase() {
+  if (process.env.NODE_ENV === "production" && !process.env.ALLOW_DEMO_SEED) {
+    console.error("❌ CRITICAL SAFETY GUARD: seedDemoShowcase() cannot be executed in production environment.");
+    console.error("Set ALLOW_DEMO_SEED=true explicitly if running in isolated staging.");
+    process.exit(1);
+  }
+
   console.log("==================================================================");
-  console.log("🎭 SEEDING SIH 2026 REALISTIC CLINICAL DEMO SHOWCASE DATASET");
+  console.log("🎭 SEEDING SIH 2026 REALISTIC CLINICAL DEMO SHOWCASE DATASET (DEV ONLY)");
   console.log("==================================================================\n");
+
 
   // 1. Showcase Sessions
   const sessions = [

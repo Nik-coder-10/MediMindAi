@@ -26,29 +26,46 @@ export class SummaryService {
   static async generateSummary(options: GenerateSummaryOptions): Promise<SummaryResponseDTO> {
     const { sessionId } = options;
 
-    let session: any = null;
-    try {
-      session = await prisma.clinicalSession.findUnique({
-        where: { id: sessionId },
-        include: {
-          patient: true,
-          chiefComplaints: true,
-          redFlagEvents: true,
-          medicalDocuments: { include: { extractedEntities: true } },
-          ayurvedaAssessment: true,
-          engineState: true,
-        },
-      });
-    } catch {
-      // Fallback mock session
+    const session = await prisma.clinicalSession.findUnique({
+      where: { id: sessionId },
+      include: {
+        patient: { include: { user: true } },
+        chiefComplaints: true,
+        redFlagEvents: true,
+        medicalDocuments: { include: { extractedEntities: true } },
+        ayurvedaAssessment: true,
+        engineState: true,
+      },
+    });
+
+    if (!session) {
+      throw AppError.notFound(`Clinical session ${sessionId} not found for summary generation.`);
     }
 
-    const patientName = session?.patient
+    const patientName = session.patient
       ? `${session.patient.firstName} ${session.patient.lastName}`
-      : "Ramesh Sharma";
-    const abhaId = session?.patient?.user?.abhaId || "14-5542-8921-3410";
-    const triagePriority = session?.triagePriority || "EMERGENCY";
-    const isRedFlag = session?.redFlagTriggered || true;
+      : "Unknown Patient";
+    const abhaId = session.patient?.user?.abhaId || "Not Registered";
+    const triagePriority = session.triagePriority || "ROUTINE";
+    const chiefComplaintText = session.chiefComplaints?.[0]?.symptomName || "Consultation Intake";
+    const facts = (session.engineState?.collectedFacts as any) || {};
+
+    const redFlagsMarkdown = session.redFlagEvents.length > 0
+      ? session.redFlagEvents.map((rf: any) => `  - \`${rf.ruleId}\`: ${rf.description}`).join("\n")
+      : "  - No critical red flags detected during intake.";
+
+    const extractedMeds: string[] = [];
+    const extractedLabs: string[] = [];
+    session.medicalDocuments.forEach((doc: any) => {
+      doc.extractedEntities.forEach((ent: any) => {
+        if (ent.type === "MEDICATION") {
+          extractedMeds.push(`- *${ent.structuredData?.normalisedName || ent.rawText}* (${ent.structuredData?.dosage || ""}, ${ent.structuredData?.frequency || ""})`);
+        }
+        if (ent.type === "LAB") {
+          extractedLabs.push(`- **${ent.structuredData?.testName || ent.rawText}**: \`${ent.structuredData?.value || ent.rawText}\``);
+        }
+      });
+    });
 
     const aiMarkdown = `
 # 📋 CLINICAL INTAKE & CASE-TAKING SUMMARY
@@ -58,104 +75,63 @@ export class SummaryService {
 
 ## 1. Patient Demographics & Encounter Details
 - **Patient Name**: ${patientName}
-- **Age / Gender**: 42 Yrs / Male
 - **ABHA ID**: ${abhaId}
-- **Encounter Date & Language**: 26/08/2026 (Hindi / English Intake)
+- **Encounter Language**: ${session.language.toUpperCase()}
 - **Encounter ID**: ${sessionId}
 
 ## 2. 🚨 Triage Priority & Safety Red Flags
 - **Triage Level**: **${triagePriority}**
 - **Triggered Red Flags**:
-  - \`RF_ACS_RADIATION\`: Chest pain radiating to left arm, neck, or jaw. Possible Acute Coronary Syndrome.
-  - \`RF_CARDIAC_AUTONOMIC_SIGNS\`: Associated cold sweating (diaphoresis) and dyspnea.
-- **Emergency Action**: **Immediate 12-lead ECG and stat cardiac biomarker evaluation recommended.**
+${redFlagsMarkdown}
 
 ## 3. Chief Complaint
-- Severe retrosternal chest heaviness and breathlessness since last night (~14 hours duration).
+- ${chiefComplaintText}
 
-## 4. History of Present Illness (HPI)
-- **Narrative**: Patient reports acute onset of heavy crushing pressure in the retrosternal area beginning yesterday evening. Pain worsened on walking and radiates continuously into the left shoulder and inner arm. Accompanied by acute cold sweating.
-- **SOCRATES Pain Profile**:
-  - **Site**: Central Retrosternal
-  - **Onset**: Acute (over ~30 minutes)
-  - **Character**: Heavy Pressure / Squeezing (7/10 severity)
-  - **Radiation**: Left upper extremity & jaw
-  - **Associated Symptoms**: Cold sweating (diaphoresis), mild breathlessness
-  - **Timing**: Continuous, worse on exertion
-  - **Exacerbating / Relieving Factors**: Aggravated by walking; partial relief on sitting still
-  - **Severity Score**: 7-10 / 10 (Severe)
+## 4. History of Present Illness (HPI & SOCRATES)
+- **Site**: ${facts.site || "Reported in complaint"}
+- **Onset**: ${facts.onset || "Acute"}
+- **Severity**: ${facts.severity || "Evaluated during intake"}
+- **Associated Symptoms**: ${facts.associated || "None reported"}
 
-## 5. Current Medications & Allergies
-- **Current Medications**:
-  1. *Tab Yogaraj Guggulu 500mg* - 1-0-1 (BD) for knee joint pain
-  2. *Syp Amritarishta 15ml* - twice daily
-  3. *Cap Omeprazole 20mg* - 1-0-0 (OD)
-- **Allergies**: No Known Drug Allergies (NKDA)
+## 5. Current Medications (From Uploaded Prescriptions)
+${extractedMeds.length > 0 ? extractedMeds.join("\n") : "- No previous medications recorded."}
 
-## 6. Relevant Investigations & Abnormal Labs
-- **Abnormal Labs for Review**:
-  - **HbA1c**: \`8.9 %\` [HIGH] (Ref: 4.0 - 5.6 %)
-  - **Serum Creatinine**: \`2.1 mg/dL\` [HIGH] (Ref: 0.6 - 1.2 mg/dL)
-  - **ESR**: \`45 mm/hr\` [HIGH] (Ref: 0 - 20 mm/hr)
-- **Normal Findings**:
-  - Hemoglobin: 13.2 g/dL | Total Platelet Count: 2.4 L/cumm
+## 6. Relevant Investigations & Labs
+${extractedLabs.length > 0 ? extractedLabs.join("\n") : "- No lab documents attached."}
 
-## 7. Longitudinal Medical Timeline
-- **2026-08-26**: Acute Emergency Consultation for Chest Pain & Radiation
-- **2024-03-15**: Metformin 500mg initiated for Impaired Glucose Tolerance
-- **2022-11-20**: Initial evaluation for bilateral knee stiffness (*Sandhigata Vata*)
-- **2019-05-10**: Chronic Dyspepsia & Hyperacidity diagnosis (*Amlapitta*)
-
-## 8. AYUSH & Dashavidha Pariksha Findings
-- **Prakriti**: Vata-Kapha
-- **Vikriti**: Vata-Pitta Dushti with Rasavaha Srotas involvement
-- **Agni**: Vishamagni (Irregular digestive capacity)
-- **Ama**: Saama Lakshana (Coated tongue, heavy feeling)
-- **Koshtha**: Madhyama
-
-## 9. Clinical Notes & Physician Attention Areas
-- ⚠️ **High Priority**: Immediate 12-lead ECG, Troponin I/T, and Blood Pressure monitoring.
-- Assess for acute ischemic changes prior to administering oral medications.
-- Note elevated serum creatinine (2.1 mg/dL) when selecting analgesics or IV contrast.
+## 7. AYUSH & Dashavidha Pariksha Findings
+- **Prakriti**: ${session.ayurvedaAssessment?.prakriti || "Vata-Kapha"}
+- **Vikriti**: ${session.ayurvedaAssessment?.vikriti || "Vata-Pitta"}
+- **Agni**: ${session.ayurvedaAssessment?.anala || "Vishamagni"}
+- **Notes**: ${session.ayurvedaAssessment?.notes || "Intake completed"}
     `.trim();
 
-    try {
-      const summary = await prisma.clinicalSummary.upsert({
-        where: { sessionId },
-        create: {
-          sessionId,
-          aiGeneratedMarkdown: aiMarkdown,
-          doctorEditedMarkdown: null,
-          status: SummaryStatus.DRAFT,
-          version: 1,
-        },
-        update: {
-          aiGeneratedMarkdown: aiMarkdown,
-          version: { increment: 1 },
-        },
-      });
-
-      return {
-        id: summary.id,
-        sessionId: summary.sessionId,
-        aiGeneratedMarkdown: summary.aiGeneratedMarkdown,
-        doctorEditedMarkdown: summary.doctorEditedMarkdown,
-        status: summary.status as any,
-        version: summary.version,
-        updatedAt: summary.updatedAt.toISOString(),
-      };
-    } catch {
-      return {
-        id: `sum-${Date.now()}`,
+    const summary = await prisma.clinicalSummary.upsert({
+      where: { sessionId },
+      create: {
         sessionId,
         aiGeneratedMarkdown: aiMarkdown,
         doctorEditedMarkdown: null,
-        status: "DRAFT",
+        status: SummaryStatus.DRAFT,
         version: 1,
-        updatedAt: new Date().toISOString(),
-      };
-    }
+      },
+      update: {
+        aiGeneratedMarkdown: aiMarkdown,
+        version: { increment: 1 },
+      },
+    });
+
+    return {
+      id: summary.id,
+      sessionId: summary.sessionId,
+      aiGeneratedMarkdown: summary.aiGeneratedMarkdown,
+      doctorEditedMarkdown: summary.doctorEditedMarkdown,
+      status: summary.status as any,
+      version: summary.version,
+      updatedAt: summary.updatedAt.toISOString(),
+    };
   }
+
 
   /**
    * Retrieves current summary for a session

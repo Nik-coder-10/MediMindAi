@@ -1,9 +1,11 @@
 import { NextRequest } from "next/server";
 import { apiSuccess, apiError } from "@/lib/api/response";
+import { AppError } from "@/lib/api/errors";
 import { prisma } from "@/lib/db/prisma";
 import { SummaryService } from "@/lib/services/summary.service";
 import { MedicalTimelineService } from "@/lib/services/timeline.service";
 import { AyurvedaAssessmentService } from "@/lib/services/ayurveda.service";
+
 
 export async function GET(
   req: NextRequest,
@@ -12,89 +14,125 @@ export async function GET(
   try {
     const sessionId = params.sessionId;
 
-    // 1. Fetch Summary
-    let summary = await SummaryService.getSummary(sessionId);
-    if (!summary) {
-      summary = await SummaryService.generateSummary({ sessionId });
+    // 1. Fetch Session with full relational graph
+    const session = await prisma.clinicalSession.findUnique({
+      where: { id: sessionId },
+      include: {
+        patient: {
+          include: {
+            user: true,
+            timelineEvents: { orderBy: { eventDate: "desc" }, take: 10 },
+            abhaLink: true,
+            consentRecords: { where: { revokedAt: null }, orderBy: { grantedAt: "desc" }, take: 1 },
+          },
+        },
+        chiefComplaints: true,
+        redFlagEvents: { orderBy: { triggeredAt: "desc" } },
+        medicalDocuments: {
+          where: { deletedAt: null },
+          include: { extractedEntities: true },
+        },
+        clinicalSummary: true,
+        ayurvedaAssessment: true,
+      },
+    });
+
+    if (!session) {
+      return apiError(AppError.notFound(`Clinical case session '${sessionId}' was not found.`));
     }
 
-    // 2. Fetch Timeline & Labs
-    const timeline = await MedicalTimelineService.getPatientTimeline("pat-demo-001");
-    const demoLabs = [
-      { testName: "HbA1c", value: 8.9 },
-      { testName: "Hemoglobin", value: 9.2 },
-      { testName: "Serum Creatinine", value: 2.1 },
-      { testName: "ESR", value: 45 },
-    ];
-    const abnormalLabs = MedicalTimelineService.evaluateAbnormalLabs(demoLabs);
+    // 2. Fetch or Generate Summary
+    let summary = session.clinicalSummary;
+    if (!summary) {
+      summary = (await SummaryService.generateSummary({ sessionId })) as any;
+    }
 
-    // 3. Complete Aggregated Case Dossier
+    // 3. Format timeline and extracted labs from real document records
+    const timeline = session.patient?.timelineEvents?.map((e: any) => ({
+      id: e.id,
+      patientId: e.patientId,
+      eventDate: e.eventDate.toISOString().split("T")[0],
+      title: e.title,
+      description: e.description || "",
+      category: e.category,
+      sourceDocumentId: e.sourceDocumentId,
+      metadata: e.metadata,
+    })) || [];
+
+    const extractedLabs: any[] = [];
+    session.medicalDocuments.forEach((doc: any) => {
+      doc.extractedEntities.forEach((ent: any) => {
+        if (ent.type === "LAB") {
+          extractedLabs.push({
+            testName: ent.structuredData?.testName || ent.rawText,
+            value: ent.structuredData?.value || ent.rawText,
+          });
+        }
+      });
+    });
+    const abnormalLabs = MedicalTimelineService.evaluateAbnormalLabs(extractedLabs);
+
+    // 4. Assemble genuine case data
     const caseData = {
       sessionId,
-      patient: {
-        id: "pat-demo-001",
-        firstName: "Ramesh",
-        lastName: "Sharma",
-        age: 42,
-        gender: "MALE",
-        bloodGroup: "B+",
-        abhaId: "14-5542-8921-3410",
-        phone: "+91 98765 43210",
-        preferredLanguage: "hi",
-      },
+      patient: session.patient ? {
+        id: session.patient.id,
+        firstName: session.patient.firstName,
+        lastName: session.patient.lastName,
+        age: Math.floor((Date.now() - new Date(session.patient.dateOfBirth).getTime()) / (365.25 * 24 * 60 * 60 * 1000)),
+        gender: session.patient.gender,
+        bloodGroup: session.patient.bloodGroup,
+        abhaId: session.patient.user?.abhaId || session.patient.abhaLink?.abhaNumber || "N/A",
+        phone: session.patient.user?.phone || "N/A",
+        preferredLanguage: session.patient.user?.preferredLanguage || session.language || "hi",
+      } : null,
       encounter: {
-        triagePriority: "EMERGENCY",
-        redFlagTriggered: true,
-        startedAt: "2026-08-26T10:30:00Z",
-        chiefComplaint: "Severe retrosternal crushing chest pain radiating to left arm",
-        status: "IN_PROGRESS",
+        triagePriority: session.triagePriority,
+        redFlagTriggered: session.redFlagTriggered,
+        startedAt: session.startedAt.toISOString(),
+        chiefComplaint: session.chiefComplaints?.[0]?.symptomName || "Consultation Intake",
+        status: session.status,
       },
-      redFlags: [
-        {
-          ruleId: "RF_ACS_RADIATION",
-          description: "Chest pain radiating to left arm, neck, or jaw. Possible Acute Coronary Syndrome.",
-          severity: "CRITICAL",
-          triggeredAt: "2026-08-26T10:34:00Z",
-        },
-        {
-          ruleId: "RF_CARDIAC_AUTONOMIC_SIGNS",
-          description: "Associated cold sweating (diaphoresis) and shortness of breath.",
-          severity: "CRITICAL",
-          triggeredAt: "2026-08-26T10:36:00Z",
-        },
-      ],
+      redFlags: session.redFlagEvents.map((rf: any) => ({
+        ruleId: rf.ruleId,
+        description: rf.description,
+        severity: rf.severity,
+        triggeredAt: rf.triggeredAt.toISOString(),
+      })),
       summary,
       timeline,
       abnormalLabs,
-      ayurveda: {
-        prakriti: "Vata-Kapha",
-        vikriti: "Vata-Pitta Dushti",
-        agni: "Vishamagni (Irregular)",
-        koshtha: "Krura (Hard / Constipated)",
-        sattva: "Madhyama",
-        bala: "Madhyama",
-      },
-      documents: [
-        {
-          fileName: "AIIA_Prescription_Opd.pdf",
-          type: "PRESCRIPTION",
-          uploadedAt: "2026-08-26T10:32:00Z",
-          medications: [
-            { name: "Tab Yogaraj Guggulu 500mg", frequency: "1-0-1", duration: "15 days" },
-            { name: "Syp Amritarishta 15ml", frequency: "BD", duration: "15 days" },
-          ],
-        },
-      ],
-      consent: {
+      ayurveda: session.ayurvedaAssessment ? {
+        prakriti: session.ayurvedaAssessment.prakriti,
+        vikriti: session.ayurvedaAssessment.vikriti,
+        agni: session.ayurvedaAssessment.anala,
+        koshtha: (session.ayurvedaAssessment.ashtavidhaData as any)?.koshtha,
+        sattva: session.ayurvedaAssessment.sattva,
+        bala: session.ayurvedaAssessment.bala,
+      } : null,
+      documents: session.medicalDocuments.map((doc: any) => ({
+        id: doc.id,
+        fileName: doc.fileName,
+        type: doc.type,
+        uploadedAt: doc.uploadedAt.toISOString(),
+        medications: doc.extractedEntities.filter((e: any) => e.type === "MEDICATION").map((m: any) => ({
+          name: m.structuredData?.normalisedName || m.rawText,
+          frequency: m.structuredData?.frequency || "",
+          duration: m.structuredData?.duration || "",
+        })),
+      })),
+      consent: session.patient?.consentRecords?.[0] ? {
         status: "ACTIVE",
-        grantedAt: "2026-08-26T10:28:00Z",
-        purposes: ["HISTORY_TAKING", "DOCTOR_SHARING", "ABDM"],
-        ipAddress: "103.21.14.88",
-      },
+        grantedAt: session.patient.consentRecords[0].grantedAt.toISOString(),
+        purpose: session.patient.consentRecords[0].purpose,
+        ipAddress: session.patient.consentRecords[0].ipAddress,
+      } : null,
     };
 
     return apiSuccess(caseData);
   } catch (error) {
+    console.error(`Doctor case fetch error for sessionId '${params.sessionId}':`, error);
     return apiError(error);
   }
 }
+

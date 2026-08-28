@@ -43,16 +43,8 @@ export class SessionService {
 
       return session;
     } catch (e: any) {
-      // In-memory fallback if DB container is booting
-      const mockSession = {
-        id: `sess-${Date.now()}`,
-        patientId: dto.patientId,
-        language: dto.language || "hi",
-        triagePriority: dto.triagePriority || "ROUTINE",
-        status: "IN_PROGRESS",
-        startedAt: new Date().toISOString(),
-      };
-      return mockSession;
+      console.error("Failed to create ClinicalSession in database:", e);
+      throw AppError.internal("Unable to start clinical case-taking session. Please verify database connectivity.");
     }
   }
 
@@ -78,15 +70,10 @@ export class SessionService {
       });
       if (!session) throw AppError.notFound(`ClinicalSession ${sessionId} not found`);
       return session;
-    } catch {
-      return {
-        id: sessionId,
-        status: "IN_PROGRESS",
-        language: "hi",
-        triagePriority: "ROUTINE",
-        chiefComplaints: [],
-        conversationTurns: [],
-      };
+    } catch (e: any) {
+      if (e instanceof AppError) throw e;
+      console.error(`Failed to retrieve ClinicalSession ${sessionId}:`, e);
+      throw AppError.internal(`Unable to load clinical session data. Please try again.`);
     }
   }
 
@@ -111,8 +98,10 @@ export class SessionService {
       });
 
       return session;
-    } catch {
-      return { id: sessionId, status: "COMPLETED", completedAt: new Date().toISOString() };
+    } catch (e: any) {
+      console.error(`Failed to complete ClinicalSession ${sessionId}:`, e);
+      throw AppError.internal("Unable to mark clinical session as completed. Please try again.");
     }
   }
 }
+
