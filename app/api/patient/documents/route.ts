@@ -2,6 +2,10 @@ import { NextRequest } from "next/server";
 import { z } from "zod";
 import { apiSuccess, apiError } from "@/lib/api/response";
 import { DocumentService } from "@/lib/services/document.service";
+import { AuthService } from "@/lib/auth/auth-guard";
+import { AppError } from "@/lib/api/errors";
+
+export const dynamic = "force-dynamic";
 
 const registerDocumentSchema = z.object({
   sessionId: z.string().min(1, "sessionId is required"),
@@ -17,6 +21,9 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const validated = registerDocumentSchema.parse(body);
+
+    await AuthService.requireSessionAccess(req, validated.sessionId);
+
     const document = await DocumentService.registerDocument(validated as any);
     return apiSuccess(document, 201);
   } catch (error) {
@@ -29,11 +36,15 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const sessionId = searchParams.get("sessionId");
     if (!sessionId) {
-      return apiSuccess({ message: "Provide ?sessionId=<id> to list documents" });
+      throw AppError.badRequest("Provide ?sessionId=<id> to list documents");
     }
+
+    await AuthService.requireSessionAccess(req, sessionId);
+
     const docs = await DocumentService.listSessionDocuments(sessionId);
     return apiSuccess({ sessionId, documents: docs });
   } catch (error) {
     return apiError(error);
   }
 }
+

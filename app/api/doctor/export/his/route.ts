@@ -3,6 +3,9 @@ import { z } from "zod";
 import { apiSuccess, apiError } from "@/lib/api/response";
 import { AuditService } from "@/lib/services/audit.service";
 import { FhirService } from "@/lib/fhir/fhir.service";
+import { AuthService } from "@/lib/auth/auth-guard";
+
+export const dynamic = "force-dynamic";
 
 const exportSchema = z.object({
   sessionId: z.string().min(1, "sessionId is required"),
@@ -13,6 +16,10 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const validated = exportSchema.parse(body);
+
+    await AuthService.requireDoctor(req);
+    await AuthService.requireSessionAccess(req, validated.sessionId);
+
 
     const bundle = FhirService.generateEncounterBundle({
       sessionId: validated.sessionId,

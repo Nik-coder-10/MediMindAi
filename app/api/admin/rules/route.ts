@@ -3,8 +3,10 @@ import { z } from "zod";
 import { apiSuccess, apiError } from "@/lib/api/response";
 import { AuditService } from "@/lib/services/audit.service";
 import { CLINICAL_RED_FLAG_REGISTRY } from "@/lib/engine/red-flag-rules";
-
+import { AuthService } from "@/lib/auth/auth-guard";
 import { dynamicRedFlagRules } from "@/lib/engine/dynamic-registry";
+
+export const dynamic = "force-dynamic";
 
 const ruleSchema = z.object({
   ruleId: z.string().min(1),
@@ -26,8 +28,10 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    await AuthService.requireAdmin(req);
     const body = await req.json();
     const validated = ruleSchema.parse(body);
+
 
     dynamicRedFlagRules.set(validated.ruleId, validated);
 

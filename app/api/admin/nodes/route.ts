@@ -4,8 +4,10 @@ import { apiSuccess, apiError } from "@/lib/api/response";
 import { prisma } from "@/lib/db/prisma";
 import { AuditService } from "@/lib/services/audit.service";
 import { QuestionNodeType } from "@/lib/engine/types";
-
+import { AuthService } from "@/lib/auth/auth-guard";
 import { dynamicQuestionNodes } from "@/lib/engine/dynamic-registry";
+
+export const dynamic = "force-dynamic";
 
 const createNodeSchema = z.object({
   chiefComplaintCategory: z.string().min(1),
@@ -43,8 +45,10 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    await AuthService.requireAdmin(req);
     const body = await req.json();
     const validated = createNodeSchema.parse(body);
+
 
     dynamicQuestionNodes.set(validated.nodeCode, validated);
 

@@ -1,14 +1,17 @@
 import { NextRequest } from "next/server";
 import { apiSuccess, apiError } from "@/lib/api/response";
 import { prisma } from "@/lib/db/prisma";
+import { AuthService } from "@/lib/auth/auth-guard";
 
 export const dynamic = "force-dynamic";
 
-
 export async function GET(req: NextRequest) {
   try {
+    await AuthService.requireDoctor(req);
+
     const { searchParams } = new URL(req.url);
     const priorityFilter = searchParams.get("priority");
+
 
     const sessions = await prisma.clinicalSession.findMany({
       where: {

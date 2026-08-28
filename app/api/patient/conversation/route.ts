@@ -2,6 +2,10 @@ import { NextRequest } from "next/server";
 import { z } from "zod";
 import { apiSuccess, apiError } from "@/lib/api/response";
 import { ConversationService } from "@/lib/services/conversation.service";
+import { AuthService } from "@/lib/auth/auth-guard";
+import { AppError } from "@/lib/api/errors";
+
+export const dynamic = "force-dynamic";
 
 const recordTurnSchema = z.object({
   sessionId: z.string().min(1, "sessionId is required"),
@@ -15,6 +19,9 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const validated = recordTurnSchema.parse(body);
+
+    await AuthService.requireSessionAccess(req, validated.sessionId);
+
     const turn = await ConversationService.recordTurn(validated as any);
     return apiSuccess(turn, 201);
   } catch (error) {
@@ -27,11 +34,15 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const sessionId = searchParams.get("sessionId");
     if (!sessionId) {
-      return apiSuccess({ message: "Provide ?sessionId=<id> to fetch transcript" });
+      throw AppError.badRequest("Provide ?sessionId=<id> to fetch transcript");
     }
+
+    await AuthService.requireSessionAccess(req, sessionId);
+
     const turns = await ConversationService.getHistory(sessionId);
     return apiSuccess({ sessionId, turns });
   } catch (error) {
     return apiError(error);
   }
 }
+

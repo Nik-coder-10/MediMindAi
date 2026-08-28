@@ -5,13 +5,22 @@ import { DocumentService } from "@/lib/services/document.service";
 import { OCRService, MedicalEntityExtractor } from "@/lib/ocr/ocr.service";
 import { AuditService } from "@/lib/services/audit.service";
 import { prisma } from "@/lib/db/prisma";
+import { AuthService } from "@/lib/auth/auth-guard";
+import { AppError } from "@/lib/api/errors";
 
 export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
     const file = formData.get("file") as File | null;
-    const sessionId = (formData.get("sessionId") as string) || "sess-demo-001";
+    const sessionId = formData.get("sessionId") as string;
     const documentType = (formData.get("type") as any) || "PRESCRIPTION";
+
+    if (!sessionId) {
+      throw AppError.badRequest("sessionId is required for document upload.");
+    }
+
+    const { user } = await AuthService.requireSessionAccess(req, sessionId);
+
 
     let fileName = file ? file.name : "prescription_scan.pdf";
     let mimeType = file ? file.type : "application/pdf";

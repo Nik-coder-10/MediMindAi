@@ -2,6 +2,10 @@ import { NextRequest } from "next/server";
 import { apiSuccess, apiError } from "@/lib/api/response";
 import { AdaptiveEngineService } from "@/lib/engine/adaptive-engine.service";
 import { defaultQuestionProvider } from "@/lib/engine/question-provider";
+import { AuthService } from "@/lib/auth/auth-guard";
+import { AppError } from "@/lib/api/errors";
+
+export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
   try {
@@ -9,8 +13,10 @@ export async function GET(req: NextRequest) {
     const sessionId = searchParams.get("sessionId");
 
     if (!sessionId) {
-      return apiSuccess({ state: null, question: null });
+      throw AppError.badRequest("Provide ?sessionId=<id>");
     }
+
+    await AuthService.requireSessionAccess(req, sessionId);
 
     const state = await AdaptiveEngineService.getCurrentState(sessionId);
     if (!state || !state.currentNodeCode) {
@@ -23,3 +29,4 @@ export async function GET(req: NextRequest) {
     return apiError(error);
   }
 }
+

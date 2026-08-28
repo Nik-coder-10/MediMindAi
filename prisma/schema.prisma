@@ -123,6 +123,7 @@ enum AbhaStatus {
 
 model User {
   id                String    @id @default(uuid()) @db.Uuid
+  supabaseUserId    String?   @unique
   role              Role      @default(PATIENT)
   abhaId            String?   @unique
   phone             String?   @unique
@@ -138,12 +139,14 @@ model User {
   doctorProfile     DoctorProfile?
   auditLogs         AuditLog[]
 
+  @@index([supabaseUserId])
   @@index([role])
   @@index([abhaId])
   @@index([phone])
   @@index([email])
   @@map("users")
 }
+
 
 model PatientProfile {
   id                  String          @id @default(uuid()) @db.Uuid

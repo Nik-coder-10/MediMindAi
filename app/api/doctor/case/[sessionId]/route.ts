@@ -5,7 +5,9 @@ import { prisma } from "@/lib/db/prisma";
 import { SummaryService } from "@/lib/services/summary.service";
 import { MedicalTimelineService } from "@/lib/services/timeline.service";
 import { AyurvedaAssessmentService } from "@/lib/services/ayurveda.service";
+import { AuthService } from "@/lib/auth/auth-guard";
 
+export const dynamic = "force-dynamic";
 
 export async function GET(
   req: NextRequest,
@@ -13,8 +15,10 @@ export async function GET(
 ) {
   try {
     const sessionId = params.sessionId;
+    await AuthService.requireSessionAccess(req, sessionId);
 
     // 1. Fetch Session with full relational graph
+
     const session = await prisma.clinicalSession.findUnique({
       where: { id: sessionId },
       include: {

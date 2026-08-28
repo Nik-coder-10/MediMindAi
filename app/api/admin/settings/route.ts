@@ -2,6 +2,9 @@ import { NextRequest } from "next/server";
 import { z } from "zod";
 import { apiSuccess, apiError } from "@/lib/api/response";
 import { AuditService } from "@/lib/services/audit.service";
+import { AuthService } from "@/lib/auth/auth-guard";
+
+export const dynamic = "force-dynamic";
 
 let systemFeatureFlags = {
   voiceEnabled: true,
@@ -29,8 +32,10 @@ export async function GET(req: NextRequest) {
 
 export async function PUT(req: NextRequest) {
   try {
+    await AuthService.requireAdmin(req);
     const body = await req.json();
     const validated = settingsSchema.parse(body);
+
 
     systemFeatureFlags = { ...systemFeatureFlags, ...validated };
 

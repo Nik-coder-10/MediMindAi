@@ -1,20 +1,26 @@
 import { NextRequest } from "next/server";
 import { apiSuccess, apiError } from "@/lib/api/response";
 import { prisma } from "@/lib/db/prisma";
+import { AuthService } from "@/lib/auth/auth-guard";
+
+export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
   try {
-    let totalSessions = 142;
-    let completedSessions = 134;
-    let emergencyCases = 12;
+    await AuthService.requireAdmin(req);
+
+    let totalSessions = 0;
+    let completedSessions = 0;
+    let emergencyCases = 0;
 
     try {
       totalSessions = await prisma.clinicalSession.count();
       completedSessions = await prisma.clinicalSession.count({ where: { status: "COMPLETED" } });
       emergencyCases = await prisma.clinicalSession.count({ where: { triagePriority: "EMERGENCY" } });
     } catch {
-      // In-memory fallback
+      // Offline fallback
     }
+
 
     const overview = {
       kpis: {
