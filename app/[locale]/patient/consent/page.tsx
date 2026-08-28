@@ -50,7 +50,10 @@ export default function PatientConsentPage({
   const handleGrantConsent = async () => {
     setIsSubmitting(true);
     try {
-      router.push(`/${selectedLang}/patient/patient-dashboard`);
+      // In Next.js client, read search params if available or default to AYURVEDA
+      const urlParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
+      const mode = urlParams?.get("mode") || "AYURVEDA";
+      router.push(`/${selectedLang}/patient/complaint?mode=${mode}`);
     } finally {
       setIsSubmitting(false);
     }
