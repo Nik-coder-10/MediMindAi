@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { ExtraLargeButton } from "@/components/ui/patient/ExtraLargeButton";
 import { MedicalTimelineView } from "@/components/ui/clinical/MedicalTimelineView";
+import { speakWithIndianVoice } from "@/lib/voice/tts";
 import {
   Stethoscope,
   AlertTriangle,
@@ -24,6 +25,8 @@ import {
   Eye,
   Loader2,
   Check,
+  Volume2,
+  VolumeX,
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -38,6 +41,7 @@ export default function IndividualDoctorCaseViewPage({
   const [activeTab, setActiveTab] = useState<"SUMMARY" | "TIMELINE" | "LABS" | "AYUSH" | "DOCS">("SUMMARY");
   const [editedMarkdown, setEditedMarkdown] = useState("");
   const [isEditing, setIsEditing] = useState(false);
+  const [isPlayingSummaryAudio, setIsPlayingSummaryAudio] = useState(false);
   const [loading, setLoading] = useState(false);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
 
@@ -208,47 +212,99 @@ export default function IndividualDoctorCaseViewPage({
       <div className="space-y-6">
         {/* Tab 1: Clinical Summary */}
         {activeTab === "SUMMARY" && (
-          <Card className="p-6 sm:p-8 rounded-3xl border-2 border-input space-y-4 bg-card shadow-sm">
-            <div className="flex items-center justify-between border-b pb-3">
-              <span className="text-sm font-extrabold text-foreground flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-emerald-600" />
-                {isEditing ? "संशोधन मोड (Editing Mode)" : "AI समर्थित क्लिनिकल सारांश (AI Draft)"}
-              </span>
+              <Card className="p-6 sm:p-8 rounded-3xl border-2 border-input space-y-4 bg-card shadow-sm">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b pb-4">
+                  <div className="space-y-1">
+                    <span className="text-sm font-extrabold text-foreground flex items-center gap-2">
+                      <Sparkles className="h-4 w-4 text-emerald-600" />
+                      {isEditing ? "संशोधन मोड (Editing Mode)" : "AI समर्थित क्लिनिकल सारांश (AI Draft Summary)"}
+                    </span>
+                    <span className="text-xs text-muted-foreground font-semibold block">
+                      Accessibility & Read-Aloud for visually impaired / low-literacy patients
+                    </span>
+                  </div>
 
-              <button
-                type="button"
-                onClick={() => setIsEditing(!isEditing)}
-                className="text-xs font-bold px-3 py-1.5 rounded-lg border bg-emerald-50 text-emerald-800 inline-flex items-center gap-1"
-              >
-                {isEditing ? <Eye className="h-3.5 w-3.5" /> : <Edit3 className="h-3.5 w-3.5" />}
-                <span>{isEditing ? "पूर्वावलोकन देखें" : "संशोधित करें (Edit)"}</span>
-              </button>
-            </div>
+                  <div className="flex items-center gap-2">
+                    {/* Audio Read-Out Button with Language Switching */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (isPlayingSummaryAudio) {
+                          if (typeof window !== "undefined" && "speechSynthesis" in window) {
+                            window.speechSynthesis.cancel();
+                          }
+                          setIsPlayingSummaryAudio(false);
+                          return;
+                        }
 
-            {isEditing ? (
-              <div className="space-y-3">
-                <textarea
-                  rows={18}
-                  value={editedMarkdown}
-                  onChange={(e) => setEditedMarkdown(e.target.value)}
-                  className="w-full p-4 font-mono text-xs sm:text-sm rounded-2xl border-2 border-input focus:border-ayush-green bg-slate-50 dark:bg-slate-900"
-                />
-                <div className="flex justify-end gap-2">
-                  <ExtraLargeButton variant="secondary" size="default" onClick={() => setIsEditing(false)}>
-                    रद्द करें
-                  </ExtraLargeButton>
-                  <ExtraLargeButton variant="primary" size="default" onClick={handleSaveEdit}>
-                    सहेजें (Save)
-                  </ExtraLargeButton>
+                        setIsPlayingSummaryAudio(true);
+                        // Strip markdown formatting for natural voice readout
+                        const cleanText = editedMarkdown
+                          .replace(/[#*`_~-]/g, " ")
+                          .replace(/\s+/g, " ")
+                          .trim();
+
+                        speakWithIndianVoice(
+                          cleanText || "Clinical summary is currently empty.",
+                          params.locale === "hi" ? "hi" : "en",
+                          () => setIsPlayingSummaryAudio(false),
+                          () => setIsPlayingSummaryAudio(false)
+                        );
+                      }}
+                      aria-label="Listen to medical summary readout"
+                      className={`min-h-[38px] px-3 py-1.5 rounded-xl border font-bold text-xs inline-flex items-center gap-1.5 transition-all shadow-xs ${
+                        isPlayingSummaryAudio
+                          ? "bg-rose-50 border-rose-300 text-rose-700 animate-pulse"
+                          : "bg-emerald-50 hover:bg-emerald-100 border-emerald-300 text-emerald-900"
+                      }`}
+                    >
+                      {isPlayingSummaryAudio ? (
+                        <VolumeX className="h-4 w-4 text-rose-600" />
+                      ) : (
+                        <Volume2 className="h-4 w-4 text-emerald-700" />
+                      )}
+                      <span>
+                        {isPlayingSummaryAudio
+                          ? params.locale === "hi" ? "ऑडियो रोकें" : "Stop Audio"
+                          : params.locale === "hi" ? "आवाज में सुनें (Listen)" : "Listen Summary"}
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setIsEditing(!isEditing)}
+                      className="text-xs font-bold px-3 py-1.5 rounded-xl border bg-slate-100 dark:bg-slate-800 text-foreground inline-flex items-center gap-1 min-h-[38px]"
+                    >
+                      {isEditing ? <Eye className="h-3.5 w-3.5" /> : <Edit3 className="h-3.5 w-3.5" />}
+                      <span>{isEditing ? "पूर्वावलोकन देखें" : "संशोधित करें (Edit)"}</span>
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ) : (
-              <div className="prose dark:prose-invert max-w-none text-xs sm:text-sm leading-relaxed p-4 rounded-2xl bg-slate-50/60 dark:bg-slate-900/60 border">
-                <pre className="whitespace-pre-wrap font-sans text-xs sm:text-sm">{editedMarkdown}</pre>
-              </div>
+
+                {isEditing ? (
+                  <div className="space-y-3">
+                    <textarea
+                      rows={18}
+                      value={editedMarkdown}
+                      onChange={(e) => setEditedMarkdown(e.target.value)}
+                      className="w-full p-4 font-mono text-xs sm:text-sm rounded-2xl border-2 border-input focus:border-ayush-green bg-slate-50 dark:bg-slate-900"
+                    />
+                    <div className="flex justify-end gap-2">
+                      <ExtraLargeButton variant="secondary" size="default" onClick={() => setIsEditing(false)}>
+                        रद्द करें
+                      </ExtraLargeButton>
+                      <ExtraLargeButton variant="primary" size="default" onClick={handleSaveEdit}>
+                        सहेजें (Save)
+                      </ExtraLargeButton>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="prose dark:prose-invert max-w-none text-xs sm:text-sm leading-relaxed p-4 rounded-2xl bg-slate-50/60 dark:bg-slate-900/60 border">
+                    <pre className="whitespace-pre-wrap font-sans text-xs sm:text-sm">{editedMarkdown}</pre>
+                  </div>
+                )}
+              </Card>
             )}
-          </Card>
-        )}
 
         {/* Tab 2: Medical Timeline */}
         {activeTab === "TIMELINE" && (
