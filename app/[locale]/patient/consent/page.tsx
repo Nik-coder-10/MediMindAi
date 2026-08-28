@@ -13,7 +13,9 @@ export default function PatientConsentPage({
   params: { locale: string };
 }) {
   const router = useRouter();
-  const [selectedLang, setSelectedLang] = useState<"hi" | "en">(locale === "hi" ? "hi" : "en");
+  const [selectedLang, setSelectedLang] = useState<"hi" | "en" | "mr">(
+    locale === "mr" ? "mr" : locale === "hi" ? "hi" : "en"
+  );
   const [agreedPurposes, setAgreedPurposes] = useState<Record<string, boolean>>({
     HISTORY_TAKING: true,
     DOCUMENT_OCR: true,
@@ -23,7 +25,7 @@ export default function PatientConsentPage({
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const template = ConsentTemplates[selectedLang];
+  const template = ConsentTemplates[selectedLang] || ConsentTemplates.hi;
 
   const handleTogglePurpose = (key: string) => {
     setAgreedPurposes((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -31,11 +33,10 @@ export default function PatientConsentPage({
 
   const handlePlayAudio = () => {
     setIsPlayingAudio(true);
-    // Simulate Web Audio API speech readout
     if ("speechSynthesis" in window) {
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(template.explanation);
-      utterance.lang = selectedLang === "hi" ? "hi-IN" : "en-IN";
+      utterance.lang = selectedLang === "hi" ? "hi-IN" : selectedLang === "mr" ? "mr-IN" : "en-IN";
       utterance.onend = () => setIsPlayingAudio(false);
       utterance.onerror = () => setIsPlayingAudio(false);
       window.speechSynthesis.speak(utterance);
@@ -54,6 +55,36 @@ export default function PatientConsentPage({
     }
   };
 
+  const voiceLabels = {
+    hi: {
+      title: "आवाज में सुनें (Voice Explanation)",
+      subtitle: "सहमति की शर्तें हिंदी में सुनने के लिए बटन दबाएं।",
+      play: "ऑडियो सुनें (Play Audio)",
+      playing: "चल रहा है (Playing...)",
+      purposeTitle: "सहमति के उद्देश्य (Consent Purposes):",
+      back: "रद्द करें / पीछे (Back)",
+      submitting: "सहमति दर्ज हो रही है...",
+    },
+    en: {
+      title: "Voice Explanation / Listen to Audio",
+      subtitle: "Listen to the consent terms read out in English.",
+      play: "Play Audio",
+      playing: "Playing Audio...",
+      purposeTitle: "Consent Purposes:",
+      back: "Cancel / Back",
+      submitting: "Recording Consent...",
+    },
+    mr: {
+      title: "आवाजात ऐका (Voice Explanation)",
+      subtitle: "संमतीच्या अटी व नियम मराठीमध्ये ऐकण्यासाठी बटण दाबा.",
+      play: "ऑडिओ ऐका (Play Audio)",
+      playing: "ऑडिओ सुरू आहे (Playing...)",
+      purposeTitle: "संमतीचे उद्देश (Consent Purposes):",
+      back: "रद्द करा / मागे जा (Back)",
+      submitting: "संमती जतन होत आहे...",
+    },
+  }[selectedLang];
+
   return (
     <div className="container max-w-3xl py-10 space-y-6">
       <Card className="border-2 border-emerald-500/30 shadow-lg">
@@ -66,21 +97,31 @@ export default function PatientConsentPage({
               <CardTitle className="text-2xl font-bold">{template.title}</CardTitle>
             </div>
 
-            {/* Language toggle within consent */}
-            <div className="flex gap-2">
+            {/* Language toggle within consent supporting Hindi, English, and Marathi */}
+            <div className="flex gap-1.5 bg-muted/60 p-1 rounded-xl border">
               <Button
-                variant={selectedLang === "hi" ? "ayush" : "outline"}
+                variant={selectedLang === "hi" ? "ayush" : "ghost"}
                 size="sm"
+                className="h-8 px-3 text-xs font-bold"
                 onClick={() => setSelectedLang("hi")}
               >
                 हिंदी
               </Button>
               <Button
-                variant={selectedLang === "en" ? "ayush" : "outline"}
+                variant={selectedLang === "en" ? "ayush" : "ghost"}
                 size="sm"
+                className="h-8 px-3 text-xs font-bold"
                 onClick={() => setSelectedLang("en")}
               >
                 English
+              </Button>
+              <Button
+                variant={selectedLang === "mr" ? "ayush" : "ghost"}
+                size="sm"
+                className="h-8 px-3 text-xs font-bold"
+                onClick={() => setSelectedLang("mr")}
+              >
+                मराठी
               </Button>
             </div>
           </div>
@@ -90,16 +131,17 @@ export default function PatientConsentPage({
           {/* Audio explanation banner */}
           <div className="flex items-center justify-between p-4 rounded-xl bg-muted/60 border">
             <div className="space-y-0.5">
-              <p className="text-sm font-semibold">Voice Explanation / आवाज में सुनें</p>
-              <p className="text-xs text-muted-foreground">Listen to the consent terms read out in {selectedLang === "hi" ? "Hindi" : "English"}.</p>
+              <p className="text-sm font-semibold">{voiceLabels.title}</p>
+              <p className="text-xs text-muted-foreground">{voiceLabels.subtitle}</p>
             </div>
             <Button
               variant="outline"
               onClick={handlePlayAudio}
-              className="flex items-center gap-2 border-emerald-300"
+              aria-label={voiceLabels.play}
+              className="flex items-center gap-2 border-emerald-300 min-h-[44px]"
             >
               <Volume2 className={`h-4 w-4 ${isPlayingAudio ? "text-emerald-600 animate-bounce" : ""}`} />
-              <span>{isPlayingAudio ? "Playing Audio..." : "Play Audio"}</span>
+              <span className="text-xs font-bold">{isPlayingAudio ? voiceLabels.playing : voiceLabels.play}</span>
             </Button>
           </div>
 
@@ -109,7 +151,7 @@ export default function PatientConsentPage({
 
           {/* Granular Purpose Checkboxes */}
           <div className="space-y-3">
-            <h4 className="text-sm font-bold tracking-tight">Consent Purposes (सहमति के उद्देश्य):</h4>
+            <h4 className="text-sm font-bold tracking-tight">{voiceLabels.purposeTitle}</h4>
             <div className="grid gap-3">
               {Object.entries(template.purposes).map(([key, label]) => {
                 const isChecked = agreedPurposes[key];
@@ -142,7 +184,7 @@ export default function PatientConsentPage({
             onClick={() => router.back()}
             className="w-full sm:w-auto"
           >
-            Cancel / Back
+            {voiceLabels.back}
           </Button>
           <Button
             variant="ayush"
@@ -152,7 +194,7 @@ export default function PatientConsentPage({
             className="w-full sm:w-auto flex items-center gap-2"
           >
             <FileCheck className="h-5 w-5" />
-            <span>{isSubmitting ? "Recording Consent..." : template.acceptButton}</span>
+            <span>{isSubmitting ? voiceLabels.submitting : template.acceptButton}</span>
           </Button>
         </CardFooter>
       </Card>
