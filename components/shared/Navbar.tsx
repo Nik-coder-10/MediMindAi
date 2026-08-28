@@ -5,10 +5,17 @@ import Link from "next/link";
 import { LanguageSelector } from "./LanguageSelector";
 import { useThemeStore } from "@/stores/use-theme-store";
 import { Button } from "@/components/ui/button";
-import { Stethoscope, User, ShieldCheck, Eye } from "lucide-react";
+import { Stethoscope, User, ShieldCheck, Eye, SunMedium, Moon } from "lucide-react";
+
 
 export function Navbar({ locale }: { locale: string }) {
-  const { highContrast, toggleHighContrast } = useThemeStore();
+  const { contrastMode, cycleContrastMode } = useThemeStore();
+
+  const contrastLabels = {
+    normal: { label: "Normal", icon: <Eye className="h-4 w-4 text-emerald-700" />, badge: "Standard" },
+    high: { label: "High Contrast", icon: <SunMedium className="h-4 w-4 text-amber-500" />, badge: "WCAG AAA" },
+    low: { label: "Low Contrast", icon: <Moon className="h-4 w-4 text-sky-600" />, badge: "Eye-Rest" },
+  }[contrastMode];
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -36,12 +43,13 @@ export function Navbar({ locale }: { locale: string }) {
           <Button
             variant="outline"
             size="sm"
-            onClick={toggleHighContrast}
-            aria-label="Toggle High Contrast Mode"
-            className="flex items-center gap-1.5 min-h-[38px]"
+            onClick={cycleContrastMode}
+            aria-label="Toggle Contrast Mode (Normal, High, Low)"
+            className="flex items-center gap-1.5 min-h-[38px] border-2 font-semibold shadow-2xs"
+            title="Switch contrast mode: Normal -> High Contrast (AAA) -> Low Contrast (Eye-Rest)"
           >
-            <Eye className="h-4 w-4 text-emerald-700" />
-            <span className="hidden sm:inline font-semibold">{highContrast ? "Normal" : "High Contrast"}</span>
+            {contrastLabels.icon}
+            <span className="hidden sm:inline">{contrastLabels.label}</span>
           </Button>
           <Button variant="outline" size="sm" asChild className="min-h-[38px] font-semibold">
             <Link href={`/${locale}/login`}>Login</Link>
@@ -54,3 +62,4 @@ export function Navbar({ locale }: { locale: string }) {
     </header>
   );
 }
+

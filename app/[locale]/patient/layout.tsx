@@ -17,7 +17,7 @@ export default function PatientShellLayout({
 }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { highContrast, toggleHighContrast } = useThemeStore();
+
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 font-sans">

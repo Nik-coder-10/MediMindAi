@@ -4,19 +4,24 @@ import { useEffect } from "react";
 import { useThemeStore } from "@/stores/use-theme-store";
 
 export function useHighContrast() {
-  const { highContrast, toggleHighContrast, fontSize, setFontSize } = useThemeStore();
+  const { contrastMode, setContrastMode, cycleContrastMode, fontSize, setFontSize } = useThemeStore();
 
   useEffect(() => {
+    if (typeof document === "undefined") return;
     const root = document.documentElement;
-    if (highContrast) {
+
+    root.classList.remove("high-contrast", "low-contrast");
+
+    if (contrastMode === "high") {
       root.classList.add("high-contrast");
-    } else {
-      root.classList.remove("high-contrast");
+    } else if (contrastMode === "low") {
+      root.classList.add("low-contrast");
     }
 
     root.classList.remove("text-size-normal", "text-size-large", "text-size-xl");
     root.classList.add(`text-size-${fontSize}`);
-  }, [highContrast, fontSize]);
+  }, [contrastMode, fontSize]);
 
-  return { highContrast, toggleHighContrast, fontSize, setFontSize };
+  return { contrastMode, setContrastMode, cycleContrastMode, fontSize, setFontSize };
 }
+
