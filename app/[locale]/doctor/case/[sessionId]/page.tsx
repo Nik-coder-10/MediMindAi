@@ -38,12 +38,54 @@ export default function IndividualDoctorCaseViewPage({
   const router = useRouter();
   const sessionId = params.sessionId;
   const [caseData, setCaseData] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState<"SUMMARY" | "TIMELINE" | "LABS" | "AYUSH" | "DOCS">("SUMMARY");
+  const [activeTab, setActiveTab] = useState<"SUMMARY" | "TIMELINE" | "LABS" | "AYUSH" | "DOCS" | "PRESCRIPTION">("SUMMARY");
   const [editedMarkdown, setEditedMarkdown] = useState("");
   const [isEditing, setIsEditing] = useState(false);
   const [isPlayingSummaryAudio, setIsPlayingSummaryAudio] = useState(false);
   const [loading, setLoading] = useState(false);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
+
+  // Doctor Sign-in & Authentication State
+  const [doctorAuth, setDoctorAuth] = useState<{
+    isSignedIn: boolean;
+    name: string;
+    regNumber: string;
+    specialty: string;
+    hospital: string;
+  }>({
+    isSignedIn: true,
+    name: "Dr. Arvind K. Sharma (MD, BAMS)",
+    regNumber: "AYUSH-REG-DL-2024-9842",
+    specialty: "Senior Vaidya & Consultant Physician",
+    hospital: "All India Institute of Ayurveda (AIIA), New Delhi",
+  });
+
+  const [showDoctorLoginModal, setShowDoctorLoginModal] = useState(false);
+  const [tempDoctorName, setTempDoctorName] = useState(doctorAuth.name);
+  const [tempDoctorReg, setTempDoctorReg] = useState(doctorAuth.regNumber);
+  const [tempSpecialty, setTempSpecialty] = useState(doctorAuth.specialty);
+
+  // Doctor's Official Prescription & Clinical Report State
+  const [doctorRxNotes, setDoctorRxNotes] = useState(
+    "Patient presented with acute retrosternal chest discomfort and chronic Amavata joint stiffness. ECG and Stat cardiac markers advised immediately. Continue supportive Ayurvedic formulations with strict dietary restrictions."
+  );
+  const [doctorPrescriptions, setDoctorPrescriptions] = useState([
+    { name: "Tab Yogaraj Guggulu 500mg", dosage: "1 Tab", frequency: "1-0-1 (BD)", duration: "15 Days", instructions: "With lukewarm water after meals" },
+    { name: "Syp Amritarishta 15ml", dosage: "15ml (2 tsp)", frequency: "1-0-1 (BD)", duration: "15 Days", instructions: "Mixed with equal water after food" },
+    { name: "Cap Omeprazole 20mg", dosage: "1 Cap", frequency: "1-0-0 (OD)", duration: "10 Days", instructions: "Empty stomach morning" },
+  ]);
+  const [doctorInvestigations, setDoctorInvestigations] = useState(
+    "12-Lead ECG (Stat), Cardiac Troponin I, Repeat HbA1c & Lipid Profile at 4 weeks."
+  );
+  const [doctorDietAdvice, setDoctorDietAdvice] = useState(
+    "Pathya: Fresh warm light diet (Mudga Yusha), ginger water. Strictly avoid curd, heavy fried foods, and cold drinks (Apathya)."
+  );
+  const [doctorFollowUp, setDoctorFollowUp] = useState("After 7 days or SOS if chest symptoms recur.");
+  const [newRxName, setNewRxName] = useState("");
+  const [newRxDose, setNewRxDose] = useState("");
+  const [newRxFreq, setNewRxFreq] = useState("1-0-1");
+  const [newRxDuration, setNewRxDuration] = useState("15 Days");
+
 
   useEffect(() => {
     async function loadCase() {
@@ -187,6 +229,7 @@ export default function IndividualDoctorCaseViewPage({
       <div className="flex items-center gap-2 overflow-x-auto border-b pb-2">
         {[
           { id: "SUMMARY", label: "क्लिनिकल सारांश (Summary)", icon: <FileText className="h-4 w-4" /> },
+          { id: "PRESCRIPTION", label: "🩺 चिकित्सक नुस्खा व OPD रिपोर्ट (Rx & Report)", icon: <Stethoscope className="h-4 w-4" /> },
           { id: "TIMELINE", label: "इतिहास (Timeline)", icon: <Calendar className="h-4 w-4" /> },
           { id: "LABS", label: "जांच रिपोर्ट (Abnormal Labs)", icon: <Activity className="h-4 w-4" /> },
           { id: "AYUSH", label: "आयुर्वेद दशविध (AYUSH)", icon: <Sparkles className="h-4 w-4" /> },
@@ -196,7 +239,7 @@ export default function IndividualDoctorCaseViewPage({
             key={tab.id}
             type="button"
             onClick={() => setActiveTab(tab.id as any)}
-            className={`min-h-[44px] px-4 rounded-2xl text-xs font-extrabold inline-flex items-center gap-2 transition-all ${
+            className={`min-h-[44px] px-4 rounded-2xl text-xs font-extrabold inline-flex items-center gap-2 transition-all shrink-0 ${
               activeTab === tab.id
                 ? "bg-ayush-green text-white shadow-xs"
                 : "bg-card text-muted-foreground hover:text-foreground border"
@@ -207,6 +250,7 @@ export default function IndividualDoctorCaseViewPage({
           </button>
         ))}
       </div>
+
 
       {/* Tab Content Display */}
       <div className="space-y-6">
@@ -490,6 +534,232 @@ export default function IndividualDoctorCaseViewPage({
           </div>
         )}
 
+        {/* Tab 2: Doctor Prescription & Official Report */}
+        {activeTab === "PRESCRIPTION" && (
+          <div className="space-y-6">
+            {/* Doctor Credentials & Authentication Banner */}
+            <Card className="p-5 rounded-3xl border-2 border-emerald-300 bg-emerald-50/50 dark:bg-emerald-950/20 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-3.5">
+                <div className="w-12 h-12 rounded-2xl bg-emerald-600 text-white flex items-center justify-center text-xl font-bold shadow-sm">
+                  👨‍⚕️
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-extrabold text-base text-foreground">{doctorAuth.name}</span>
+                    <span className="text-2xs font-extrabold px-2 py-0.5 rounded-full bg-emerald-200 text-emerald-900">
+                      सत्यापित चिकित्सक (Verified)
+                    </span>
+                  </div>
+                  <p className="text-xs font-semibold text-muted-foreground">
+                    पंजीकरण सं (Reg No): <span className="font-mono font-bold text-foreground">{doctorAuth.regNumber}</span> • {doctorAuth.specialty}
+                  </p>
+                  <p className="text-2xs text-muted-foreground">{doctorAuth.hospital}</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowDoctorLoginModal(true)}
+                  className="min-h-[40px] px-3.5 rounded-xl border border-emerald-300 bg-white dark:bg-slate-900 text-emerald-900 dark:text-emerald-200 font-bold text-xs hover:bg-emerald-100/50"
+                >
+                  चिकित्सक बदलें / साइन-इन (Change Doctor)
+                </button>
+              </div>
+            </Card>
+
+            {/* Main Doctor Prescription & Clinical Report Composer */}
+            <Card className="p-6 sm:p-8 rounded-3xl border-2 border-input space-y-6 bg-card shadow-sm">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b pb-4">
+                <div className="space-y-1">
+                  <h3 className="text-lg font-extrabold text-foreground flex items-center gap-2">
+                    <Stethoscope className="h-5 w-5 text-emerald-600" />
+                    <span>आधिकारिक चिकित्सक परामर्श एवं पर्ची (Physician Rx & Clinical Notes)</span>
+                  </h3>
+                  <p className="text-xs text-muted-foreground font-semibold">
+                    Doctor's authoritative clinical report, Rx medications, and lifestyle instructions.
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      // Fetch / Pre-populate from AI Summary
+                      setDoctorRxNotes(
+                        `Clinical Findings: Retrosternal chest heaviness radiating to left arm. High ESR (38 mm/hr) & HbA1c (6.8%). Suspected Saama Vata-Pitta Dushti.\nImmediate Actions: 12-Lead ECG Stat, Troponin I.`
+                      );
+                      setActionSuccess("AI सारांश से मुख्य निष्कर्ष प्राप्त किए गए (Prefilled from AI Dossier)");
+                    }}
+                    className="min-h-[38px] px-3.5 rounded-xl border border-emerald-300 bg-emerald-50 text-emerald-900 font-bold text-xs inline-flex items-center gap-1.5 hover:bg-emerald-100"
+                  >
+                    <Sparkles className="h-3.5 w-3.5" />
+                    <span>AI सारांश से फेच करें (Fetch AI Insights)</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* 1. Doctor's Clinical Impression / Narrative */}
+              <div className="space-y-2">
+                <label className="text-xs font-extrabold text-muted-foreground uppercase flex items-center gap-1.5">
+                  <FileText className="h-4 w-4 text-emerald-700" /> १. चिकित्सक क्लिनिकल रिपोर्ट व जांच निष्कर्ष (Doctor's Assessment & Clinical Notes):
+                </label>
+                <textarea
+                  rows={3}
+                  value={doctorRxNotes}
+                  onChange={(e) => setDoctorRxNotes(e.target.value)}
+                  className="w-full p-4 rounded-2xl border-2 border-input focus:border-ayush-green text-sm font-semibold text-foreground bg-background"
+                  placeholder="Enter clinical assessment, examination findings, and diagnosis..."
+                />
+              </div>
+
+              {/* 2. Prescribed Medications Table & Add Medicine Tool */}
+              <div className="space-y-3 pt-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-extrabold text-muted-foreground uppercase flex items-center gap-1.5">
+                    <Pill className="h-4 w-4 text-emerald-700" /> २. निर्धारित औषधियां (Prescribed Medications / Rx):
+                  </label>
+                  <span className="text-2xs font-bold px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded-full">
+                    {doctorPrescriptions.length} दवाइयां दर्ज
+                  </span>
+                </div>
+
+                {/* Table of Prescriptions */}
+                <div className="overflow-x-auto rounded-2xl border bg-slate-50/50 dark:bg-slate-900/50">
+                  <table className="w-full text-xs text-left">
+                    <thead className="bg-slate-100 dark:bg-slate-800 text-muted-foreground uppercase font-extrabold border-b">
+                      <tr>
+                        <th className="p-3">क्र. (No)</th>
+                        <th className="p-3">दवा का नाम (Medicine)</th>
+                        <th className="p-3">मात्रा (Dose)</th>
+                        <th className="p-3">सेवन समय (Frequency)</th>
+                        <th className="p-3">अवधि (Duration)</th>
+                        <th className="p-3">निर्देश (Instructions)</th>
+                        <th className="p-3 text-right">हटाएं</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y font-semibold">
+                      {doctorPrescriptions.map((rx, idx) => (
+                        <tr key={idx} className="hover:bg-white dark:hover:bg-slate-800/60">
+                          <td className="p-3 font-extrabold text-muted-foreground">{idx + 1}.</td>
+                          <td className="p-3 font-extrabold text-foreground">{rx.name}</td>
+                          <td className="p-3">{rx.dosage}</td>
+                          <td className="p-3">
+                            <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-900 font-extrabold">
+                              {rx.frequency}
+                            </span>
+                          </td>
+                          <td className="p-3">{rx.duration}</td>
+                          <td className="p-3 text-muted-foreground">{rx.instructions}</td>
+                          <td className="p-3 text-right">
+                            <button
+                              type="button"
+                              onClick={() => setDoctorPrescriptions(doctorPrescriptions.filter((_, i) => i !== idx))}
+                              className="text-rose-600 hover:text-rose-800 font-extrabold px-2 py-1"
+                            >
+                              ✕
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Add New Prescription Row */}
+                <div className="p-3.5 rounded-2xl bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-200 grid grid-cols-1 sm:grid-cols-5 gap-2 items-center">
+                  <input
+                    type="text"
+                    placeholder="दवा का नाम (e.g. Tab Ashwagandha)"
+                    value={newRxName}
+                    onChange={(e) => setNewRxName(e.target.value)}
+                    className="p-2 rounded-xl border text-xs font-semibold bg-white dark:bg-slate-900 sm:col-span-2"
+                  />
+                  <input
+                    type="text"
+                    placeholder="खुराक (e.g. 500mg)"
+                    value={newRxDose}
+                    onChange={(e) => setNewRxDose(e.target.value)}
+                    className="p-2 rounded-xl border text-xs font-semibold bg-white dark:bg-slate-900"
+                  />
+                  <select
+                    value={newRxFreq}
+                    onChange={(e) => setNewRxFreq(e.target.value)}
+                    className="p-2 rounded-xl border text-xs font-semibold bg-white dark:bg-slate-900"
+                  >
+                    <option value="1-0-1 (BD)">1-0-1 (सुबह-शाम)</option>
+                    <option value="1-0-0 (OD)">1-0-0 (सुबह)</option>
+                    <option value="0-0-1 (HS)">0-0-1 (रात)</option>
+                    <option value="1-1-1 (TDS)">1-1-1 (तीन बार)</option>
+                    <option value="1 SOS">1 SOS (आवश्यकतानुसार)</option>
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!newRxName.trim()) return;
+                      setDoctorPrescriptions([
+                        ...doctorPrescriptions,
+                        {
+                          name: newRxName.trim(),
+                          dosage: newRxDose.trim() || "1 Tab/Dose",
+                          frequency: newRxFreq,
+                          duration: newRxDuration,
+                          instructions: "After meals with warm water",
+                        },
+                      ]);
+                      setNewRxName("");
+                      setNewRxDose("");
+                    }}
+                    className="min-h-[36px] px-3 rounded-xl bg-ayush-green text-white font-extrabold text-xs hover:bg-emerald-700"
+                  >
+                    + दवा जोड़ें (Add Rx)
+                  </button>
+                </div>
+              </div>
+
+              {/* 3. Investigations, Diet & Follow-up Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-extrabold text-muted-foreground uppercase flex items-center gap-1">
+                    <Activity className="h-3.5 w-3.5 text-emerald-700" /> ३. आवश्यक जांचें (Advised Investigations):
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={doctorInvestigations}
+                    onChange={(e) => setDoctorInvestigations(e.target.value)}
+                    className="w-full p-3 rounded-xl border text-xs font-semibold bg-background"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-extrabold text-muted-foreground uppercase flex items-center gap-1">
+                    <Calendar className="h-3.5 w-3.5 text-emerald-700" /> ४. पुनरावलोकन / अगला परामर्श (Follow-up):
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={doctorFollowUp}
+                    onChange={(e) => setDoctorFollowUp(e.target.value)}
+                    className="w-full p-3 rounded-xl border text-xs font-semibold bg-background"
+                  />
+                </div>
+              </div>
+
+              {/* 4. Pathya-Apathya Diet & Lifestyle Advice */}
+              <div className="space-y-1.5 pt-1">
+                <label className="text-xs font-extrabold text-muted-foreground uppercase flex items-center gap-1">
+                  <Sparkles className="h-3.5 w-3.5 text-emerald-700" /> ५. पथ्य-अपथ्य व आहार-विहार निर्देश (Diet & Lifestyle Guidance):
+                </label>
+                <textarea
+                  rows={2}
+                  value={doctorDietAdvice}
+                  onChange={(e) => setDoctorDietAdvice(e.target.value)}
+                  className="w-full p-3 rounded-xl border text-xs font-semibold bg-background"
+                />
+              </div>
+            </Card>
+          </div>
+        )}
+
         {/* Tab 5: Documents */}
         {activeTab === "DOCS" && (
           <Card className="p-6 sm:p-8 rounded-3xl border-2 border-input space-y-4 bg-card shadow-sm">
@@ -513,6 +783,207 @@ export default function IndividualDoctorCaseViewPage({
         )}
       </div>
 
+      {/* Official Government OPD Prescription Slip (Rendered for Print / Export) */}
+      <div id="official-opd-prescription" className="hidden print:block p-8 bg-white text-black space-y-6">
+        {/* Header with National Emblems & AIIA / Ayush Ministry Info */}
+        <div className="border-b-4 border-emerald-700 pb-4 flex justify-between items-start">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <span className="text-2xl">🌿</span>
+              <h1 className="text-xl font-black tracking-tight text-emerald-900 uppercase">
+                अखिल भारतीय आयुर्वेद संस्थान (AIIA)
+              </h1>
+            </div>
+            <h2 className="text-sm font-bold text-gray-700">
+              ALL INDIA INSTITUTE OF AYURVEDA • MINISTRY OF AYUSH, GOVT. OF INDIA
+            </h2>
+            <p className="text-xs text-gray-500 font-semibold">
+              Gautampuri, Sarita Vihar, Mathura Road, New Delhi-110076 | AyurSetu OPD Desk
+            </p>
+          </div>
+          <div className="text-right space-y-0.5">
+            <span className="text-xs font-extrabold px-3 py-1 bg-emerald-100 text-emerald-900 rounded-md inline-block border">
+              VIRTUAL OPD PRESCRIPTION
+            </span>
+            <p className="text-xs font-mono font-bold">OPD Token: #AIIA-104</p>
+            <p className="text-2xs text-gray-500">Date: {new Date().toLocaleDateString("en-IN")}</p>
+          </div>
+        </div>
+
+        {/* Patient Details & ABDM Info */}
+        <div className="grid grid-cols-3 gap-2 p-3 bg-gray-50 border rounded-lg text-xs">
+          <div>
+            <span className="text-gray-500 font-semibold block">Patient Name:</span>
+            <span className="font-bold text-sm">{patient.firstName} {patient.lastName}</span>
+          </div>
+          <div>
+            <span className="text-gray-500 font-semibold block">Age / Gender / Blood Group:</span>
+            <span className="font-bold">{patient.age}Y / {patient.gender} ({patient.bloodGroup})</span>
+          </div>
+          <div>
+            <span className="text-gray-500 font-semibold block">ABHA ID:</span>
+            <span className="font-mono font-bold">{patient.abhaId}</span>
+          </div>
+          <div>
+            <span className="text-gray-500 font-semibold block">Encounter / Session ID:</span>
+            <span className="font-mono">{sessionId}</span>
+          </div>
+          <div>
+            <span className="text-gray-500 font-semibold block">Triage Priority:</span>
+            <span className="font-bold text-rose-700">{caseData?.encounter?.triagePriority || "EMERGENCY"}</span>
+          </div>
+          <div>
+            <span className="text-gray-500 font-semibold block">Prakriti / Constitution:</span>
+            <span className="font-bold">{caseData?.ayurveda?.prakriti || "Vata-Kapha"}</span>
+          </div>
+        </div>
+
+        {/* Doctor Clinical Assessment */}
+        <div className="space-y-1">
+          <h3 className="text-xs font-extrabold uppercase text-emerald-800 border-b pb-1">
+            Clinical Notes & Diagnosis:
+          </h3>
+          <p className="text-xs font-medium text-gray-800 whitespace-pre-wrap">{doctorRxNotes}</p>
+        </div>
+
+        {/* Rx Symbol & Medication Table */}
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <span className="text-xl font-serif font-black text-emerald-900">℞</span>
+            <span className="text-xs font-extrabold uppercase tracking-wider text-gray-700">Prescribed Medications</span>
+          </div>
+
+          <table className="w-full text-xs border border-collapse">
+            <thead>
+              <tr className="bg-gray-100 text-gray-700 border-b">
+                <th className="p-2 text-left">S.No</th>
+                <th className="p-2 text-left">Medicine Name (Generic/Ayurvedic)</th>
+                <th className="p-2 text-left">Dosage</th>
+                <th className="p-2 text-left">Frequency</th>
+                <th className="p-2 text-left">Duration</th>
+                <th className="p-2 text-left">Instructions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y">
+              {doctorPrescriptions.map((rx, idx) => (
+                <tr key={idx}>
+                  <td className="p-2 font-bold text-gray-600">{idx + 1}</td>
+                  <td className="p-2 font-bold">{rx.name}</td>
+                  <td className="p-2">{rx.dosage}</td>
+                  <td className="p-2 font-bold text-emerald-800">{rx.frequency}</td>
+                  <td className="p-2">{rx.duration}</td>
+                  <td className="p-2 text-gray-600">{rx.instructions}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Diet & Investigations */}
+        <div className="grid grid-cols-2 gap-4 text-xs">
+          <div className="p-2.5 bg-emerald-50/50 border border-emerald-200 rounded">
+            <span className="font-extrabold text-emerald-900 block mb-0.5">Pathya / Diet Advice:</span>
+            <p className="text-gray-700">{doctorDietAdvice}</p>
+          </div>
+          <div className="p-2.5 bg-gray-50 border rounded">
+            <span className="font-extrabold text-gray-800 block mb-0.5">Investigations Advised:</span>
+            <p className="text-gray-700">{doctorInvestigations}</p>
+          </div>
+        </div>
+
+        {/* Doctor Signature & Registration Info */}
+        <div className="pt-6 border-t-2 flex justify-between items-end">
+          <div className="text-2xs text-gray-500 space-y-0.5">
+            <p>• Generated through <strong>AyurSetu Digital Case-Taking Platform</strong></p>
+            <p>• Valid for PM-JAY & ABDM National Health Records linkage</p>
+            <p>• Ayush National Helpline: 1075</p>
+          </div>
+          <div className="text-right space-y-1">
+            <div className="font-script text-lg text-emerald-900 font-bold">{doctorAuth.name}</div>
+            <div className="text-xs font-bold text-gray-800">{doctorAuth.name}</div>
+            <p className="text-2xs text-gray-600 font-mono">Reg No: {doctorAuth.regNumber}</p>
+            <p className="text-2xs text-gray-500">{doctorAuth.specialty}</p>
+            <span className="inline-block text-2xs font-extrabold px-2 py-0.5 bg-emerald-100 text-emerald-900 rounded">
+              Digitally Signed & Verified
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Doctor Login & Registration Modal */}
+      {showDoctorLoginModal && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="w-full max-w-md bg-card border-3 border-emerald-400 rounded-3xl p-6 sm:p-8 space-y-5 shadow-2xl">
+            <div className="space-y-1 text-center">
+              <span className="text-3xl">👨‍⚕️</span>
+              <h3 className="text-xl font-extrabold text-foreground">चिकित्सक साइन-इन व सत्यापन</h3>
+              <p className="text-xs text-muted-foreground font-semibold">
+                Doctor Verification & Medical Registration Number
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <label className="text-xs font-extrabold text-muted-foreground uppercase">डॉक्टर का पूरा नाम (Doctor Name):</label>
+                <input
+                  type="text"
+                  value={tempDoctorName}
+                  onChange={(e) => setTempDoctorName(e.target.value)}
+                  className="w-full p-3 rounded-xl border text-sm font-semibold bg-background"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-extrabold text-muted-foreground uppercase">मेडिकल पंजीकरण सं (Registration No):</label>
+                <input
+                  type="text"
+                  value={tempDoctorReg}
+                  onChange={(e) => setTempDoctorReg(e.target.value)}
+                  className="w-full p-3 rounded-xl border font-mono text-sm font-semibold bg-background"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-extrabold text-muted-foreground uppercase">विशेषज्ञता / पद (Designation):</label>
+                <input
+                  type="text"
+                  value={tempSpecialty}
+                  onChange={(e) => setTempSpecialty(e.target.value)}
+                  className="w-full p-3 rounded-xl border text-sm font-semibold bg-background"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowDoctorLoginModal(false)}
+                className="flex-1 py-3 rounded-xl border text-xs font-bold"
+              >
+                रद्द करें (Cancel)
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setDoctorAuth({
+                    isSignedIn: true,
+                    name: tempDoctorName,
+                    regNumber: tempDoctorReg,
+                    specialty: tempSpecialty,
+                    hospital: "All India Institute of Ayurveda (AIIA), New Delhi",
+                  });
+                  setShowDoctorLoginModal(false);
+                  setActionSuccess("चिकित्सक क्रेडेंशियल अद्यतित किए गए (Doctor Profile Updated)");
+                }}
+                className="flex-1 py-3 rounded-xl bg-ayush-green text-white text-xs font-extrabold shadow-md hover:bg-emerald-700"
+              >
+                सत्यापित करें (Save & Sign-In)
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Sticky Bottom Action Bar */}
       <div className="fixed bottom-0 left-0 right-0 p-4 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t shadow-2xl z-40">
         <div className="container max-w-7xl flex flex-wrap items-center justify-between gap-4">
@@ -526,11 +997,11 @@ export default function IndividualDoctorCaseViewPage({
           <div className="flex items-center gap-3">
             <button
               type="button"
-              onClick={() => setIsEditing(true)}
-              className="min-h-[48px] px-5 rounded-2xl border-2 border-input font-bold text-xs inline-flex items-center gap-2 hover:bg-muted"
+              onClick={() => setActiveTab("PRESCRIPTION")}
+              className="min-h-[48px] px-5 rounded-2xl border-2 border-emerald-300 font-bold text-xs inline-flex items-center gap-2 bg-emerald-50 text-emerald-900 hover:bg-emerald-100"
             >
-              <Edit3 className="h-4 w-4" />
-              <span>संशोधन (Edit)</span>
+              <Pill className="h-4 w-4 text-emerald-700" />
+              <span>पर्ची लिखें (Write Rx)</span>
             </button>
 
             <button
@@ -540,10 +1011,10 @@ export default function IndividualDoctorCaseViewPage({
                   window.print();
                 }
               }}
-              className="min-h-[48px] px-4 rounded-2xl border-2 border-emerald-300 font-bold text-xs inline-flex items-center gap-2 bg-emerald-50 text-emerald-900 hover:bg-emerald-100"
+              className="min-h-[48px] px-4 rounded-2xl border-2 border-emerald-600 bg-ayush-green text-white font-extrabold text-xs inline-flex items-center gap-2 shadow-sm hover:bg-emerald-700"
             >
               <FileText className="h-4 w-4" />
-              <span>SOAP / FHIR Export</span>
+              <span>सरकारी OPD पर्ची प्रिंट / Export PDF</span>
             </button>
 
             <ExtraLargeButton
@@ -561,4 +1032,5 @@ export default function IndividualDoctorCaseViewPage({
     </div>
   );
 }
+
 
