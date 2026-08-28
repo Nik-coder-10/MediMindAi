@@ -3,7 +3,12 @@ import { PrismaClient, Role, Gender, SessionStatus, TriagePriority, TurnRole, Re
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log("🌱 Seeding database with realistic Ayush clinical data...");
+  if (process.env.NODE_ENV === "production" && !process.env.ALLOW_PROD_SEED) {
+    console.error("🛑 FATAL: Database seed is disabled in production environments.");
+    process.exit(1);
+  }
+
+  console.log("🌱 Seeding database with realistic Ayush clinical data (Dev/Staging only)...");
 
   // 1. Create Doctor User & Profile
   const doctorUser = await prisma.user.upsert({
