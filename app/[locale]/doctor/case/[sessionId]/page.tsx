@@ -579,7 +579,7 @@ export default function IndividualDoctorCaseViewPage({
                     <span>आधिकारिक चिकित्सक परामर्श एवं पर्ची (Physician Rx & Clinical Notes)</span>
                   </h3>
                   <p className="text-xs text-muted-foreground font-semibold">
-                    Doctor's authoritative clinical report, Rx medications, and lifestyle instructions.
+                    Doctor&apos;s authoritative clinical report, Rx medications, and lifestyle instructions.
                   </p>
                 </div>
 
@@ -604,8 +604,9 @@ export default function IndividualDoctorCaseViewPage({
               {/* 1. Doctor's Clinical Impression / Narrative */}
               <div className="space-y-2">
                 <label className="text-xs font-extrabold text-muted-foreground uppercase flex items-center gap-1.5">
-                  <FileText className="h-4 w-4 text-emerald-700" /> १. चिकित्सक क्लिनिकल रिपोर्ट व जांच निष्कर्ष (Doctor's Assessment & Clinical Notes):
+                  <FileText className="h-4 w-4 text-emerald-700" /> १. चिकित्सक क्लिनिकल रिपोर्ट व जांच निष्कर्ष (Doctor&apos;s Assessment & Clinical Notes):
                 </label>
+
                 <textarea
                   rows={3}
                   value={doctorRxNotes}

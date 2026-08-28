@@ -13,7 +13,8 @@ export interface ClinicalNotification {
 }
 
 // In-memory shift notification log
-export const shiftNotifications: ClinicalNotification[] = [
+const shiftNotifications: ClinicalNotification[] = [
+
   {
     id: "notif-001",
     type: "RED_FLAG_CRITICAL",

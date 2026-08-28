@@ -39,15 +39,30 @@ const nextConfig = {
     },
   ],
 
-  webpack: (config, { dev }) => {
+  experimental: {
+    serverComponentsExternalPackages: ["@napi-rs/canvas", "canvas", "pdfjs-dist", "tesseract.js"],
+  },
+
+  webpack: (config, { dev, isServer }) => {
     if (dev) {
       config.cache = {
         type: "filesystem",
         allowCollectingMemory: true,
       };
     }
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        canvas: false,
+        "@napi-rs/canvas": false,
+        fs: false,
+        path: false,
+        os: false,
+      };
+    }
     return config;
   },
 };
+
 
 export default withNextIntl(nextConfig);
