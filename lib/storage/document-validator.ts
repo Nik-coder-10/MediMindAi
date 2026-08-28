@@ -100,18 +100,29 @@ export function validateUploadedDocument(
     );
   }
 
-  // 4. Magic bytes detection
-  const detectedMime = detectMagicBytes(fileBuffer) || declaredMimeType;
+  // 4. Magic bytes detection & spoofing rejection
+  const detectedMime = detectMagicBytes(fileBuffer);
 
-  if (!ALLOWED_MIME_TYPES.includes(detectedMime) && !ALLOWED_MIME_TYPES.includes(declaredMimeType)) {
+  // If binary document type (.pdf, .png, .jpg, .webp), magic bytes MUST match
+  if ([".pdf", ".jpg", ".jpeg", ".png", ".webp"].includes(ext)) {
+    if (!detectedMime) {
+      throw AppError.badRequest(
+        `Invalid file format. The file content does not match the signature for '${ext}'.`
+      );
+    }
+  }
+
+  const effectiveMime = detectedMime || declaredMimeType;
+
+  if (!ALLOWED_MIME_TYPES.includes(effectiveMime)) {
     throw AppError.badRequest(
-      `MIME type '${detectedMime || declaredMimeType}' is unsupported. Only PDF, JPG, PNG, WEBP, and TXT are supported.`
+      `MIME type '${effectiveMime}' is unsupported. Only PDF, JPG, PNG, WEBP, and TXT are supported.`
     );
   }
 
   return {
     isValid: true,
-    mimeType: detectedMime || declaredMimeType,
+    mimeType: effectiveMime,
     extension: ext,
   };
 }
