@@ -38,20 +38,19 @@ export default function PatientShellLayout({
             </div>
           </Link>
 
-          {/* Action Tools: Language & Logout */}
+          {/* Action Tools: Logout */}
           <div className="flex items-center gap-2">
-            <PatientLanguageSwitcher currentLocale={locale} />
-
             <button
               type="button"
               onClick={() => router.push(`/${locale}/login`)}
               aria-label="Logout"
-              className="min-h-[48px] min-w-[48px] px-3 rounded-xl border-2 border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 font-bold text-xs flex items-center gap-1 shadow-sm"
+              className="min-h-[44px] min-w-[44px] px-3.5 rounded-xl border-2 border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 font-bold text-xs flex items-center gap-1.5 shadow-sm"
             >
               <LogOut className="h-4 w-4" />
-              <span className="hidden sm:inline">लॉगआउट</span>
+              <span>लॉगआउट</span>
             </button>
           </div>
+
         </div>
       </header>
 

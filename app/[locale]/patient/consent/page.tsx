@@ -86,35 +86,14 @@ export default function PatientConsentPage({
     <div className="container max-w-3xl py-10 space-y-6">
       <Card className="border-2 border-emerald-500/30 shadow-lg">
         <CardHeader className="bg-emerald-50/50 dark:bg-emerald-950/20 border-b pb-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="space-y-1">
-              <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200">
-                <ShieldCheck className="h-3.5 w-3.5" /> {labels.badge}
-              </span>
-              <CardTitle className="text-2xl font-bold">{template.title}</CardTitle>
-            </div>
-
-            {/* Language toggle: Hindi and English only */}
-            <div className="flex gap-1 bg-muted/60 p-1 rounded-xl border">
-              <Button
-                variant={selectedLang === "hi" ? "ayush" : "ghost"}
-                size="sm"
-                className="h-8 px-4 text-xs font-bold"
-                onClick={() => setSelectedLang("hi")}
-              >
-                हिंदी
-              </Button>
-              <Button
-                variant={selectedLang === "en" ? "ayush" : "ghost"}
-                size="sm"
-                className="h-8 px-4 text-xs font-bold"
-                onClick={() => setSelectedLang("en")}
-              >
-                English
-              </Button>
-            </div>
+          <div className="space-y-1">
+            <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200">
+              <ShieldCheck className="h-3.5 w-3.5" /> {labels.badge}
+            </span>
+            <CardTitle className="text-2xl font-bold">{template.title}</CardTitle>
           </div>
         </CardHeader>
+
 
         <CardContent className="space-y-6 pt-6">
           {/* Audio explanation banner */}
