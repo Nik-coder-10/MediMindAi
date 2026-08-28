@@ -338,9 +338,9 @@ const CATEGORY_PROFILES: Record<ClinicalCategory, CategoryProfile> = {
   Headache: {
     category: "Headache",
     keywords: [
-      "headache", "head pain", "migraine", "thunderclap", "sir dard", "sirdard", "shirashoola",
+      "headache", "head pain", "migraine", "thunderclap", "sir dard", "sirdard", "sar dard", "sardard", "shirashoola",
       "chakkar", "dizziness", "aura", "nausea", "photophobia", "neck stiffness",
-      "सिरदर्द", "सिर दर्द", "माइग्रेन", "आधासीसी", "चक्कर", "शिरःशूल", "गर्दन में अकड़न"
+      "सिरदर्द", "सिर दर्द", "सर दर्द", "सरदर्द", "सिर में दर्द", "सर में दर्द", "माइग्रेन", "आधासीसी", "चक्कर", "शिरःशूल", "गर्दन में अकड़न"
     ],
     problemsDetector: (text: string) => {
       const problems: string[] = [];
@@ -348,6 +348,10 @@ const CATEGORY_PROFILES: Record<ClinicalCategory, CategoryProfile> = {
       if (lower.includes("migraine") || text.includes("माइग्रेन") || lower.includes("aadhasisi")) {
         problems.push("Migraine / Vascular Headache (अर्धावभेदक)");
       }
+      if (lower.includes("sir") || lower.includes("sar") || text.includes("सिर") || text.includes("सर दर्द") || text.includes("सरदर्द")) {
+        problems.push("Headache & Cephalea (शिरःशूल / सिरदर्द)");
+      }
+
       if (lower.includes("dizz") || lower.includes("chakkar") || text.includes("चक्कर")) {
         problems.push("Associated Vertigo / Dizziness (भ्रम)");
       }

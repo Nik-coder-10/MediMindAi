@@ -105,12 +105,16 @@ export default function AdaptiveQuestionsFlowPage({
           return;
         }
 
+        const storedComplaint = typeof window !== "undefined" ? sessionStorage.getItem("ayursetu_chief_complaint") : null;
+        const complaint = storedComplaint || (locale === "hi" ? "सिरदर्द व शरीर में दर्द" : "Headache and body ache");
+
         const res = await fetch("/api/patient/session/start", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             sessionId,
-            chiefComplaint: "छाती में दर्द (Chest pain since last night)",
+            chiefComplaint: complaint,
+            language: locale === "hi" ? "hi" : "en",
           }),
         });
         const data = await res.json();
@@ -126,7 +130,8 @@ export default function AdaptiveQuestionsFlowPage({
     }
 
     initEngine();
-  }, [sessionId]);
+  }, [sessionId, locale]);
+
 
   const handleSelectOption = (option: QuestionOption) => {
     setSelectedAnswer(option.value);

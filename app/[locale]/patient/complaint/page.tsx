@@ -33,8 +33,14 @@ export default function PatientComplaintVoicePage({
 
   const handleContinue = () => {
     if (!complaintText) return;
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem("ayursetu_chief_complaint", complaintText);
+      sessionStorage.removeItem("ayursetu_current_question");
+      sessionStorage.removeItem("ayursetu_current_step");
+    }
     router.push(`/${locale}/patient/questions`);
   };
+
 
   return (
     <div className="space-y-6">

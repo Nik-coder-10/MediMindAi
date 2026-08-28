@@ -38,14 +38,18 @@ export default function PatientSummaryPreviewPage({
   const [submittedSuccess, setSubmittedSuccess] = useState(false);
   const [uploadedDocs, setUploadedDocs] = useState<Array<{ name: string; size: string }>>([]);
   const [extractedData, setExtractedData] = useState<any>(null);
+  const [chiefComplaint, setChiefComplaint] = useState<string>("सिरदर्द व शरीर में दर्द");
+
 
   useEffect(() => {
     try {
       if (typeof window !== "undefined") {
         const storedDocs = sessionStorage.getItem("ayush_uploaded_docs");
         const storedEntities = sessionStorage.getItem("ayush_extracted_entities");
+        const storedComplaint = sessionStorage.getItem("ayursetu_chief_complaint");
         if (storedDocs) setUploadedDocs(JSON.parse(storedDocs));
         if (storedEntities) setExtractedData(JSON.parse(storedEntities));
+        if (storedComplaint) setChiefComplaint(storedComplaint);
       }
     } catch (e) {
       console.error("Failed to load session storage data", e);
@@ -55,38 +59,29 @@ export default function PatientSummaryPreviewPage({
   const documentSummaryText =
     uploadedDocs.length > 0
       ? `${uploadedDocs.length} दस्तावेज़ अपलोड किए गए (${uploadedDocs.map((d) => d.name).join(", ")})`
-      : "1 पर्ची अपलोड की गई (AIIA OPD Prescription & Lab Slip)";
+      : "कोई पुराना पर्चा अपलोड नहीं किया गया (Direct Clinical Consultation)";
 
-  const medicationsList = extractedData?.medications?.length
-    ? extractedData.medications
-    : [
-        { name: "Tab Yogaraj Guggulu 500mg", dosage: "500mg", frequency: "1-0-1", duration: "15 days" },
-        { name: "Syp Amritarishta 15ml", dosage: "15ml", frequency: "BD", duration: "15 days" },
-        { name: "Cap Omeprazole 20mg", dosage: "20mg", frequency: "1-0-0 OD", duration: "10 days" },
-      ];
+  const medicationsList = extractedData?.medications || [];
+  const labsList = extractedData?.labResults || [];
 
-  const labsList = extractedData?.labResults?.length
-    ? extractedData.labResults
-    : [
-        { testName: "HbA1c", value: 6.8, unit: "%", referenceRange: "4.0 - 5.6", flag: "HIGH" },
-        { testName: "Serum Uric Acid", value: 7.8, unit: "mg/dL", referenceRange: "3.5 - 7.2", flag: "HIGH" },
-        { testName: "ESR", value: 38, unit: "mm/hr", referenceRange: "0 - 15", flag: "HIGH" },
-      ];
+  const isHeadache = chiefComplaint.toLowerCase().includes("head") || chiefComplaint.includes("सिर") || chiefComplaint.includes("सर");
+  const isMsk = chiefComplaint.toLowerCase().includes("knee") || chiefComplaint.toLowerCase().includes("joint") || chiefComplaint.includes("घुटने") || chiefComplaint.includes("जोड़");
 
   const summaryData = {
     patientName: "रमेश शर्मा (Ramesh Sharma)",
     ageGender: "42 वर्ष / पुरुष (42Y / Male)",
     abhaId: "14-5542-8921-3410",
-    chiefComplaint: "छाती में तेज भारीपन व दर्द (Severe Retrosternal Pressure)",
-    duration: "कल रात से (~14 घंटे)",
-    severity: "7 से 10 (अत्यधिक तेज)",
-    radiation: "बाएं हाथ व गर्दन में (Radiating to Left Arm)",
-    associated: "ठंडा पसीना व सांस फूलना (Diaphoresis & Dyspnea)",
+    chiefComplaint: chiefComplaint,
+    duration: "2-3 दिन से (Acute presentation)",
+    severity: "मध्यम से तीव्र (Moderate to Severe)",
+    radiation: isHeadache ? "माथे व दोनों तरफ (Forehead & Bilateral temples)" : isMsk ? "जोड़ों के आसपास (Periarticular)" : "स्थानीय (Localized)",
+    associated: isHeadache ? "गले में खराश व शरीर में दर्द (Sore throat & body ache)" : "हल्की हरारत व सुस्ती (Malaise & fatigue)",
     ayushMode: "आयुर्वेद मोड (Ayurveda Clinical Mode Active)",
-    prakriti: "वात-कफ (Vata-Kapha)",
+    prakriti: isHeadache ? "वात-पित्त (Vata-Pitta)" : "वात-कफ (Vata-Kapha)",
     agni: "विषमाग्नि (Irregular Digestion)",
     documents: documentSummaryText,
   };
+
 
   const handleSubmitToDoctor = async () => {
     setSubmitting(true);
