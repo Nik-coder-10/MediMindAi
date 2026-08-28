@@ -27,7 +27,8 @@ export default function PatientShellLayout({
     setMounted(true);
   }, []);
 
-  // If user is accessing patient routes but explicitly confirmed not logged in after mount
+  // Only show auth gate after client hydration confirms user is not authenticated
+  // DO NOT block rendering before mount — this causes blank screen on language switch
   if (mounted && !isAuthenticated && !pathname.includes("/login")) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4 bg-slate-50 dark:bg-slate-950">
@@ -69,6 +70,9 @@ export default function PatientShellLayout({
       </div>
     );
   }
+
+  // While zustand-persist is still rehydrating (mounted=false), show the full shell with children
+  // This ensures language switch never produces a blank screen
 
 
   return (
