@@ -29,11 +29,24 @@ export function AudioPrompt({
       return;
     }
 
+    setIsPlaying(true);
+    // If text contains Hindi characters or hindiText is given and active locale is hindi, speak Hindi
+    const isHindi = Boolean(hindiText);
+    const spokenText = isHindi ? hindiText! : text;
+
     window.speechSynthesis.cancel();
-    const utteranceText = hindiText || text;
-    const utterance = new SpeechSynthesisUtterance(utteranceText);
-    utterance.lang = hindiText ? "hi-IN" : "en-IN";
-    utterance.rate = 0.9; // Slightly slower, calm cadence for elderly patients
+    const utterance = new SpeechSynthesisUtterance(spokenText);
+    utterance.lang = isHindi ? "hi-IN" : "en-IN";
+    utterance.rate = 0.90; // Calm medical pace
+
+    const voices = window.speechSynthesis.getVoices();
+    if (isHindi) {
+      const hVoice = voices.find((v) => v.lang === "hi-IN" || v.lang.startsWith("hi") || v.name.toLowerCase().includes("hindi") || v.name.toLowerCase().includes("swara"));
+      if (hVoice) utterance.voice = hVoice;
+    } else {
+      const eVoice = voices.find((v) => v.lang === "en-IN" || v.name.toLowerCase().includes("india") || v.name.toLowerCase().includes("neerja") || v.name.toLowerCase().includes("prabhat"));
+      if (eVoice) utterance.voice = eVoice;
+    }
 
     utterance.onstart = () => setIsPlaying(true);
     utterance.onend = () => setIsPlaying(false);

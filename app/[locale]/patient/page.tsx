@@ -20,22 +20,26 @@ export default function PatientLauncherPage({
     router.push(`/${locale}/patient/consent?mode=${selectedMode}`);
   };
 
+  const isHindi = locale === "hi";
+
   return (
     <div className="space-y-8 text-center max-w-xl mx-auto py-4">
       <AudioPrompt
-        hindiText="आयुर्वेद व सामान्य चिकित्सा परामर्श में आपका स्वागत है। कृपया अपनी परामर्श पद्धति चुनें।"
+        hindiText={isHindi ? "आयुर्वेद व सामान्य चिकित्सा परामर्श में आपका स्वागत है। कृपया अपनी परामर्श पद्धति चुनें।" : undefined}
         text="Welcome to AyurSetu clinical consultation. Please select your preferred consultation mode."
       />
 
       <div className="space-y-3">
         <span className="text-xs font-extrabold px-4 py-1.5 bg-emerald-100 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 rounded-full inline-flex items-center gap-1.5 shadow-xs border border-emerald-300">
-          <Sparkles className="h-4 w-4 text-emerald-600" /> SIH 2026 • अखिल भारतीय आयुर्वेद संस्थान (AIIA)
+          <Sparkles className="h-4 w-4 text-emerald-600" /> SIH 2026 • {isHindi ? "अखिल भारतीय आयुर्वेद संस्थान (AIIA)" : "All India Institute of Ayurveda (AIIA)"}
         </span>
         <h1 className="text-3xl sm:text-4xl font-extrabold text-foreground tracking-tight">
-          रोगी परामर्श सेवा (Patient Case-Taking)
+          {isHindi ? "रोगी परामर्श सेवा (Patient Case-Taking)" : "Patient Consultation (Case-Taking)"}
         </h1>
         <p className="text-sm sm:text-base text-muted-foreground font-medium">
-          Choose your clinical consultation mode to begin your adaptive case-taking.
+          {isHindi
+            ? "अपनी नैदानिक परामर्श पद्धति चुनकर परामर्श आरंभ करें।"
+            : "Choose your clinical consultation mode to begin your adaptive case-taking."}
         </p>
       </div>
 
