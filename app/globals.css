@@ -49,29 +49,89 @@
   }
 
   /* Strict WCAG 2.2 AAA High Contrast Mode (Deep Black & Pure High-Visibility Yellow/White) */
+  html.high-contrast,
+  html.high-contrast body,
   .high-contrast {
     --background: 0 0% 0% !important;
     --foreground: 0 0% 100% !important;
-    --card: 0 0% 5% !important;
+    --card: 0 0% 0% !important;
     --card-foreground: 0 0% 100% !important;
-    --popover: 0 0% 5% !important;
+    --popover: 0 0% 0% !important;
     --popover-foreground: 0 0% 100% !important;
     --primary: 60 100% 50% !important; /* Pure Yellow */
     --primary-foreground: 0 0% 0% !important;
-    --secondary: 0 0% 15% !important;
+    --secondary: 0 0% 12% !important;
     --secondary-foreground: 0 0% 100% !important;
-    --muted: 0 0% 15% !important;
+    --muted: 0 0% 12% !important;
     --muted-foreground: 0 0% 90% !important;
     --accent: 60 100% 50% !important;
     --accent-foreground: 0 0% 0% !important;
     --border: 0 0% 100% !important;
     --input: 0 0% 100% !important;
-    color-scheme: dark;
+    color-scheme: dark !important;
+    background-color: #000000 !important;
+    color: #ffffff !important;
+  }
+
+  html.high-contrast header,
+  html.high-contrast nav,
+  html.high-contrast main,
+  html.high-contrast footer,
+  html.high-contrast section,
+  html.high-contrast div {
+    border-color: #ffffff !important;
+  }
+
+  html.high-contrast header {
+    background-color: #050505 !important;
+  }
+
+  html.high-contrast header a,
+  html.high-contrast nav a {
+    color: #ffffff !important;
+  }
+
+  html.high-contrast header a:hover,
+  html.high-contrast nav a:hover {
+    color: #ffff00 !important;
+  }
+
+  html.high-contrast .bg-background,
+  html.high-contrast .bg-white,
+  html.high-contrast .bg-card,
+  html.high-contrast .bg-slate-50,
+  html.high-contrast .bg-slate-100,
+  html.high-contrast .bg-emerald-50,
+  html.high-contrast .bg-emerald-50\/50,
+  html.high-contrast .bg-amber-50,
+  html.high-contrast .bg-rose-50,
+  html.high-contrast .bg-muted {
+    background-color: #000000 !important;
+    color: #ffffff !important;
+  }
+
+  html.high-contrast .text-foreground,
+  html.high-contrast .text-muted-foreground,
+  html.high-contrast .text-slate-900,
+  html.high-contrast .text-slate-700,
+  html.high-contrast .text-emerald-950,
+  html.high-contrast .text-emerald-900,
+  html.high-contrast .text-amber-950 {
+    color: #ffffff !important;
+  }
+
+  html.high-contrast h1,
+  html.high-contrast h2,
+  html.high-contrast h3,
+  html.high-contrast strong {
+    color: #ffff00 !important; /* High-contrast bright yellow headings */
   }
 
   /* Soft Low Contrast / Eye-Rest Comfort Mode (Soft Sepia / Warm Slate & Muted Tone) */
+  html.low-contrast,
+  html.low-contrast body,
   .low-contrast {
-    --background: 40 25% 94% !important; /* Soft warm parchment */
+    --background: 40 25% 94% !important; /* Soft warm parchment #F5F1E9 */
     --foreground: 30 10% 25% !important; /* Soft charcoal */
     --card: 40 30% 97% !important;
     --card-foreground: 30 10% 25% !important;
@@ -85,9 +145,38 @@
     --muted-foreground: 30 8% 45% !important;
     --accent: 140 20% 90% !important;
     --accent-foreground: 140 25% 30% !important;
-    --border: 40 15% 82% !important;
-    --input: 40 15% 82% !important;
-    color-scheme: light;
+    --border: 40 15% 80% !important;
+    --input: 40 15% 80% !important;
+    color-scheme: light !important;
+    background-color: #F5F1E9 !important;
+    color: #38342E !important;
+  }
+
+  html.low-contrast header {
+    background-color: #ECE7DC !important;
+    border-color: #D6D0C3 !important;
+  }
+
+  html.low-contrast header a,
+  html.low-contrast nav a {
+    color: #38342E !important;
+  }
+
+  html.low-contrast .bg-background,
+  html.low-contrast .bg-white,
+  html.low-contrast .bg-card {
+    background-color: #F8F5EE !important;
+  }
+
+  html.low-contrast .bg-slate-50,
+  html.low-contrast .bg-emerald-50,
+  html.low-contrast .bg-muted {
+    background-color: #EFEBE0 !important;
+  }
+
+  html.low-contrast .text-foreground,
+  html.low-contrast .text-slate-900 {
+    color: #38342E !important;
   }
 
   .text-size-large {
@@ -98,7 +187,6 @@
     font-size: 1.4rem !important; /* 22.4px base */
   }
 }
-
 
 @layer base {
   * {
@@ -121,3 +209,4 @@
     min-width: 56px;
   }
 }
+
