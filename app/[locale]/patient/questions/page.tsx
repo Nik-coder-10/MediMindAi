@@ -19,11 +19,14 @@ export default function AdaptiveQuestionsFlowPage({
 }) {
   const router = useRouter();
   const [sessionId] = useState<string>("sess-demo-001");
-  const [currentQuestion, setCurrentQuestion] = useState<EngineQuestionDefinition | null>(() => {
+  const [currentQuestion, setCurrentQuestion] = useState<EngineQuestionDefinition>(() => {
     if (typeof window !== "undefined") {
       try {
         const saved = sessionStorage.getItem("ayursetu_current_question");
-        if (saved) return JSON.parse(saved);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed && parsed.nodeCode) return parsed;
+        }
       } catch {}
     }
     return {
@@ -44,7 +47,15 @@ export default function AdaptiveQuestionsFlowPage({
   const [isPaused, setIsPaused] = useState(false);
   const [redFlagBanner, setRedFlagBanner] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [stepNumber, setStepNumber] = useState(1);
+  const [stepNumber, setStepNumber] = useState<number>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const savedStep = sessionStorage.getItem("ayursetu_current_step");
+        if (savedStep) return parseInt(savedStep, 10) || 1;
+      } catch {}
+    }
+    return 1;
+  });
   const [playingOptionAudio, setPlayingOptionAudio] = useState<string | null>(null);
 
   const handleSpeakOptionAudio = (
@@ -85,7 +96,11 @@ export default function AdaptiveQuestionsFlowPage({
             sessionStorage.setItem("ayursetu_current_question", JSON.stringify(currentData.data.question));
           }
           if (currentData.data.state?.questionCount) {
-            setStepNumber(currentData.data.state.questionCount + 1);
+            const nextStep = currentData.data.state.questionCount + 1;
+            setStepNumber(nextStep);
+            if (typeof window !== "undefined") {
+              sessionStorage.setItem("ayursetu_current_step", nextStep.toString());
+            }
           }
           return;
         }
@@ -138,12 +153,15 @@ export default function AdaptiveQuestionsFlowPage({
       }
 
       if (data.data?.nextQuestion) {
-        setCurrentQuestion(data.data.nextQuestion);
+        const nextQ = data.data.nextQuestion;
+        const nextStep = stepNumber + 1;
+        setCurrentQuestion(nextQ);
+        setStepNumber(nextStep);
         if (typeof window !== "undefined") {
-          sessionStorage.setItem("ayursetu_current_question", JSON.stringify(data.data.nextQuestion));
+          sessionStorage.setItem("ayursetu_current_question", JSON.stringify(nextQ));
+          sessionStorage.setItem("ayursetu_current_step", nextStep.toString());
         }
         setSelectedAnswer(null);
-        setStepNumber((prev) => prev + 1);
       } else {
         router.push(`/${locale}/patient/documents`);
       }
@@ -153,6 +171,7 @@ export default function AdaptiveQuestionsFlowPage({
       setLoading(false);
     }
   };
+
 
 
 
