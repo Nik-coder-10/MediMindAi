@@ -88,7 +88,7 @@ export default function LoginPage({
       if (res?.error) {
         setError("Invalid credentials. Please verify your registration number and password.");
       } else {
-        router.push(role === "ADMIN" ? `/${locale}/admin/admin-dashboard` : `/${locale}/doctor/consultation`);
+        router.push(role === "ADMIN" ? `/${locale}/admin-dashboard` : `/${locale}/doctor`);
       }
     } catch {
       setError("Authentication failed.");
