@@ -698,12 +698,16 @@ const CATEGORY_PROFILES: Record<ClinicalCategory, CategoryProfile> = {
     category: "Respiratory",
     keywords: [
       "cough", "breath", "breathing", "dyspnea", "asthma", "wheezing", "sputum", "phlegm",
-      "chest congestion", "khansi", "saans", "dama", "balgam", "shwasa", "kasa",
-      "खांसी", "सांस", "सांस फूलना", "दमा", "कफ", "बलगम", "श्वास", "कास", "घरघराहट"
+      "chest congestion", "khansi", "saans", "dama", "balgam", "shwasa", "kasa", "throat",
+      "throat pain", "sore throat", "gala", "gale me dard", "khash-khash", "tonsil", "pharyngitis",
+      "खांसी", "सांस", "सांस फूलना", "दमा", "कफ", "बलगम", "श्वास", "कास", "घरघराहट", "गले में दर्द", "गला", "गले में खराश"
     ],
     problemsDetector: (text: string) => {
       const problems: string[] = [];
       const lower = text.toLowerCase();
+      if (lower.includes("throat") || lower.includes("gala") || text.includes("गले") || text.includes("गला")) {
+        problems.push("Sore Throat / Pharyngeal Irritation (गले में दर्द / कंठशूल)");
+      }
       if (lower.includes("cough") || lower.includes("khansi") || text.includes("खांसी")) {
         problems.push("Productive / Dry Cough (कास / खांसी)");
       }
@@ -716,6 +720,7 @@ const CATEGORY_PROFILES: Record<ClinicalCategory, CategoryProfile> = {
       if (problems.length === 0) problems.push("Respiratory Tract Symptoms (प्राणवह स्रोतस विकार)");
       return problems;
     },
+
     questionTemplates: (lang, detected) => [
       {
         id: "resp_cough_type",
@@ -1014,57 +1019,42 @@ export class AdaptiveQuestionGenerator {
 
     const normalized = text.toLowerCase();
 
-    // 1. Musculoskeletal / Joint Pain
-    for (const kw of CATEGORY_PROFILES.Musculoskeletal.keywords) {
-      if (normalized.includes(kw.toLowerCase()) || text.includes(kw)) {
-        return "Musculoskeletal";
+    // Priority ordering with matched score evaluation
+    const categories: ClinicalCategory[] = [
+      "Headache",
+      "Respiratory",
+      "Abdominal Pain",
+      "Fever",
+      "Musculoskeletal",
+      "Chest Pain",
+      "General",
+    ];
+
+    let bestCategory: ClinicalCategory = "General";
+    let maxScore = 0;
+
+    for (const cat of categories) {
+      const profile = CATEGORY_PROFILES[cat];
+      if (!profile) continue;
+
+      let score = 0;
+      for (const kw of profile.keywords) {
+        const kwLower = kw.toLowerCase();
+        if (normalized.includes(kwLower) || text.includes(kw)) {
+          // Boost exact phrase matches or strong identifiers
+          score += kwLower.length >= 6 ? 2 : 1;
+        }
+      }
+
+      if (score > maxScore) {
+        maxScore = score;
+        bestCategory = cat;
       }
     }
 
-    // 2. Chest Pain
-    for (const kw of CATEGORY_PROFILES["Chest Pain"].keywords) {
-      if (normalized.includes(kw.toLowerCase()) || text.includes(kw)) {
-        return "Chest Pain";
-      }
-    }
-
-    // 3. Headache
-    for (const kw of CATEGORY_PROFILES.Headache.keywords) {
-      if (normalized.includes(kw.toLowerCase()) || text.includes(kw)) {
-        return "Headache";
-      }
-    }
-
-    // 4. Abdominal Pain
-    for (const kw of CATEGORY_PROFILES["Abdominal Pain"].keywords) {
-      if (normalized.includes(kw.toLowerCase()) || text.includes(kw)) {
-        return "Abdominal Pain";
-      }
-    }
-
-    // 5. Fever
-    for (const kw of CATEGORY_PROFILES.Fever.keywords) {
-      if (normalized.includes(kw.toLowerCase()) || text.includes(kw)) {
-        return "Fever";
-      }
-    }
-
-    // 6. Respiratory
-    for (const kw of CATEGORY_PROFILES.Respiratory.keywords) {
-      if (normalized.includes(kw.toLowerCase()) || text.includes(kw)) {
-        return "Respiratory";
-      }
-    }
-
-    // 7. General
-    for (const kw of CATEGORY_PROFILES.General.keywords) {
-      if (normalized.includes(kw.toLowerCase()) || text.includes(kw)) {
-        return "General";
-      }
-    }
-
-    return "General";
+    return bestCategory;
   }
+
 
   /**
    * Generates dynamic, structured adaptive questions for a patient encounter

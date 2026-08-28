@@ -90,9 +90,20 @@ async function runAdaptiveGeneratorTestSuite() {
   assert(respResult.category === "Respiratory", "Breathlessness classifies as 'Respiratory'");
   assert(respResult.questions.some(q => q.clinicalPurpose === "character"), "Evaluates cough character & sputum");
 
+  // TEST 6b: Multi-symptom (Headache, body pain, throat pain)
+  console.log("\n--- 6b. Case: 'headache, body pain and throat pain' ---");
+  const multiResult = await AdaptiveQuestionGenerator.generateQuestions({
+    chiefComplaint: "i have a headache, body pain and throate pain",
+    language: "en",
+  });
+  assert(multiResult.category === "Headache" || multiResult.category === "Respiratory", "Classifies relevant category for headache/throat pain");
+  assert(!multiResult.questions.some(q => q.id.startsWith("cp_")), "Does NOT ask chest pain questions");
+  assert(multiResult.detectedProblems.length > 0, "Detects specific symptoms");
+
   // TEST 7: End-to-end Session Engine with Knee Pain
   console.log("\n--- 7. INTEGRATION: AdaptiveEngineService with Knee Pain ---");
   const testSessionId = `sess-msk-${Date.now()}`;
+
   const { state: mskSession, firstQuestion } = await AdaptiveEngineService.startSession(
     testSessionId,
     "घुटने में तेज दर्द और सूजन (Severe knee pain and swelling)"
