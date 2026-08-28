@@ -64,6 +64,8 @@ export default function IndividualDoctorCaseViewPage({
   const [tempDoctorName, setTempDoctorName] = useState(doctorAuth.name);
   const [tempDoctorReg, setTempDoctorReg] = useState(doctorAuth.regNumber);
   const [tempSpecialty, setTempSpecialty] = useState(doctorAuth.specialty);
+  const [tempHospital, setTempHospital] = useState(doctorAuth.hospital);
+
 
   // Doctor's Official Prescription & Clinical Report State
   const [doctorRxNotes, setDoctorRxNotes] = useState(
@@ -783,128 +785,163 @@ export default function IndividualDoctorCaseViewPage({
         )}
       </div>
 
-      {/* Official Government OPD Prescription Slip (Rendered for Print / Export) */}
-      <div id="official-opd-prescription" className="hidden print:block p-8 bg-white text-black space-y-6">
-        {/* Header with National Emblems & AIIA / Ayush Ministry Info */}
-        <div className="border-b-4 border-emerald-700 pb-4 flex justify-between items-start">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <span className="text-2xl">🌿</span>
-              <h1 className="text-xl font-black tracking-tight text-emerald-900 uppercase">
-                अखिल भारतीय आयुर्वेद संस्थान (AIIA)
-              </h1>
+      {/* Official Government / Hospital OPD Prescription Slip (Rendered for Print / Export) */}
+      <div id="official-opd-prescription" className="hidden print:block p-8 bg-white text-slate-900 space-y-5 max-w-4xl mx-auto border-2 border-slate-300 font-sans text-xs leading-normal">
+        {/* Top Formal Hospital Letterhead Banner */}
+        <div className="border-b-2 border-emerald-800 pb-3">
+          <div className="flex justify-between items-start">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="text-3xl">🌿</span>
+                <div>
+                  <h1 className="text-xl font-black tracking-tight text-emerald-950 uppercase">
+                    {doctorAuth.hospital ? doctorAuth.hospital : "AYURSETU CLINICAL HEALTHCARE DESK"}
+                  </h1>
+                  <p className="text-2xs font-bold text-slate-600 uppercase tracking-wide">
+                    {doctorAuth.hospital
+                      ? "Centre of Excellence in Ayush Clinical Care & Integrated Medicine"
+                      : "Independent Clinical Practice & Tele-Consultation"}
+                  </p>
+                </div>
+              </div>
+              <p className="text-3xs text-slate-500 font-semibold">
+                Ministry of Ayush, Govt. of India • Ayushman Bharat Digital Mission (ABDM) Integrated Health Facility
+              </p>
             </div>
-            <h2 className="text-sm font-bold text-gray-700">
-              ALL INDIA INSTITUTE OF AYURVEDA • MINISTRY OF AYUSH, GOVT. OF INDIA
-            </h2>
-            <p className="text-xs text-gray-500 font-semibold">
-              Gautampuri, Sarita Vihar, Mathura Road, New Delhi-110076 | AyurSetu OPD Desk
-            </p>
+
+            <div className="text-right border-l pl-4 border-slate-300 space-y-0.5 min-w-[200px]">
+              <span className="text-3xs font-extrabold px-2.5 py-0.5 bg-emerald-100 text-emerald-950 rounded border border-emerald-300 inline-block uppercase">
+                OUTPATIENT DEPARTMENT (OPD) SLIP
+              </span>
+              <div className="font-mono font-bold text-xs text-slate-800">OPD Token: #AIIA-104</div>
+              <div className="text-3xs text-slate-600 font-semibold">Date & Time: {new Date().toLocaleString("en-IN")}</div>
+              <div className="text-3xs text-slate-600 font-semibold">Encounter ID: <span className="font-mono">{sessionId}</span></div>
+            </div>
           </div>
-          <div className="text-right space-y-0.5">
-            <span className="text-xs font-extrabold px-3 py-1 bg-emerald-100 text-emerald-900 rounded-md inline-block border">
-              VIRTUAL OPD PRESCRIPTION
+        </div>
+
+        {/* 2-Column Grid: Patient Demographics & Attending Physician */}
+        <div className="grid grid-cols-2 gap-3 p-3 bg-slate-50/80 border rounded-xl">
+          {/* Patient Details */}
+          <div className="space-y-1 pr-2 border-r border-slate-200">
+            <span className="text-3xs font-black uppercase text-emerald-900 tracking-wider block border-b pb-0.5">
+              1. PATIENT DEMOGRAPHICS & PHR
             </span>
-            <p className="text-xs font-mono font-bold">OPD Token: #AIIA-104</p>
-            <p className="text-2xs text-gray-500">Date: {new Date().toLocaleDateString("en-IN")}</p>
+            <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 text-2xs">
+              <div><span className="text-slate-500 font-semibold">Name:</span> <strong className="text-slate-900">{patient.firstName} {patient.lastName}</strong></div>
+              <div><span className="text-slate-500 font-semibold">Age/Gender:</span> <strong className="text-slate-900">{patient.age}Y / {patient.gender}</strong></div>
+              <div><span className="text-slate-500 font-semibold">ABHA Number:</span> <span className="font-mono font-bold text-slate-900">{patient.abhaId}</span></div>
+              <div><span className="text-slate-500 font-semibold">Blood Group:</span> <strong className="text-slate-900">{patient.bloodGroup}</strong></div>
+              <div><span className="text-slate-500 font-semibold">Prakriti:</span> <strong className="text-slate-900">{caseData?.ayurveda?.prakriti || "Vata-Kapha"}</strong></div>
+              <div><span className="text-slate-500 font-semibold">Triage Level:</span> <strong className="text-rose-700">{caseData?.encounter?.triagePriority || "EMERGENCY"}</strong></div>
+            </div>
+          </div>
+
+          {/* Attending Physician & Hospital Info */}
+          <div className="space-y-1 pl-2">
+            <span className="text-3xs font-black uppercase text-emerald-900 tracking-wider block border-b pb-0.5">
+              2. ATTENDING PHYSICIAN & FACILITY
+            </span>
+            <div className="space-y-0.5 text-2xs">
+              <div><span className="text-slate-500 font-semibold">Doctor Name:</span> <strong className="text-slate-900">{doctorAuth.name}</strong></div>
+              <div><span className="text-slate-500 font-semibold">Medical Reg No:</span> <span className="font-mono font-bold text-emerald-950">{doctorAuth.regNumber}</span></div>
+              <div><span className="text-slate-500 font-semibold">Designation:</span> <span className="text-slate-800 font-medium">{doctorAuth.specialty}</span></div>
+              <div>
+                <span className="text-slate-500 font-semibold">Hospital / Clinic:</span>{" "}
+                <strong className="text-emerald-900">
+                  {doctorAuth.hospital ? doctorAuth.hospital : "Independent / Private Practice"}
+                </strong>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Patient Details & ABDM Info */}
-        <div className="grid grid-cols-3 gap-2 p-3 bg-gray-50 border rounded-lg text-xs">
-          <div>
-            <span className="text-gray-500 font-semibold block">Patient Name:</span>
-            <span className="font-bold text-sm">{patient.firstName} {patient.lastName}</span>
+        {/* Clinical Assessment & Diagnosis Section */}
+        <div className="space-y-1 border p-3 rounded-xl bg-white">
+          <div className="flex justify-between items-center border-b pb-1">
+            <span className="text-3xs font-black uppercase text-emerald-900 tracking-wider">
+              3. CLINICAL SUMMARY & PROVISIONAL DIAGNOSIS
+            </span>
+            <span className="text-3xs font-mono font-bold text-slate-600">ICD-11: BA41.Z • NAMASTE: AYU-HR-003</span>
           </div>
-          <div>
-            <span className="text-gray-500 font-semibold block">Age / Gender / Blood Group:</span>
-            <span className="font-bold">{patient.age}Y / {patient.gender} ({patient.bloodGroup})</span>
-          </div>
-          <div>
-            <span className="text-gray-500 font-semibold block">ABHA ID:</span>
-            <span className="font-mono font-bold">{patient.abhaId}</span>
-          </div>
-          <div>
-            <span className="text-gray-500 font-semibold block">Encounter / Session ID:</span>
-            <span className="font-mono">{sessionId}</span>
-          </div>
-          <div>
-            <span className="text-gray-500 font-semibold block">Triage Priority:</span>
-            <span className="font-bold text-rose-700">{caseData?.encounter?.triagePriority || "EMERGENCY"}</span>
-          </div>
-          <div>
-            <span className="text-gray-500 font-semibold block">Prakriti / Constitution:</span>
-            <span className="font-bold">{caseData?.ayurveda?.prakriti || "Vata-Kapha"}</span>
+          <div className="text-2xs text-slate-800 space-y-1 pt-0.5">
+            <p><strong>Chief Complaint:</strong> {caseData?.encounter?.chiefComplaint || "Retrosternal chest heaviness & joint stiffness"}</p>
+            <p><strong>Physician Examination & Notes:</strong> {doctorRxNotes}</p>
           </div>
         </div>
 
-        {/* Doctor Clinical Assessment */}
-        <div className="space-y-1">
-          <h3 className="text-xs font-extrabold uppercase text-emerald-800 border-b pb-1">
-            Clinical Notes & Diagnosis:
-          </h3>
-          <p className="text-xs font-medium text-gray-800 whitespace-pre-wrap">{doctorRxNotes}</p>
-        </div>
-
-        {/* Rx Symbol & Medication Table */}
-        <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            <span className="text-xl font-serif font-black text-emerald-900">℞</span>
-            <span className="text-xs font-extrabold uppercase tracking-wider text-gray-700">Prescribed Medications</span>
+        {/* Prescription (℞) Table */}
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between border-b pb-1">
+            <div className="flex items-center gap-1.5">
+              <span className="text-lg font-serif font-black text-emerald-950">℞</span>
+              <span className="text-3xs font-black uppercase text-emerald-950 tracking-wider">
+                4. PRESCRIBED MEDICATIONS & REGIMEN
+              </span>
+            </div>
+            <span className="text-3xs text-slate-500 font-semibold">Take medications strictly as directed with warm water</span>
           </div>
 
-          <table className="w-full text-xs border border-collapse">
+          <table className="w-full text-2xs border border-collapse">
             <thead>
-              <tr className="bg-gray-100 text-gray-700 border-b">
-                <th className="p-2 text-left">S.No</th>
-                <th className="p-2 text-left">Medicine Name (Generic/Ayurvedic)</th>
-                <th className="p-2 text-left">Dosage</th>
-                <th className="p-2 text-left">Frequency</th>
-                <th className="p-2 text-left">Duration</th>
-                <th className="p-2 text-left">Instructions</th>
+              <tr className="bg-slate-100 text-slate-800 font-bold border-b text-3xs uppercase">
+                <th className="p-1.5 text-left w-8">#</th>
+                <th className="p-1.5 text-left">Medicine Name (Brand/Generic/Ayurvedic)</th>
+                <th className="p-1.5 text-left w-20">Dose</th>
+                <th className="p-1.5 text-left w-28">Frequency (Timing)</th>
+                <th className="p-1.5 text-left w-20">Duration</th>
+                <th className="p-1.5 text-left">Special Instructions</th>
               </tr>
             </thead>
             <tbody className="divide-y">
               {doctorPrescriptions.map((rx, idx) => (
-                <tr key={idx}>
-                  <td className="p-2 font-bold text-gray-600">{idx + 1}</td>
-                  <td className="p-2 font-bold">{rx.name}</td>
-                  <td className="p-2">{rx.dosage}</td>
-                  <td className="p-2 font-bold text-emerald-800">{rx.frequency}</td>
-                  <td className="p-2">{rx.duration}</td>
-                  <td className="p-2 text-gray-600">{rx.instructions}</td>
+                <tr key={idx} className="hover:bg-slate-50">
+                  <td className="p-1.5 font-bold text-slate-500">{idx + 1}.</td>
+                  <td className="p-1.5 font-bold text-slate-900">{rx.name}</td>
+                  <td className="p-1.5 font-medium">{rx.dosage}</td>
+                  <td className="p-1.5 font-bold text-emerald-900 bg-emerald-50/50">{rx.frequency}</td>
+                  <td className="p-1.5 font-medium">{rx.duration}</td>
+                  <td className="p-1.5 text-slate-700">{rx.instructions}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
 
-        {/* Diet & Investigations */}
-        <div className="grid grid-cols-2 gap-4 text-xs">
-          <div className="p-2.5 bg-emerald-50/50 border border-emerald-200 rounded">
-            <span className="font-extrabold text-emerald-900 block mb-0.5">Pathya / Diet Advice:</span>
-            <p className="text-gray-700">{doctorDietAdvice}</p>
+        {/* 2-Column: Pathya-Apathya Diet & Advised Investigations */}
+        <div className="grid grid-cols-2 gap-3 text-2xs">
+          <div className="p-2.5 bg-emerald-50/40 border border-emerald-200 rounded-xl space-y-0.5">
+            <span className="text-3xs font-black uppercase text-emerald-950 block border-b border-emerald-200 pb-0.5">
+              5. PATHYA & APATHYA (DIETARY & LIFESTYLE ADVICE)
+            </span>
+            <p className="text-slate-800 pt-0.5">{doctorDietAdvice}</p>
           </div>
-          <div className="p-2.5 bg-gray-50 border rounded">
-            <span className="font-extrabold text-gray-800 block mb-0.5">Investigations Advised:</span>
-            <p className="text-gray-700">{doctorInvestigations}</p>
+
+          <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl space-y-0.5">
+            <span className="text-3xs font-black uppercase text-slate-900 block border-b border-slate-200 pb-0.5">
+              6. INVESTIGATIONS & NEXT FOLLOW-UP
+            </span>
+            <p className="text-slate-800 pt-0.5"><strong>Lab / Tests:</strong> {doctorInvestigations}</p>
+            <p className="text-slate-800"><strong>Follow-Up:</strong> {doctorFollowUp}</p>
           </div>
         </div>
 
-        {/* Doctor Signature & Registration Info */}
-        <div className="pt-6 border-t-2 flex justify-between items-end">
-          <div className="text-2xs text-gray-500 space-y-0.5">
-            <p>• Generated through <strong>AyurSetu Digital Case-Taking Platform</strong></p>
-            <p>• Valid for PM-JAY & ABDM National Health Records linkage</p>
-            <p>• Ayush National Helpline: 1075</p>
+        {/* Official Footer: Digital Signature & Legal ABDM Security Notice */}
+        <div className="pt-4 border-t-2 border-slate-300 flex justify-between items-end">
+          <div className="space-y-0.5 text-3xs text-slate-500">
+            <p>• Valid digital prescription generated via <strong>AyurSetu / MediMind AI OPD System</strong></p>
+            <p>• Certified compliant with <strong>Ministry of Ayush EHR & ABDM FHIR R4 Standards</strong></p>
+            <p>• For emergency escalation or telemedicine queries, call National Ayush Helpline: <strong>1075</strong></p>
           </div>
-          <div className="text-right space-y-1">
-            <div className="font-script text-lg text-emerald-900 font-bold">{doctorAuth.name}</div>
-            <div className="text-xs font-bold text-gray-800">{doctorAuth.name}</div>
-            <p className="text-2xs text-gray-600 font-mono">Reg No: {doctorAuth.regNumber}</p>
-            <p className="text-2xs text-gray-500">{doctorAuth.specialty}</p>
-            <span className="inline-block text-2xs font-extrabold px-2 py-0.5 bg-emerald-100 text-emerald-900 rounded">
-              Digitally Signed & Verified
+
+          <div className="text-right space-y-0.5">
+            <div className="font-serif italic font-bold text-sm text-emerald-950">{doctorAuth.name}</div>
+            <div className="text-2xs font-bold text-slate-900">{doctorAuth.name}</div>
+            <div className="text-3xs font-mono font-bold text-slate-700">Reg: {doctorAuth.regNumber}</div>
+            <div className="text-3xs text-slate-600">{doctorAuth.specialty}</div>
+            {doctorAuth.hospital && <div className="text-3xs font-semibold text-emerald-900">{doctorAuth.hospital}</div>}
+            <span className="inline-block text-3xs font-extrabold px-2 py-0.5 bg-emerald-100 text-emerald-950 rounded border border-emerald-300 mt-1">
+              ✓ Digitally Signed & OPD Sealed
             </span>
           </div>
         </div>
@@ -918,7 +955,7 @@ export default function IndividualDoctorCaseViewPage({
               <span className="text-3xl">👨‍⚕️</span>
               <h3 className="text-xl font-extrabold text-foreground">चिकित्सक साइन-इन व सत्यापन</h3>
               <p className="text-xs text-muted-foreground font-semibold">
-                Doctor Verification & Medical Registration Number
+                Doctor Verification, Medical Registration & Hospital Affiliation
               </p>
             </div>
 
@@ -929,6 +966,7 @@ export default function IndividualDoctorCaseViewPage({
                   type="text"
                   value={tempDoctorName}
                   onChange={(e) => setTempDoctorName(e.target.value)}
+                  placeholder="e.g. Dr. Arvind K. Sharma (MD, BAMS)"
                   className="w-full p-3 rounded-xl border text-sm font-semibold bg-background"
                 />
               </div>
@@ -939,6 +977,7 @@ export default function IndividualDoctorCaseViewPage({
                   type="text"
                   value={tempDoctorReg}
                   onChange={(e) => setTempDoctorReg(e.target.value)}
+                  placeholder="e.g. AYUSH-REG-DL-2024-9842"
                   className="w-full p-3 rounded-xl border font-mono text-sm font-semibold bg-background"
                 />
               </div>
@@ -949,8 +988,25 @@ export default function IndividualDoctorCaseViewPage({
                   type="text"
                   value={tempSpecialty}
                   onChange={(e) => setTempSpecialty(e.target.value)}
+                  placeholder="e.g. Senior Vaidya & Consultant Physician"
                   className="w-full p-3 rounded-xl border text-sm font-semibold bg-background"
                 />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-extrabold text-muted-foreground uppercase">
+                  अस्पताल / क्लिनिक / फर्म का नाम (Hospital / Clinic / Firm Name):
+                </label>
+                <input
+                  type="text"
+                  value={tempHospital}
+                  onChange={(e) => setTempHospital(e.target.value)}
+                  placeholder="Leave blank if private / independent practitioner"
+                  className="w-full p-3 rounded-xl border text-sm font-semibold bg-background"
+                />
+                <p className="text-3xs text-muted-foreground">
+                  (यदि आप किसी अस्पताल से जुड़े नहीं हैं तो इसे खाली छोड़ दें, यह पर्चे पर उसी अनुसार दिखेगा)
+                </p>
               </div>
             </div>
 
@@ -970,10 +1026,10 @@ export default function IndividualDoctorCaseViewPage({
                     name: tempDoctorName,
                     regNumber: tempDoctorReg,
                     specialty: tempSpecialty,
-                    hospital: "All India Institute of Ayurveda (AIIA), New Delhi",
+                    hospital: tempHospital.trim(),
                   });
                   setShowDoctorLoginModal(false);
-                  setActionSuccess("चिकित्सक क्रेडेंशियल अद्यतित किए गए (Doctor Profile Updated)");
+                  setActionSuccess("चिकित्सक क्रेडेंशियल व अस्पताल का नाम अद्यतित (Doctor Profile Updated)");
                 }}
                 className="flex-1 py-3 rounded-xl bg-ayush-green text-white text-xs font-extrabold shadow-md hover:bg-emerald-700"
               >
@@ -1017,20 +1073,21 @@ export default function IndividualDoctorCaseViewPage({
               <span>सरकारी OPD पर्ची प्रिंट / Export PDF</span>
             </button>
 
-            <ExtraLargeButton
-              variant="primary"
-              size="default"
-              icon={<ShieldCheck className="h-5 w-5" />}
-              onClick={handleAccept}
-              disabled={loading}
-            >
-              स्वीकृत व हस्ताक्षर करें (Accept & Sign)
-            </ExtraLargeButton>
+              <ExtraLargeButton
+                variant="primary"
+                size="default"
+                icon={<ShieldCheck className="h-5 w-5" />}
+                onClick={handleAccept}
+                disabled={loading}
+              >
+                स्वीकृत व हस्ताक्षर करें (Accept & Sign)
+              </ExtraLargeButton>
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  );
-}
+    );
+  }
+
 
 
