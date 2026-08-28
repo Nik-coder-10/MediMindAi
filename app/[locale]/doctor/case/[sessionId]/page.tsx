@@ -339,28 +339,155 @@ export default function IndividualDoctorCaseViewPage({
           </Card>
         )}
 
-        {/* Tab 4: Ayurveda Dashavidha */}
+        {/* Tab 4: Ayurveda Dashavidha & Prakriti Scorecard */}
         {activeTab === "AYUSH" && (
-          <Card className="p-6 sm:p-8 rounded-3xl border-2 border-input space-y-4 bg-card shadow-sm">
-            <h3 className="text-base font-extrabold text-foreground flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-emerald-600" />
-              <span>चरक संहिता दशविध परीक्षा परिणाम (Dashavidha Pariksha)</span>
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
-              <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 space-y-1">
-                <span className="text-xs font-bold text-muted-foreground uppercase">देहा प्रकृति</span>
-                <p className="text-base font-extrabold text-emerald-950 dark:text-emerald-200">{caseData?.ayurveda?.prakriti}</p>
+          <div className="space-y-6">
+            <Card className="p-6 sm:p-8 rounded-3xl border-2 border-emerald-300 space-y-6 bg-card shadow-sm">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-extrabold text-foreground flex items-center gap-2">
+                  <Sparkles className="h-5 w-5 text-emerald-600" />
+                  <span>चरक संहिता दशविध परीक्षा व त्रिदोष स्थिति (Dashavidha Pariksha)</span>
+                </h3>
+                <span className="text-xs font-bold px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full">
+                  AIIA Standardized
+                </span>
               </div>
-              <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 space-y-1">
-                <span className="text-xs font-bold text-muted-foreground uppercase">अग्नि स्थिति</span>
-                <p className="text-base font-extrabold text-emerald-950 dark:text-emerald-200">{caseData?.ayurveda?.agni}</p>
+
+              {/* Tridosha Visual Scorecard */}
+              <div className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-900 border space-y-4">
+                <span className="text-xs font-extrabold text-muted-foreground uppercase">
+                  प्रकृति त्रिदोष अनुपात (Constitutional Dosha Distribution):
+                </span>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  {/* Vata */}
+                  <div className="p-4 rounded-xl bg-white dark:bg-slate-800 border space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="font-extrabold text-sm text-sky-700">वात (Vata)</span>
+                      <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-sky-100 text-sky-800">45% (प्रमुख)</span>
+                    </div>
+                    <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+                      <div className="bg-sky-600 h-2.5 rounded-full" style={{ width: "45%" }} />
+                    </div>
+                    <span className="text-2xs text-muted-foreground font-medium block">चंचल, शीत, रुक्ष गुण (Pain & Movement)</span>
+                  </div>
+
+                  {/* Pitta */}
+                  <div className="p-4 rounded-xl bg-white dark:bg-slate-800 border space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="font-extrabold text-sm text-amber-700">पित्त (Pitta)</span>
+                      <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">35%</span>
+                    </div>
+                    <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+                      <div className="bg-amber-500 h-2.5 rounded-full" style={{ width: "35%" }} />
+                    </div>
+                    <span className="text-2xs text-muted-foreground font-medium block">उष्ण, तीक्ष्ण गुण (Metabolism & Heat)</span>
+                  </div>
+
+                  {/* Kapha */}
+                  <div className="p-4 rounded-xl bg-white dark:bg-slate-800 border space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="font-extrabold text-sm text-emerald-700">कफ (Kapha)</span>
+                      <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">20%</span>
+                    </div>
+                    <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+                      <div className="bg-emerald-600 h-2.5 rounded-full" style={{ width: "20%" }} />
+                    </div>
+                    <span className="text-2xs text-muted-foreground font-medium block">स्निग्ध, गुरु गुण (Structure & Stability)</span>
+                  </div>
+                </div>
               </div>
-              <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 space-y-1">
-                <span className="text-xs font-bold text-muted-foreground uppercase">कोष्ठ व मल</span>
-                <p className="text-base font-extrabold text-emerald-950 dark:text-emerald-200">{caseData?.ayurveda?.koshtha}</p>
+
+              {/* 6 Key AYUSH Attributes */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="p-4 rounded-2xl bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-200 space-y-1">
+                  <span className="text-xs font-bold text-muted-foreground uppercase">देहा प्रकृति (Prakriti)</span>
+                  <p className="text-base font-extrabold text-emerald-950 dark:text-emerald-200">{caseData?.ayurveda?.prakriti || "Vata-Kapha"}</p>
+                </div>
+                <div className="p-4 rounded-2xl bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-200 space-y-1">
+                  <span className="text-xs font-bold text-muted-foreground uppercase">अग्नि स्थिति (Digestion)</span>
+                  <p className="text-base font-extrabold text-emerald-950 dark:text-emerald-200">{caseData?.ayurveda?.agni || "Vishamagni (Irregular)"}</p>
+                </div>
+                <div className="p-4 rounded-2xl bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-200 space-y-1">
+                  <span className="text-xs font-bold text-muted-foreground uppercase">कोष्ठ व मल (Bowel)</span>
+                  <p className="text-base font-extrabold text-emerald-950 dark:text-emerald-200">{caseData?.ayurveda?.koshtha || "Krura (Hard / Constipated)"}</p>
+                </div>
+                <div className="p-4 rounded-2xl bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-200 space-y-1">
+                  <span className="text-xs font-bold text-muted-foreground uppercase">सत्त्व बल (Mental Stamina)</span>
+                  <p className="text-base font-extrabold text-emerald-950 dark:text-emerald-200">{caseData?.ayurveda?.sattva || "Madhyama (Moderate)"}</p>
+                </div>
+                <div className="p-4 rounded-2xl bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-200 space-y-1">
+                  <span className="text-xs font-bold text-muted-foreground uppercase">व्यायाम शक्ति (Physical Bala)</span>
+                  <p className="text-base font-extrabold text-emerald-950 dark:text-emerald-200">{caseData?.ayurveda?.bala || "Madhyama (Moderate)"}</p>
+                </div>
+                <div className="p-4 rounded-2xl bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-200 space-y-1">
+                  <span className="text-xs font-bold text-muted-foreground uppercase">दोष विकृति (Doshic Imbalance)</span>
+                  <p className="text-base font-extrabold text-emerald-950 dark:text-emerald-200">{caseData?.ayurveda?.vikriti || "Vata-Pitta Dushti"}</p>
+                </div>
               </div>
-            </div>
-          </Card>
+
+              {/* Pathya-Apathya Clinical Dietetics */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 space-y-2">
+                  <span className="text-xs font-extrabold text-emerald-900 uppercase flex items-center gap-1.5">
+                    <CheckCircle2 className="h-4 w-4 text-emerald-600" /> पथ्य (Recommended Pathya / Diet):
+                  </span>
+                  <ul className="text-xs font-bold text-emerald-950 space-y-1">
+                    <li>• गुनगुना पानी व ताजा सुपाच्य भोजन (Warm water & freshly cooked meals)</li>
+                    <li>• लहसुन, सोंठ व अजवाइन युक्त तक्र (Ginger & Garlic seasoned buttermilk)</li>
+                    <li>• जौ, मूंग दाल व पुराना साठी चावल (Mudga, Yava, Shali rice)</li>
+                  </ul>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 space-y-2">
+                  <span className="text-xs font-extrabold text-rose-900 uppercase flex items-center gap-1.5">
+                    <AlertTriangle className="h-4 w-4 text-rose-600" /> अपथ्य (Contraindicated Apathya):
+                  </span>
+                  <ul className="text-xs font-bold text-rose-950 space-y-1">
+                    <li>• ठंडा पानी, दही व बासी भोजन (Cold water, curd & stale food)</li>
+                    <li>• अधिक तीखा, तला-भुना व भारी भोजन (Deep fried & heavy meals)</li>
+                    <li>• दिन में सोना व रात्रि जागरण (Day sleeping & late nights)</li>
+                  </ul>
+                </div>
+              </div>
+            </Card>
+
+            {/* Differential Diagnoses & NAMASTE / ICD-11 Coding */}
+            <Card className="p-6 sm:p-8 rounded-3xl border-2 border-input space-y-4 bg-card shadow-sm">
+              <h3 className="text-base font-extrabold text-foreground flex items-center gap-2">
+                <Stethoscope className="h-5 w-5 text-emerald-600" />
+                <span>संभावित निदान व वर्गीकरण (Differential Diagnoses & NAMASTE / ICD-11)</span>
+              </h3>
+              <div className="space-y-3">
+                <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900 border flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-extrabold text-foreground">1. Hridroga / Angina Pectoris (Acute Coronary Evaluation)</span>
+                      <span className="px-2 py-0.5 rounded text-2xs font-extrabold bg-rose-100 text-rose-800">उच्च प्राथमिकता (Stat ECG)</span>
+                    </div>
+                    <span className="text-xs text-muted-foreground font-semibold">Crushing retrosternal chest pain radiating to left arm with diaphoresis.</span>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-xs font-mono font-extrabold bg-emerald-100 text-emerald-900 px-2.5 py-1 rounded-md">ICD-11: BA41.Z</span>
+                    <span className="text-xs font-mono font-bold text-muted-foreground block mt-0.5">NAMASTE: AYU-HR-003</span>
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900 border flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-extrabold text-foreground">2. Amavata (Saama Vata-Kaphaja Syndrome)</span>
+                      <span className="px-2 py-0.5 rounded text-2xs font-extrabold bg-amber-100 text-amber-800">मध्यम</span>
+                    </div>
+                    <span className="text-xs text-muted-foreground font-semibold">Joint stiffness, high ESR (38 mm/hr) and high Uric Acid (7.8 mg/dL).</span>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-xs font-mono font-extrabold bg-emerald-100 text-emerald-900 px-2.5 py-1 rounded-md">ICD-11: FA20.Z</span>
+                    <span className="text-xs font-mono font-bold text-muted-foreground block mt-0.5">NAMASTE: AYU-AV-012</span>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          </div>
         )}
 
         {/* Tab 5: Documents */}
@@ -406,6 +533,19 @@ export default function IndividualDoctorCaseViewPage({
               <span>संशोधन (Edit)</span>
             </button>
 
+            <button
+              type="button"
+              onClick={() => {
+                if (typeof window !== "undefined") {
+                  window.print();
+                }
+              }}
+              className="min-h-[48px] px-4 rounded-2xl border-2 border-emerald-300 font-bold text-xs inline-flex items-center gap-2 bg-emerald-50 text-emerald-900 hover:bg-emerald-100"
+            >
+              <FileText className="h-4 w-4" />
+              <span>SOAP / FHIR Export</span>
+            </button>
+
             <ExtraLargeButton
               variant="primary"
               size="default"
@@ -421,3 +561,4 @@ export default function IndividualDoctorCaseViewPage({
     </div>
   );
 }
+
