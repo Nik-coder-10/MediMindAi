@@ -66,7 +66,14 @@ export function apiError(error: unknown) {
     return NextResponse.json(responseBody, { status: 400 });
   }
 
-  const genericMessage = error instanceof Error ? error.message : "Internal server error";
+  const isProd = process.env.NODE_ENV === "production";
+  let genericMessage = "Internal server error";
+  if (!isProd && error instanceof Error) {
+    genericMessage = error.message;
+  } else if (error instanceof Error && !error.message.includes("prisma") && !error.message.includes("database") && !error.message.includes("select") && !error.message.includes("connect")) {
+    genericMessage = error.message;
+  }
+
   const responseBody: ApiResponse = {
     success: false,
     error: {
