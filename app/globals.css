@@ -82,27 +82,36 @@
     border-color: #ffffff !important;
   }
 
+  html.high-contrast header,
+  html.high-contrast header nav,
+  html.high-contrast header a,
+  html.high-contrast header button,
+  html.high-contrast header span,
+  html.high-contrast header svg {
+    color: #ffffff !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+
   html.high-contrast header {
     background-color: #000000 !important;
     background: #000000 !important;
     border-bottom: 2px solid #ffffff !important;
     opacity: 1 !important;
-  }
-
-  html.high-contrast header a,
-  html.high-contrast nav a,
-  html.high-contrast header span,
-  html.high-contrast nav span {
-    color: #ffffff !important;
-    opacity: 1 !important;
+    z-index: 50 !important;
   }
 
   html.high-contrast header a:hover,
-  html.high-contrast nav a:hover,
   html.high-contrast header a:hover span,
-  html.high-contrast nav a:hover span {
+  html.high-contrast header a:hover svg {
     color: #ffff00 !important;
+    stroke: #ffff00 !important;
   }
+
+  html.high-contrast header svg {
+    stroke: #ffff00 !important;
+  }
+
 
 
   html.high-contrast .bg-background,

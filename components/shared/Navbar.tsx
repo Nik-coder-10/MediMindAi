@@ -28,27 +28,28 @@ export function Navbar({ locale }: { locale: string }) {
           <nav className="hidden md:flex gap-6 text-sm font-medium">
             <Link
               href={`/${locale}/doctor`}
-              className="flex items-center gap-1.5 text-foreground/90 hover:text-foreground font-bold transition-colors"
+              className="flex items-center gap-1.5 text-foreground hover:text-primary font-bold transition-colors"
             >
-              <Stethoscope className="h-4 w-4 text-emerald-600 shrink-0" />
+              <Stethoscope className="h-4.5 w-4.5 text-emerald-500 shrink-0" />
               <span>Doctor Consultation</span>
             </Link>
             <Link
               href={`/${locale}/patient`}
-              className="flex items-center gap-1.5 text-foreground/90 hover:text-foreground font-bold transition-colors"
+              className="flex items-center gap-1.5 text-foreground hover:text-primary font-bold transition-colors"
             >
-              <User className="h-4 w-4 text-emerald-600 shrink-0" />
+              <User className="h-4.5 w-4.5 text-emerald-500 shrink-0" />
               <span>Patient PHR</span>
             </Link>
             <Link
               href={`/${locale}/admin-dashboard`}
-              className="flex items-center gap-1.5 text-foreground/90 hover:text-foreground font-bold transition-colors"
+              className="flex items-center gap-1.5 text-foreground hover:text-primary font-bold transition-colors"
             >
-              <ShieldCheck className="h-4 w-4 text-emerald-600 shrink-0" />
+              <ShieldCheck className="h-4.5 w-4.5 text-emerald-500 shrink-0" />
               <span>Admin & AYUSH</span>
             </Link>
           </nav>
         </div>
+
 
 
         <div className="flex items-center space-x-3">
