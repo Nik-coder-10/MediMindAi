@@ -2,6 +2,8 @@ import { prisma } from "@/lib/db/prisma";
 import { AppError } from "@/lib/api/errors";
 import { defaultQuestionProvider } from "./question-provider";
 import { RedFlagService } from "@/lib/services/redflag.service";
+import { AdaptiveQuestionGenerator } from "./adaptive-question-generator";
+import { dynamicQuestionNodes } from "./dynamic-registry";
 import {
   ComplaintCategory,
   EngineStateDTO,
@@ -13,24 +15,84 @@ import { TriagePriority } from "@prisma/client";
 // In-memory state cache fallback for resilience
 const inMemoryEngineStates: Map<string, EngineStateDTO> = new Map();
 
+function mapCategoryToDTO(cat: string): ComplaintCategory {
+  switch (cat) {
+    case "Musculoskeletal":
+      return "JOINT_PAIN";
+    case "Chest Pain":
+      return "CHEST_PAIN";
+    case "Headache":
+      return "HEADACHE";
+    case "Abdominal Pain":
+      return "ABDOMINAL_PAIN";
+    case "Fever":
+      return "FEVER";
+    default:
+      return "GENERAL";
+  }
+}
+
 export class AdaptiveEngineService {
   /**
    * Starts a new clinical question session for a chief complaint
    */
   static async startSession(
     sessionId: string,
-    chiefComplaintText: string
+    chiefComplaintText: string,
+    language: "hi" | "en" = "hi"
   ): Promise<{ state: EngineStateDTO; firstQuestion: EngineQuestionDefinition | null }> {
     if (!sessionId || !chiefComplaintText) {
       throw AppError.badRequest("sessionId and chiefComplaintText are required");
     }
 
-    const category = await defaultQuestionProvider.classifyComplaint(chiefComplaintText);
-    const firstNode = await defaultQuestionProvider.getFirstNodeForCategory(category);
+    // 1. Generate dynamic tailored adaptive questions based on chief complaint
+    const dynamicGen = await AdaptiveQuestionGenerator.generateQuestions({
+      chiefComplaint: chiefComplaintText,
+      language,
+      sessionId,
+    });
+
+    const category = mapCategoryToDTO(dynamicGen.category);
+
+    // 2. Register dynamic question chain in dynamic nodes registry
+    let firstNode: EngineQuestionDefinition | null = null;
+    const questions = dynamicGen.questions;
+
+    for (let i = 0; i < questions.length; i++) {
+      const q = questions[i];
+      const nextQ = questions[i + 1];
+
+      const nodeDef: EngineQuestionDefinition = {
+        nodeCode: q.id,
+        chiefComplaintCategory: category,
+        clinicalDomain: `SOCRATES_${q.clinicalPurpose.toUpperCase()}`,
+        questionText: q.textEn,
+        questionTextHindi: q.text,
+        questionType: q.type === "scale" ? "SINGLE_CHOICE" : (q.type.toUpperCase() as any),
+        options: (q.options || []).map((opt) => {
+          if (typeof opt === "string") {
+            return { value: opt, labelHi: opt, labelEn: opt };
+          }
+          return opt;
+        }),
+        nextRules: nextQ ? [{ targetNodeCode: nextQ.id }] : [],
+      };
+
+      dynamicQuestionNodes.set(q.id, nodeDef);
+
+      if (i === 0) {
+        firstNode = nodeDef;
+      }
+    }
+
+    // If dynamic questions were empty (fallback), query provider
+    if (!firstNode) {
+      firstNode = await defaultQuestionProvider.getFirstNodeForCategory(category);
+    }
 
     const initialFacts: CollectedFacts = {
       category,
-      answers: { chiefComplaint: chiefComplaintText },
+      answers: { chiefComplaint: chiefComplaintText, detectedProblems: dynamicGen.detectedProblems },
       triggeredRedFlags: [],
     };
 
@@ -39,7 +101,7 @@ export class AdaptiveEngineService {
       category,
       currentNodeCode: firstNode?.nodeCode || null,
       questionCount: 0,
-      maxQuestions: 10,
+      maxQuestions: Math.max(questions.length, 10),
       triageLevel: "ROUTINE",
       isPaused: false,
       completed: false,
@@ -77,6 +139,7 @@ export class AdaptiveEngineService {
 
     return { state: engineState, firstQuestion: firstNode };
   }
+
 
   /**
    * Processes an answer from patient, updates facts, evaluates safety red flags, and returns next question

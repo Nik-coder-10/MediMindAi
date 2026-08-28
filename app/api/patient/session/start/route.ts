@@ -6,6 +6,7 @@ import { AdaptiveEngineService } from "@/lib/engine/adaptive-engine.service";
 const startEngineSchema = z.object({
   sessionId: z.string().min(1, "sessionId is required"),
   chiefComplaint: z.string().min(1, "chiefComplaint is required"),
+  language: z.enum(["hi", "en"]).default("hi").optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -14,10 +15,12 @@ export async function POST(req: NextRequest) {
     const validated = startEngineSchema.parse(body);
     const result = await AdaptiveEngineService.startSession(
       validated.sessionId,
-      validated.chiefComplaint
+      validated.chiefComplaint,
+      validated.language || "hi"
     );
     return apiSuccess(result, 200);
   } catch (error) {
     return apiError(error);
   }
 }
+

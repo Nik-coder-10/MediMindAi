@@ -448,25 +448,49 @@ export const COMPREHENSIVE_QUESTION_REGISTRY: Record<string, EngineQuestionDefin
 export class ComprehensiveQuestionProvider implements QuestionProvider {
   async classifyComplaint(text: string): Promise<ComplaintCategory> {
     const lower = text.toLowerCase();
-    if (lower.includes("chest") || lower.includes("सीना") || lower.includes("छाती") || lower.includes("heart") || lower.includes("हृदय")) {
+    if (
+      lower.includes("joint") ||
+      lower.includes("घुटने") ||
+      lower.includes("घुटना") ||
+      lower.includes("जोड़ों") ||
+      lower.includes("जोड़") ||
+      lower.includes("knee") ||
+      lower.includes("arthritis") ||
+      lower.includes("वात") ||
+      lower.includes("back") ||
+      lower.includes("kamar") ||
+      lower.includes("कमर") ||
+      lower.includes("पीठ") ||
+      lower.includes("stiff") ||
+      lower.includes("jakdan") ||
+      lower.includes("जकड़न") ||
+      lower.includes("sujan") ||
+      lower.includes("सूजन")
+    ) {
+      return "JOINT_PAIN";
+    }
+    if (lower.includes("chest") || lower.includes("सीना") || lower.includes("छाती") || lower.includes("heart") || lower.includes("हृदय") || lower.includes("cardiac")) {
       return "CHEST_PAIN";
     }
-    if (lower.includes("head") || lower.includes("सिर") || lower.includes("migraine") || lower.includes("headache")) {
+    if (lower.includes("head") || lower.includes("सिर") || lower.includes("migraine") || lower.includes("headache") || lower.includes("आधासीसी")) {
       return "HEADACHE";
     }
-    if (lower.includes("stomach") || lower.includes("पेट") || lower.includes("abdomen") || lower.includes("gas") || lower.includes("acidity") || lower.includes("अम्लपित्त")) {
+    if (lower.includes("stomach") || lower.includes("पेट") || lower.includes("abdomen") || lower.includes("gas") || lower.includes("acidity") || lower.includes("अम्लपित्त") || lower.includes("dast") || lower.includes("दस्त") || lower.includes("kabz") || lower.includes("कब्ज")) {
       return "ABDOMINAL_PAIN";
     }
-    if (lower.includes("fever") || lower.includes("बुखार") || lower.includes("ताप") || lower.includes("jvara") || lower.includes("chills")) {
+    if (lower.includes("fever") || lower.includes("बुखार") || lower.includes("ताप") || lower.includes("jvara") || lower.includes("chills") || lower.includes("thand") || lower.includes("ठंड")) {
       return "FEVER";
-    }
-    if (lower.includes("joint") || lower.includes("घुटने") || lower.includes("जोड़ों") || lower.includes("knee") || lower.includes("arthritis") || lower.includes("वात")) {
-      return "JOINT_PAIN";
     }
     return "GENERAL";
   }
 
   async getNodeByCode(nodeCode: string): Promise<EngineQuestionDefinition | null> {
+    // 1. Check in-memory dynamic questions registry (from dynamic generator or admin)
+    const { dynamicQuestionNodes } = await import("./dynamic-registry");
+    if (dynamicQuestionNodes.has(nodeCode)) {
+      return dynamicQuestionNodes.get(nodeCode);
+    }
+    // 2. Check static registry
     return COMPREHENSIVE_QUESTION_REGISTRY[nodeCode] || null;
   }
 
@@ -501,3 +525,4 @@ export class ComprehensiveQuestionProvider implements QuestionProvider {
 }
 
 export const defaultQuestionProvider = new ComprehensiveQuestionProvider();
+
