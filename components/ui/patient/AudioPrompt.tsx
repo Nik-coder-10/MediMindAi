@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { usePathname } from "next/navigation";
-import { Volume2, VolumeX, Sparkles } from "lucide-react";
-import { motion } from "framer-motion";
+import { Volume2, VolumeX, Mic } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 interface AudioPromptProps {
@@ -22,24 +22,10 @@ export function AudioPrompt({
   locale,
 }: AudioPromptProps) {
   const pathname = usePathname();
-  // Exact check: only treat as Hindi if locale is 'hi' or pathname starts with '/hi'
   const isHindi = locale ? locale === "hi" : pathname.startsWith("/hi");
   const [isPlaying, setIsPlaying] = useState(false);
-  const [voicesReady, setVoicesReady] = useState(false);
 
-  // Load voices — some browsers fire voiceschanged before they're populated
-  useEffect(() => {
-    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
-    const load = () => {
-      const v = window.speechSynthesis.getVoices();
-      if (v.length > 0) setVoicesReady(true);
-    };
-    load();
-    window.speechSynthesis.addEventListener("voiceschanged", load);
-    return () => window.speechSynthesis.removeEventListener("voiceschanged", load);
-  }, []);
-
-  // When locale changes, cancel any active audio and reset playing state
+  // Cancel + reset when locale changes
   useEffect(() => {
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
       window.speechSynthesis.cancel();
@@ -47,7 +33,7 @@ export function AudioPrompt({
     setIsPlaying(false);
   }, [locale]);
 
-  // Also cancel when the question text changes (new question loaded)
+  // Cancel when question changes
   useEffect(() => {
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
       window.speechSynthesis.cancel();
@@ -65,13 +51,12 @@ export function AudioPrompt({
     }
 
     setIsPlaying(true);
-    // In English mode, speak the English text. In Hindi mode, speak Hindi text.
     const spokenText = isHindi ? (hindiText || text) : text;
 
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(spokenText);
     utterance.lang = isHindi ? "hi-IN" : "en-IN";
-    utterance.rate = 0.88; // Calm medical pace
+    utterance.rate = 0.88;
     utterance.pitch = 1.0;
 
     const voices = window.speechSynthesis.getVoices();
@@ -92,7 +77,6 @@ export function AudioPrompt({
           v.name.toLowerCase().includes("india") ||
           v.name.toLowerCase().includes("neerja") ||
           v.name.toLowerCase().includes("prabhat") ||
-          v.name.toLowerCase().includes("ravi") ||
           v.lang.startsWith("en")
       );
       if (eVoice) utterance.voice = eVoice;
@@ -107,54 +91,88 @@ export function AudioPrompt({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 8 }}
+      initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
       className={cn(
-        "flex items-start gap-4 p-5 rounded-2xl bg-ayush-mint/60 dark:bg-emerald-950/20 border-2 border-ayush-emerald/30 shadow-sm",
+        "relative flex items-center gap-4 p-4 rounded-2xl overflow-hidden",
+        "clay-teal border-0",
         className
       )}
     >
-      <button
-        type="button"
-        onClick={handleToggleSpeech}
-        aria-label={isPlaying ? "Stop audio instruction" : "Play audio instruction"}
-        className={cn(
-          "flex-shrink-0 w-14 h-14 rounded-2xl text-white flex items-center justify-center shadow-md active:scale-95 transition-all focus:ring-4 focus:ring-emerald-300",
-          isPlaying
-            ? "bg-rose-500 hover:bg-rose-600 animate-pulse"
-            : "bg-ayush-green hover:bg-ayush-emerald"
-        )}
-      >
-        {isPlaying ? (
-          <VolumeX className="h-7 w-7 text-white" />
-        ) : (
-          <Volume2 className="h-7 w-7" />
-        )}
-      </button>
+      {/* Subtle background glow */}
+      <div className="absolute inset-0 bg-gradient-to-br from-teal-50/80 to-transparent dark:from-teal-950/20 pointer-events-none" />
 
-      <div className="flex-1 space-y-1">
-        <div className="flex items-center gap-1.5 text-xs font-bold text-ayush-green uppercase tracking-wide">
-          <Sparkles className="h-3.5 w-3.5" />
-          <span>{isHindi ? "आवाज में निर्देश (Audio Guidance)" : "Audio Guidance"}</span>
+      {/* Voice button — clay skeuomorphic */}
+      <div className="relative shrink-0">
+        <button
+          type="button"
+          onClick={handleToggleSpeech}
+          aria-label={isPlaying ? "Stop audio" : "Play audio guidance"}
+          className={cn(
+            "relative w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-300 focus:outline-none focus-visible:ring-4 focus-visible:ring-teal-300",
+            isPlaying
+              ? "bg-gradient-to-br from-teal-500 to-teal-700 shadow-[0_4px_16px_-2px_rgba(13,148,136,0.5),inset_0_1px_2px_rgba(255,255,255,0.3)] scale-95"
+              : "bg-gradient-to-br from-teal-400 to-teal-600 shadow-[0_6px_20px_-4px_rgba(13,148,136,0.4),inset_0_1px_2px_rgba(255,255,255,0.3)] hover:shadow-[0_8px_28px_-4px_rgba(13,148,136,0.5)] active:scale-95"
+          )}
+        >
+          {isPlaying ? (
+            <VolumeX className="h-6 w-6 text-white" strokeWidth={2.5} />
+          ) : (
+            <Volume2 className="h-6 w-6 text-white" strokeWidth={2.5} />
+          )}
+        </button>
+
+        {/* Pulse ring when playing */}
+        <AnimatePresence>
+          {isPlaying && (
+            <motion.div
+              initial={{ opacity: 0.8, scale: 1 }}
+              animate={{ opacity: 0, scale: 1.8 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 1.2, repeat: Infinity, ease: "easeOut" }}
+              className="absolute inset-0 rounded-2xl border-2 border-teal-400 pointer-events-none"
+            />
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* Text content */}
+      <div className="relative flex-1 min-w-0 space-y-0.5">
+        <div className="editorial-label text-teal-700 dark:text-teal-400 flex items-center gap-1.5 mb-1">
+          <Mic className="h-3 w-3" />
+          <span>{isHindi ? "आवाज में निर्देश" : "Audio Guidance"}</span>
+          {isPlaying && (
+            <span className="flex gap-0.5 ml-1 items-end h-3">
+              {[0, 0.1, 0.2].map((delay) => (
+                <motion.span
+                  key={delay}
+                  className="w-[2px] bg-teal-500 rounded-full"
+                  animate={{ height: ["4px", "10px", "4px"] }}
+                  transition={{ duration: 0.6, repeat: Infinity, delay, ease: "easeInOut" }}
+                />
+              ))}
+            </span>
+          )}
         </div>
+
         {isHindi ? (
           <>
             {hindiText && (
-              <p className="text-xl font-bold text-foreground leading-snug">
+              <p className="text-[15px] font-bold text-foreground leading-snug line-clamp-3">
                 {hindiText}
               </p>
             )}
-            <p className="text-sm text-muted-foreground font-medium">
+            <p className="text-[12px] text-muted-foreground font-medium leading-relaxed line-clamp-2 mt-0.5">
               {text}
             </p>
           </>
         ) : (
-          <p className="text-xl font-bold text-foreground leading-snug">
+          <p className="text-[15px] font-bold text-foreground leading-snug line-clamp-3">
             {text}
           </p>
         )}
       </div>
-
     </motion.div>
   );
 }

@@ -4,9 +4,15 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ExtraLargeButton } from "@/components/ui/patient/ExtraLargeButton";
 import { AudioPrompt } from "@/components/ui/patient/AudioPrompt";
-import { Card } from "@/components/ui/card";
-import { Stethoscope, Sparkles, ArrowRight, ShieldCheck, HeartPulse, User, Flower2 } from "lucide-react";
-import { motion } from "framer-motion";
+import {
+  Stethoscope,
+  Sparkles,
+  ArrowRight,
+  ShieldCheck,
+  Flower2,
+  CheckCircle2,
+} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 import { speakWithIndianVoice } from "@/lib/voice/tts";
 import { Volume2, VolumeX } from "lucide-react";
@@ -58,139 +64,155 @@ export default function PatientLauncherPage({
     );
   };
 
+  const modes = [
+    {
+      id: "AYURVEDA" as const,
+      icon: <Flower2 className="h-6 w-6" />,
+      iconBg: "bg-gradient-to-br from-teal-400 to-teal-600",
+      cardSelected: "shadow-[0_8px_32px_-4px_rgba(13,148,136,0.25),inset_0_1px_2px_rgba(255,255,255,0.9)] border-teal-400/60",
+      cardBase: "hover:shadow-[0_4px_20px_-4px_rgba(13,148,136,0.15)]",
+      selectedRing: "ring-2 ring-teal-400/40",
+      badgeBg: "bg-teal-100 dark:bg-teal-950/50 text-teal-700 dark:text-teal-400 border-teal-300/60",
+      labelColor: "text-teal-700 dark:text-teal-400",
+      badge: isHindi ? "मंत्रालय अनुशंसित" : "Ministry Recommended",
+      title: isHindi ? "आयुर्वेद परामर्श (AYUSH)" : "Ayurveda (AYUSH) Mode",
+      desc: isHindi
+        ? "दशविध परीक्षा, प्रकृति-विकृति व अग्नि-दोष आधारित समग्र इतिहास।"
+        : "Classical Dashavidha Pariksha, Prakriti, Agni, and Dosha dynamics.",
+    },
+    {
+      id: "GENERAL" as const,
+      icon: <Stethoscope className="h-6 w-6" />,
+      iconBg: "bg-gradient-to-br from-indigo-400 to-indigo-600",
+      cardSelected: "shadow-[0_8px_32px_-4px_rgba(67,56,202,0.2),inset_0_1px_2px_rgba(255,255,255,0.9)] border-indigo-400/60",
+      cardBase: "hover:shadow-[0_4px_20px_-4px_rgba(67,56,202,0.12)]",
+      selectedRing: "ring-2 ring-indigo-400/40",
+      badgeBg: "bg-indigo-100 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-400 border-indigo-300/60",
+      labelColor: "text-indigo-700 dark:text-indigo-400",
+      badge: isHindi ? "आधुनिक चिकित्सा" : "Modern Clinical",
+      title: isHindi ? "सामान्य चिकित्सा (General)" : "General Clinical Mode",
+      desc: isHindi
+        ? "मानक लक्षण ट्राइएज, दर्द इतिहास और पुराने नुस्खे।"
+        : "Standard SOCRATES pain history, symptom triage, and medical records.",
+    },
+  ] as const;
+
   return (
-    <div className="space-y-8 text-center max-w-xl mx-auto py-4">
+    <div className="max-w-xl mx-auto space-y-7">
+      {/* Audio Prompt */}
       <AudioPrompt
+        locale={locale}
         hindiText={isHindi ? "आयुर्वेद व सामान्य चिकित्सा परामर्श में आपका स्वागत है। कृपया अपनी परामर्श पद्धति चुनें।" : undefined}
-        text={isHindi ? "Welcome to AyurSetu clinical consultation." : "Welcome to AyurSetu clinical consultation. Please select your preferred consultation mode."}
+        text={
+          isHindi
+            ? "Welcome to AyurSetu clinical consultation."
+            : "Welcome to AyurSetu clinical consultation. Please select your preferred consultation mode."
+        }
       />
 
-      <div className="space-y-3">
-        <span className="text-xs font-extrabold px-4 py-1.5 bg-emerald-100 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 rounded-full inline-flex items-center gap-1.5 shadow-xs border border-emerald-300">
-          <Sparkles className="h-4 w-4 text-emerald-600" /> SIH 2026 • {isHindi ? "अखिल भारतीय आयुर्वेद संस्थान (AIIA)" : "All India Institute of Ayurveda (AIIA)"}
-        </span>
-        <h1 className="text-3xl sm:text-4xl font-extrabold text-foreground tracking-tight">
-          {isHindi ? "रोगी परामर्श सेवा (Patient Case-Taking)" : "Patient Consultation (Case-Taking)"}
+      {/* Header */}
+      <div className="text-center space-y-3">
+        <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full gov-badge text-[11px] font-black uppercase tracking-wider text-indigo-700 dark:text-indigo-300">
+          <Sparkles className="h-3.5 w-3.5" />
+          SIH 2026 · {isHindi ? "अखिल भारतीय आयुर्वेद संस्थान (AIIA)" : "All India Institute of Ayurveda (AIIA)"}
+        </div>
+        <h1 className="text-[28px] sm:text-[34px] font-black text-foreground tracking-tight leading-tight">
+          {isHindi ? "रोगी परामर्श सेवा" : "Patient Consultation"}
         </h1>
-        <p className="text-sm sm:text-base text-muted-foreground font-medium">
+        <p className="text-[13px] text-muted-foreground font-medium leading-relaxed max-w-sm mx-auto">
           {isHindi
             ? "अपनी नैदानिक परामर्श पद्धति चुनकर परामर्श आरंभ करें।"
             : "Choose your clinical consultation mode to begin your adaptive case-taking."}
         </p>
       </div>
 
-      {/* Mode Selection Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-left pt-2">
-        {/* Ayurveda Mode */}
-        <motion.div
-          whileTap={{ scale: 0.98 }}
-          onClick={() => setSelectedMode("AYURVEDA")}
-          className={`p-5 rounded-3xl border-3 transition-all flex flex-col justify-between shadow-sm relative cursor-pointer ${
-            selectedMode === "AYURVEDA"
-              ? "bg-emerald-50/80 border-ayush-green ring-4 ring-emerald-300 dark:bg-emerald-950/30"
-              : "bg-card border-input hover:border-emerald-400"
-          }`}
-        >
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-800 flex items-center justify-center shadow-inner">
-                <Flower2 className="h-6 w-6" />
-              </div>
-              <button
-                type="button"
-                onClick={(e) => handleSpeakCard(e, "AYURVEDA")}
-                aria-label="Listen to Ayurveda mode explanation"
-                className="w-10 h-10 rounded-xl bg-emerald-100 hover:bg-emerald-200 text-emerald-900 flex items-center justify-center border border-emerald-300 transition-all active:scale-95"
-              >
-                {playingCard === "AYURVEDA" ? (
-                  <VolumeX className="h-5 w-5 text-rose-600 animate-pulse" />
-                ) : (
-                  <Volume2 className="h-5 w-5 text-emerald-800" />
-                )}
-              </button>
-            </div>
-            <div>
-              <span className="text-xs font-bold text-emerald-800 uppercase block">
-                {isHindi ? "मंत्रालय अनुशंसित" : "Ministry Recommended"}
-              </span>
-              <h3 className="text-lg font-extrabold text-foreground">
-                {isHindi ? "आयुर्वेद परामर्श (AYUSH)" : "Ayurveda (AYUSH) Mode"}
-              </h3>
-              <p className="text-xs text-muted-foreground font-medium mt-1">
-                {isHindi
-                  ? "दशविध परीक्षा, प्रकृति-विकृति व अग्नि-दोष आधारित समग्र इतिहास।"
-                  : "Classical Dashavidha Pariksha, Prakriti, Agni, and Dosha dynamics."}
-              </p>
-            </div>
-          </div>
-          {selectedMode === "AYURVEDA" && (
-            <div className="mt-4 flex items-center gap-1 text-xs font-extrabold text-emerald-700">
-              <ShieldCheck className="h-4 w-4" /> {isHindi ? "चयनित (Active Mode)" : "Selected Mode"}
-            </div>
-          )}
-        </motion.div>
+      {/* Mode selection cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {modes.map((mode) => {
+          const isSelected = selectedMode === mode.id;
+          const isPlayingThis = playingCard === mode.id;
 
-        {/* General Clinical Mode */}
-        <motion.div
-          whileTap={{ scale: 0.98 }}
-          onClick={() => setSelectedMode("GENERAL")}
-          className={`p-5 rounded-3xl border-3 transition-all flex flex-col justify-between shadow-sm relative cursor-pointer ${
-            selectedMode === "GENERAL"
-              ? "bg-emerald-50/80 border-ayush-green ring-4 ring-emerald-300 dark:bg-emerald-950/30"
-              : "bg-card border-input hover:border-emerald-400"
-          }`}
-        >
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="w-12 h-12 rounded-2xl bg-blue-100 text-blue-800 flex items-center justify-center shadow-inner">
-                <Stethoscope className="h-6 w-6" />
-              </div>
-              <button
-                type="button"
-                onClick={(e) => handleSpeakCard(e, "GENERAL")}
-                aria-label="Listen to General mode explanation"
-                className="w-10 h-10 rounded-xl bg-blue-100 hover:bg-blue-200 text-blue-900 flex items-center justify-center border border-blue-300 transition-all active:scale-95"
-              >
-                {playingCard === "GENERAL" ? (
-                  <VolumeX className="h-5 w-5 text-rose-600 animate-pulse" />
-                ) : (
-                  <Volume2 className="h-5 w-5 text-blue-800" />
+          return (
+            <motion.div
+              key={mode.id}
+              whileTap={{ scale: 0.985 }}
+              onClick={() => setSelectedMode(mode.id)}
+              className={`
+                relative p-5 rounded-2xl cursor-pointer transition-all duration-300
+                ${isSelected
+                  ? `clay-white ${mode.cardSelected} ${mode.selectedRing}`
+                  : `bg-white/70 dark:bg-slate-900/60 border border-white/80 dark:border-white/08 shadow-glass-sm ${mode.cardBase}`
+                }
+              `}
+            >
+              {/* Selected check */}
+              <AnimatePresence>
+                {isSelected && (
+                  <motion.div
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0, opacity: 0 }}
+                    className="absolute top-3 right-3"
+                  >
+                    <CheckCircle2 className={`h-5 w-5 ${mode.labelColor}`} strokeWidth={2.5} />
+                  </motion.div>
                 )}
-              </button>
-            </div>
-            <div>
-              <span className="text-xs font-bold text-blue-800 uppercase block">
-                {isHindi ? "आधुनिक चिकित्सा" : "Modern Clinical"}
-              </span>
-              <h3 className="text-lg font-extrabold text-foreground">
-                {isHindi ? "सामान्य चिकित्सा (General)" : "General Clinical Mode"}
-              </h3>
-              <p className="text-xs text-muted-foreground font-medium mt-1">
-                {isHindi
-                  ? "मानक लक्षण ट्राइएज, दर्द इतिहास और पुराने नुस्खे।"
-                  : "Standard SOCRATES pain history, symptom triage, and medical records."}
-              </p>
-            </div>
-          </div>
-          {selectedMode === "GENERAL" && (
-            <div className="mt-4 flex items-center gap-1 text-xs font-extrabold text-emerald-700">
-              <ShieldCheck className="h-4 w-4" /> {isHindi ? "चयनित (Active Mode)" : "Selected Mode"}
-            </div>
-          )}
-        </motion.div>
+              </AnimatePresence>
+
+              <div className="space-y-3">
+                {/* Icon + audio */}
+                <div className="flex items-start justify-between">
+                  <div className={`w-12 h-12 rounded-2xl ${mode.iconBg} flex items-center justify-center text-white shadow-sm`}>
+                    {mode.icon}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={(e) => handleSpeakCard(e, mode.id)}
+                    aria-label={`Listen to ${mode.id} mode explanation`}
+                    className="w-9 h-9 rounded-xl bg-muted hover:bg-muted/80 flex items-center justify-center border border-border transition-all active:scale-90 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    {isPlayingThis ? (
+                      <VolumeX className="h-4 w-4 text-red-500 animate-pulse" />
+                    ) : (
+                      <Volume2 className="h-4 w-4 text-muted-foreground" />
+                    )}
+                  </button>
+                </div>
+
+                {/* Text */}
+                <div>
+                  <span className={`inline-block text-[10px] font-black uppercase tracking-wider mb-1.5 ${mode.labelColor}`}>
+                    {mode.badge}
+                  </span>
+                  <h3 className="text-[15px] font-extrabold text-foreground leading-tight mb-1">
+                    {mode.title}
+                  </h3>
+                  <p className="text-[12px] text-muted-foreground font-medium leading-relaxed">
+                    {mode.desc}
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+          );
+        })}
       </div>
 
-      {/* Primary Action Button */}
-      <div className="pt-4">
+      {/* CTA */}
+      <div>
         <ExtraLargeButton
           variant="primary"
           size="large"
-          className="w-full shadow-xl"
-          icon={<ArrowRight className="h-6 w-6" />}
+          className="w-full"
+          icon={<ArrowRight className="h-5 w-5" />}
           onClick={handleStart}
         >
-          परामर्श शुरू करें (Start Consultation)
+          {isHindi ? "परामर्श शुरू करें" : "Start Consultation"}
         </ExtraLargeButton>
+
+        <p className="text-center text-[11px] text-muted-foreground font-medium mt-3 flex items-center justify-center gap-1.5">
+          <ShieldCheck className="h-3.5 w-3.5 text-teal-600" />
+          {isHindi ? "ABDM / ABHA सुरक्षित · एंड-टू-एंड एन्क्रिप्टेड" : "ABDM / ABHA Secured · End-to-End Encrypted"}
+        </p>
       </div>
     </div>
   );

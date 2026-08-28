@@ -5,12 +5,12 @@ import { useRouter } from "next/navigation";
 import { ProgressStepper } from "@/components/ui/patient/ProgressStepper";
 import { AudioPrompt } from "@/components/ui/patient/AudioPrompt";
 import { ExtraLargeButton } from "@/components/ui/patient/ExtraLargeButton";
-import { Card } from "@/components/ui/card";
-import { ArrowLeft, ArrowRight, AlertTriangle, Check, HelpCircle, PauseCircle, PlayCircle, Volume2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, AlertTriangle, Check, HelpCircle, PauseCircle, PlayCircle, Volume2, VolumeX } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { EngineQuestionDefinition, QuestionOption } from "@/lib/engine/types";
 import { EmergencyAlertModal } from "@/components/ui/patient/EmergencyAlertModal";
 import { speakWithIndianVoice } from "@/lib/voice/tts";
+import { cn } from "@/lib/utils";
 
 export default function AdaptiveQuestionsFlowPage({
   params: { locale },
@@ -172,37 +172,43 @@ export default function AdaptiveQuestionsFlowPage({
     }
   };
 
-
-
-
+  // ── Paused state ──
   if (isPaused) {
     return (
-      <div className="container max-w-xl py-12 text-center space-y-6">
-        <Card className="p-8 rounded-3xl border-2 border-amber-300 bg-amber-50/50 space-y-4">
-          <PauseCircle className="h-16 w-16 text-amber-600 mx-auto" />
-          <h2 className="text-2xl font-extrabold text-amber-950">सत्र रोका गया है (Session Paused)</h2>
-          <p className="text-sm font-medium text-muted-foreground">
-            Your answers have been saved. You can resume anytime without losing progress.
-          </p>
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="max-w-sm mx-auto py-16 text-center space-y-6"
+      >
+        <div className="clay-white rounded-3xl p-8 space-y-5">
+          <div className="w-16 h-16 mx-auto rounded-2xl bg-amber-100 dark:bg-amber-950/30 flex items-center justify-center">
+            <PauseCircle className="h-8 w-8 text-amber-600" />
+          </div>
+          <div>
+            <h2 className="text-[20px] font-black text-foreground">Session Paused</h2>
+            <p className="text-[12px] text-muted-foreground font-medium mt-1.5">
+              सत्र रोका गया — Your answers are saved. Resume anytime without losing progress.
+            </p>
+          </div>
           <ExtraLargeButton
             variant="primary"
             size="large"
             className="w-full"
-            icon={<PlayCircle className="h-6 w-6" />}
+            icon={<PlayCircle className="h-5 w-5" />}
             onClick={() => setIsPaused(false)}
           >
-            जारी रखें (Resume Session)
+            जारी रखें (Resume)
           </ExtraLargeButton>
-        </Card>
-      </div>
+        </div>
+      </motion.div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 max-w-xl mx-auto">
       <ProgressStepper currentStep={4} />
 
-      {/* Red Flag Alert Modal Overlay */}
+      {/* Red Flag Alert Modal */}
       {redFlagBanner && (
         <EmergencyAlertModal
           description={redFlagBanner}
@@ -211,153 +217,189 @@ export default function AdaptiveQuestionsFlowPage({
       )}
 
       {currentQuestion && (
-        <>
-          <AudioPrompt
-            locale={locale}
-            hindiText={currentQuestion.questionTextHindi}
-            text={currentQuestion.questionText}
-          />
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={currentQuestion.nodeCode}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+            className="space-y-4"
+          >
+            {/* Audio Prompt */}
+            <AudioPrompt
+              locale={locale}
+              hindiText={currentQuestion.questionTextHindi}
+              text={currentQuestion.questionText}
+            />
 
+            {/* Question Card */}
+            <div className="clay-white rounded-3xl overflow-hidden">
+              {/* Card header band */}
+              <div className="px-6 pt-5 pb-4 border-b border-border/40 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200/60 dark:border-indigo-800/40 text-indigo-700 dark:text-indigo-400 text-[10px] font-black uppercase tracking-wider">
+                    Q{stepNumber} · {currentQuestion.chiefComplaintCategory.replace("_", " ")}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsPaused(true)}
+                  className="flex items-center gap-1 text-[11px] font-bold text-muted-foreground hover:text-foreground transition-colors min-h-[36px] px-2 rounded-lg hover:bg-muted/50"
+                >
+                  <PauseCircle className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">रोकें</span>
+                </button>
+              </div>
 
-          <Card className="border-3 border-emerald-300 shadow-md p-6 sm:p-8 rounded-3xl bg-white dark:bg-card space-y-6 text-center">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full">
-                अडेप्टिव प्रश्न {stepNumber} • {currentQuestion.chiefComplaintCategory}
-              </span>
-              <button
-                type="button"
-                onClick={() => setIsPaused(true)}
-                className="text-xs font-bold text-muted-foreground hover:text-foreground flex items-center gap-1 min-h-[40px] px-2"
-              >
-                <PauseCircle className="h-4 w-4" />
-                <span>रोकें (Pause)</span>
-              </button>
-            </div>
-
-            <div className="space-y-2">
-              {locale === "hi" ? (
-                <>
-                  <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground leading-snug">
-                    {currentQuestion.questionTextHindi}
-                  </h2>
-                  <p className="text-base text-muted-foreground font-medium">
+              {/* Question text */}
+              <div className="px-6 py-5 text-center space-y-1.5">
+                {locale === "hi" ? (
+                  <>
+                    <h2 className="text-[22px] sm:text-[26px] font-black text-foreground leading-snug tracking-tight">
+                      {currentQuestion.questionTextHindi}
+                    </h2>
+                    <p className="text-[13px] text-muted-foreground font-medium">
+                      {currentQuestion.questionText}
+                    </p>
+                  </>
+                ) : (
+                  <h2 className="text-[22px] sm:text-[26px] font-black text-foreground leading-snug tracking-tight">
                     {currentQuestion.questionText}
-                  </p>
-                </>
-              ) : (
-                <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground leading-snug">
-                  {currentQuestion.questionText}
-                </h2>
-              )}
-            </div>
+                  </h2>
+                )}
+              </div>
 
-            {/* Answer Options with Single Clean Audio Button in Centralized Language */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-xl mx-auto pt-2">
-              {currentQuestion.options?.map((opt) => {
-                const isSelected = selectedAnswer === opt.value;
-                const isPlayingThis = playingOptionAudio === opt.value;
-                const activeLabel = locale === "hi" ? opt.labelHi : opt.labelEn;
-                const subtitle = locale === "hi" ? opt.labelEn : "";
+              {/* Answer options */}
+              <div className="px-5 pb-5 space-y-2.5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  {currentQuestion.options?.map((opt) => {
+                    const isSelected = selectedAnswer === opt.value;
+                    const isPlayingThis = playingOptionAudio === opt.value;
+                    const activeLabel = locale === "hi" ? opt.labelHi : opt.labelEn;
+                    const subtitle = locale === "hi" ? opt.labelEn : "";
 
-                return (
-                  <motion.div
-                    key={opt.value}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => handleSelectOption(opt)}
-                    className={`min-h-[72px] p-4 rounded-2xl border-3 flex items-center justify-between text-left font-bold transition-all shadow-sm cursor-pointer ${
-                      isSelected
-                        ? "bg-ayush-mint border-ayush-green text-ayush-green ring-4 ring-emerald-300 shadow-md"
-                        : "bg-background border-input hover:border-ayush-emerald text-foreground"
-                    }`}
-                  >
-                    <div className="flex-1 pr-2">
-                      <div className="text-base font-extrabold text-foreground">{activeLabel}</div>
-                      {subtitle && <div className="text-xs text-muted-foreground font-semibold">{subtitle}</div>}
-                    </div>
-
-                    {/* Single Speaker Button Playing in Centralized Language & Selection Check */}
-                    <div className="flex items-center gap-2 shrink-0">
-                      <button
-                        type="button"
-                        onClick={(e) => handleSpeakOptionAudio(e, activeLabel, locale === "hi" ? "hi" : "en", opt.value)}
-                        title={locale === "hi" ? "विकल्प सुनें (Listen in Hindi)" : "Listen option in English"}
-                        className={`w-10 h-10 rounded-xl flex items-center justify-center text-xs font-bold transition-all border ${
-                          isPlayingThis
-                            ? "bg-emerald-600 text-white animate-pulse"
-                            : "bg-emerald-50 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-200 border-emerald-300 hover:bg-emerald-100"
-                        }`}
+                    return (
+                      <motion.div
+                        key={opt.value}
+                        whileTap={{ scale: 0.975 }}
+                        onClick={() => handleSelectOption(opt)}
+                        className={cn(
+                          "relative min-h-[68px] p-3.5 rounded-2xl flex items-center justify-between gap-2 cursor-pointer transition-all duration-250",
+                          isSelected
+                            ? "bg-gradient-to-br from-indigo-50 to-indigo-100/60 dark:from-indigo-950/40 dark:to-indigo-900/20 border-2 border-indigo-400 shadow-[0_0_0_4px_rgba(67,56,202,0.08)]"
+                            : "bg-muted/40 dark:bg-muted/20 border-2 border-transparent hover:border-indigo-300/60 hover:bg-indigo-50/40 dark:hover:bg-indigo-950/20"
+                        )}
                       >
-                        <Volume2 className="h-4.5 w-4.5" />
-                      </button>
-
-                      {isSelected ? (
-                        <div className="w-8 h-8 rounded-full bg-ayush-green text-white flex items-center justify-center shadow-xs">
-                          <Check className="h-4 w-4 stroke-[3]" />
+                        {/* Option label */}
+                        <div className="flex-1 min-w-0">
+                          <div className={cn(
+                            "text-[14px] font-bold leading-snug",
+                            isSelected ? "text-indigo-900 dark:text-indigo-200" : "text-foreground"
+                          )}>
+                            {activeLabel}
+                          </div>
+                          {subtitle && (
+                            <div className="text-[11px] text-muted-foreground font-medium mt-0.5 truncate">
+                              {subtitle}
+                            </div>
+                          )}
                         </div>
-                      ) : (
-                        <div className="w-8 h-8 rounded-full border-2 border-slate-300 dark:border-slate-700" />
-                      )}
-                    </div>
-                  </motion.div>
-                );
-              })}
+
+                        {/* Right: speaker + selection */}
+                        <div className="flex items-center gap-2 shrink-0">
+                          <button
+                            type="button"
+                            onClick={(e) =>
+                              handleSpeakOptionAudio(
+                                e,
+                                activeLabel,
+                                locale === "hi" ? "hi" : "en",
+                                opt.value
+                              )
+                            }
+                            title="Listen"
+                            className={cn(
+                              "w-8 h-8 rounded-lg flex items-center justify-center transition-all border",
+                              isPlayingThis
+                                ? "bg-teal-600 text-white border-teal-500 animate-pulse"
+                                : "bg-background border-border text-muted-foreground hover:border-teal-400 hover:text-teal-600"
+                            )}
+                          >
+                            <Volume2 className="h-3.5 w-3.5" />
+                          </button>
+
+                          <div className={cn(
+                            "w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all",
+                            isSelected
+                              ? "bg-indigo-600 border-indigo-600 shadow-sm"
+                              : "border-border"
+                          )}>
+                            {isSelected && <Check className="h-3.5 w-3.5 text-white stroke-[3]" />}
+                          </div>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+
+                {/* Skip option */}
+                <div className="flex items-center justify-center gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedAnswer("NOT_SURE");
+                      handleNextQuestion();
+                    }}
+                    className="text-[12px] font-bold text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 min-h-[40px] px-3.5 py-2 rounded-xl border border-border hover:border-indigo-300 bg-background hover:bg-indigo-50/50 dark:hover:bg-indigo-950/20 transition-all"
+                  >
+                    <HelpCircle className="h-3.5 w-3.5" />
+                    <span>{locale === "hi" ? "स्पष्ट नहीं / छोड़ें" : "Not sure / Skip"}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={(e) =>
+                      handleSpeakOptionAudio(
+                        e,
+                        locale === "hi" ? "स्पष्ट नहीं है, छोड़ें" : "Not sure, skip question",
+                        locale === "hi" ? "hi" : "en",
+                        "skip-opt"
+                      )
+                    }
+                    title="Listen"
+                    className="w-9 h-9 rounded-xl border border-border bg-background hover:border-teal-400 text-muted-foreground hover:text-teal-600 flex items-center justify-center transition-all"
+                  >
+                    <Volume2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              </div>
             </div>
-
-            {/* "I don't know / Skip" Option with Single Speaker Button */}
-            <div className="pt-2 flex items-center justify-center gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setSelectedAnswer("NOT_SURE");
-                  handleNextQuestion();
-                }}
-                className="text-sm font-bold text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 min-h-[44px] px-4 py-2 rounded-xl border bg-card"
-              >
-                <HelpCircle className="h-4 w-4" />
-                <span>{locale === "hi" ? "स्पष्ट नहीं है / छोड़ें (Not sure / Skip)" : "Not sure / Skip"}</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={(e) =>
-                  handleSpeakOptionAudio(
-                    e,
-                    locale === "hi" ? "स्पष्ट नहीं है, छोड़ें" : "Not sure, Skip question",
-                    locale === "hi" ? "hi" : "en",
-                    "skip-opt"
-                  )
-                }
-                title="Listen option"
-                className="w-10 h-10 rounded-xl border border-emerald-300 bg-emerald-50 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-200 flex items-center justify-center"
-              >
-                <Volume2 className="h-4.5 w-4.5" />
-              </button>
-            </div>
-
-
-          </Card>
-        </>
+          </motion.div>
+        </AnimatePresence>
       )}
 
-      {/* Bottom Navigation */}
-      <div className="flex justify-between items-center pt-4">
+      {/* Navigation */}
+      <div className="flex justify-between items-center pt-1">
         <ExtraLargeButton
           variant="secondary"
           size="default"
           icon={<ArrowLeft className="h-5 w-5" />}
           onClick={() => router.back()}
         >
-          पीछे (Back)
+          {locale === "hi" ? "पीछे" : "Back"}
         </ExtraLargeButton>
 
         <ExtraLargeButton
           variant="primary"
           size="large"
           disabled={!selectedAnswer || loading}
-          icon={<ArrowRight className="h-6 w-6" />}
+          icon={<ArrowRight className="h-5 w-5" />}
           onClick={handleNextQuestion}
         >
-          {loading ? "सहेज रहे हैं..." : "अगला प्रश्न (Next)"}
+          {loading
+            ? locale === "hi" ? "सहेज रहे हैं..." : "Saving..."
+            : locale === "hi" ? "अगला प्रश्न" : "Next Question"}
         </ExtraLargeButton>
       </div>
     </div>

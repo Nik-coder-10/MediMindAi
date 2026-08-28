@@ -4,6 +4,7 @@ import React from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { locales } from "@/i18n";
 import { motion } from "framer-motion";
+import { cn } from "@/lib/utils";
 
 export function PatientLanguageSwitcher({ currentLocale }: { currentLocale: string }) {
   const router = useRouter();
@@ -20,28 +21,29 @@ export function PatientLanguageSwitcher({ currentLocale }: { currentLocale: stri
   };
 
   const languages = [
-    { code: "hi", name: "हिंदी", label: "Hindi", icon: "🇮🇳" },
-    { code: "en", name: "English", label: "English", icon: "🌐" },
+    { code: "hi", name: "हिंदी", icon: "🇮🇳" },
+    { code: "en", name: "EN", icon: "🌐" },
   ];
 
   return (
-    <div className="flex items-center gap-2 p-1 bg-muted rounded-2xl border">
+    <div className="flex items-center gap-1 p-1 rounded-xl bg-muted/60 border border-border/60">
       {languages.map((lang) => {
         const isSelected = currentLocale === lang.code;
         return (
           <motion.button
             key={lang.code}
-            whileTap={{ scale: 0.95 }}
+            whileTap={{ scale: 0.94 }}
             type="button"
             onClick={() => handleSelectLanguage(lang.code)}
             aria-pressed={isSelected}
-            className={`min-h-[48px] px-4 py-2 rounded-xl font-bold text-base flex items-center gap-2 transition-all ${
+            className={cn(
+              "min-h-[32px] px-2.5 py-1 rounded-lg font-bold text-[12px] flex items-center gap-1.5 transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400",
               isSelected
-                ? "bg-ayush-green text-white shadow-md"
-                : "text-foreground hover:bg-background/80"
-            }`}
+                ? "bg-white dark:bg-slate-800 text-foreground shadow-sm border border-border/60"
+                : "text-muted-foreground hover:text-foreground"
+            )}
           >
-            <span className="text-lg">{lang.icon}</span>
+            <span className="text-sm">{lang.icon}</span>
             <span>{lang.name}</span>
           </motion.button>
         );

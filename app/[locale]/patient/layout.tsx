@@ -5,11 +5,11 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { PatientLanguageSwitcher } from "@/components/ui/patient/PatientLanguageSwitcher";
 import { useThemeStore } from "@/stores/use-theme-store";
-import { Eye, LogOut, HeartHandshake, PhoneCall, LogIn } from "lucide-react";
+import { Eye, LogOut, HeartHandshake, PhoneCall, LogIn, Activity, ShieldCheck, Zap } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuthStore } from "@/stores/use-auth-store";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 export default function PatientShellLayout({
   children,
@@ -31,42 +31,55 @@ export default function PatientShellLayout({
   // DO NOT block rendering before mount — this causes blank screen on language switch
   if (mounted && !isAuthenticated && !pathname.includes("/login")) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 bg-slate-50 dark:bg-slate-950">
-        <Card className="max-w-md w-full p-6 sm:p-8 rounded-3xl border-2 border-emerald-400 space-y-5 text-center shadow-xl">
-          <div className="w-14 h-14 bg-emerald-100 dark:bg-emerald-950 text-emerald-700 rounded-full flex items-center justify-center mx-auto text-2xl">
-            🛡️
-          </div>
-          <div className="space-y-1.5">
-            <h2 className="text-xl font-black text-foreground">रोगी प्रमाणीकरण आवश्यक (Patient Login Required)</h2>
-            <p className="text-xs text-muted-foreground font-semibold">
-              To fetch your ABHA health record, past prescriptions, and register clinical encounters, please log in with your ABHA ID or mobile number.
-            </p>
-          </div>
+      <div className="min-h-screen patient-mesh flex items-center justify-center p-4">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.94, y: 16 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+          className="w-full max-w-sm"
+        >
+          <div className="clay-white rounded-3xl p-8 space-y-6 text-center">
+            {/* Icon */}
+            <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-indigo-100 to-indigo-50 border border-indigo-200/60 flex items-center justify-center shadow-clay-sm">
+              <ShieldCheck className="h-7 w-7 text-indigo-600" />
+            </div>
 
-          <div className="space-y-2 pt-2">
-            <Button
-              className="w-full font-extrabold min-h-[46px] flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white"
-              onClick={() => router.push(`/${locale}/login?role=patient`)}
-            >
-              <LogIn className="h-4 w-4" />
-              <span>Login with ABHA / Mobile OTP</span>
-            </Button>
+            {/* Text */}
+            <div className="space-y-2">
+              <h2 className="text-[19px] font-black text-foreground tracking-tight">
+                Patient Login Required
+              </h2>
+              <p className="text-[12px] text-muted-foreground font-medium leading-relaxed">
+                रोगी प्रमाणीकरण आवश्यक — Please log in with your ABHA ID or mobile number to access your health records.
+              </p>
+            </div>
 
-            <Button
-              variant="outline"
-              className="w-full text-xs font-bold border-emerald-300 bg-emerald-50/50 dark:bg-emerald-950/20"
-              onClick={() => {
-                loginAsPatient({
-                  name: "Ramesh Sharma",
-                  abhaId: "14-5542-8921-3410",
-                  phone: "+91 98765 43210",
-                });
-              }}
-            >
-              <span>⚡ Quick Demo Login (Ramesh Sharma • ABHA)</span>
-            </Button>
+            {/* Actions */}
+            <div className="space-y-2.5">
+              <button
+                className="w-full min-h-[48px] flex items-center justify-center gap-2 rounded-xl bg-gradient-to-br from-indigo-600 to-indigo-700 text-white font-bold text-[14px] shadow-md hover:shadow-indigo-glow transition-all duration-300 active:scale-[0.98]"
+                onClick={() => router.push(`/${locale}/login?role=patient`)}
+              >
+                <LogIn className="h-4 w-4" />
+                Login with ABHA / Mobile OTP
+              </button>
+
+              <button
+                className="w-full min-h-[48px] flex items-center justify-center gap-2 rounded-xl border border-teal-300 bg-teal-50/60 dark:bg-teal-950/20 text-teal-800 dark:text-teal-300 font-bold text-[13px] hover:bg-teal-100 dark:hover:bg-teal-950/40 transition-all"
+                onClick={() => {
+                  loginAsPatient({
+                    name: "Ramesh Sharma",
+                    abhaId: "14-5542-8921-3410",
+                    phone: "+91 98765 43210",
+                  });
+                }}
+              >
+                <Zap className="h-3.5 w-3.5" />
+                Quick Demo Login (Ramesh Sharma · ABHA)
+              </button>
+            </div>
           </div>
-        </Card>
+        </motion.div>
       </div>
     );
   }
@@ -74,69 +87,72 @@ export default function PatientShellLayout({
   // While zustand-persist is still rehydrating (mounted=false), show the full shell with children
   // This ensures language switch never produces a blank screen
 
-
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 font-sans">
-      {/* Top Patient Header Bar */}
-      <header className="sticky top-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur border-b shadow-sm">
-        <div className="container max-w-4xl mx-auto px-4 h-20 flex items-center justify-between gap-2">
-          {/* Logo & Calming Badge */}
+    <div className="min-h-screen flex flex-col patient-mesh font-sans">
+      {/* ── Patient Portal Header ── */}
+      <header className="sticky top-0 z-40 glass-panel border-b border-white/50 dark:border-white/06">
+        <div className="container max-w-4xl mx-auto px-4 h-[60px] flex items-center justify-between gap-3">
+
+          {/* Brand */}
           <Link
             href={`/${locale}/patient`}
-            className="flex items-center gap-2.5 focus:outline-none focus:ring-4 focus:ring-emerald-300 rounded-xl p-1"
+            className="flex items-center gap-2.5 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 p-1"
           >
-            <div className="w-12 h-12 rounded-2xl bg-ayush-mint flex items-center justify-center border-2 border-ayush-green text-2xl shadow-sm">
-              🌿
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-teal-500 to-teal-700 flex items-center justify-center shadow-sm">
+              <Activity className="h-4.5 w-4.5 text-white" strokeWidth={2.5} />
             </div>
-            <div>
-              <span className="text-xl font-extrabold text-ayush-green tracking-tight">आयुर्वेद सेतु</span>
-              <span className="block text-xs font-semibold text-muted-foreground">AyurSetu Patient Care</span>
+            <div className="leading-none">
+              <span className="block text-[14px] font-black text-foreground tracking-tight">
+                आयुर्वेद सेतु
+              </span>
+              <span className="block text-[10px] font-semibold text-muted-foreground">
+                Patient Care Portal
+              </span>
             </div>
           </Link>
 
-          {/* Action Tools: Logout */}
+          {/* Right controls */}
           <div className="flex items-center gap-2">
+            <PatientLanguageSwitcher currentLocale={locale} />
+
             <button
               type="button"
               onClick={() => router.push(`/${locale}/login`)}
               aria-label="Logout"
-              className="min-h-[44px] min-w-[44px] px-3.5 rounded-xl border-2 border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100 font-bold text-xs flex items-center gap-1.5 shadow-sm"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-200 dark:border-red-900/40 bg-red-50/60 dark:bg-red-950/20 text-red-600 dark:text-red-400 font-bold text-[11px] hover:bg-red-100 dark:hover:bg-red-950/40 transition-all min-h-[34px]"
             >
-              <LogOut className="h-4 w-4" />
-              <span>लॉगआउट</span>
+              <LogOut className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">लॉगआउट</span>
             </button>
           </div>
-
         </div>
       </header>
 
-      {/* Main Content Area */}
+      {/* Main Content */}
       <main className="flex-1 container max-w-4xl mx-auto px-4 py-8">
         <motion.div
-          initial={{ opacity: 0, y: 10 }}
+          initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.25 }}
+          transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
         >
           {children}
         </motion.div>
       </main>
 
-      {/* Persistent Rural Emergency Help Footer */}
-      <footer className="border-t bg-white dark:bg-slate-900 py-4">
-        <div className="container max-w-4xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3 text-center sm:text-left">
-          <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">
-            <HeartHandshake className="h-4 w-4 text-emerald-600" />
-            <span>Ministry of Ayush / AIIA • 100% Free & Secure Clinical Service</span>
+      {/* Footer */}
+      <footer className="glass-panel border-t border-white/40 dark:border-white/06 py-3.5">
+        <div className="container max-w-4xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+          <div className="flex items-center gap-2 text-[11px] font-semibold text-muted-foreground">
+            <HeartHandshake className="h-3.5 w-3.5 text-teal-600" />
+            <span>Ministry of Ayush / AIIA · 100% Free &amp; Secure</span>
           </div>
-          <div className="flex items-center gap-2">
-            <a
-              href="tel:1075"
-              className="min-h-[44px] px-4 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-300 font-bold text-xs flex items-center gap-1.5 hover:bg-emerald-100"
-            >
-              <PhoneCall className="h-3.5 w-3.5" />
-              <span>National Ayush Helpline: 1075</span>
-            </a>
-          </div>
+          <a
+            href="tel:1075"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-teal-300 dark:border-teal-800 bg-teal-50/60 dark:bg-teal-950/20 text-teal-800 dark:text-teal-300 font-bold text-[11px] hover:bg-teal-100 dark:hover:bg-teal-950/40 transition-all min-h-[36px]"
+          >
+            <PhoneCall className="h-3.5 w-3.5" />
+            Ayush Helpline: 1075
+          </a>
         </div>
       </footer>
     </div>

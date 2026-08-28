@@ -6,25 +6,30 @@ import { motion, type HTMLMotionProps } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 const extraLargeButtonVariants = cva(
-  "inline-flex items-center justify-center gap-3 whitespace-nowrap rounded-2xl font-bold tracking-tight transition-colors focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 select-none shadow-md",
+  "inline-flex items-center justify-center gap-3 whitespace-nowrap font-bold tracking-tight transition-all focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-ring/40 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-40 select-none relative overflow-hidden",
   {
     variants: {
       variant: {
+        // Deep indigo primary — authority action
         primary:
-          "bg-ayush-green text-white hover:bg-ayush-emerald active:bg-green-900 border-2 border-emerald-700",
-        secondary:
-          "bg-white dark:bg-card text-foreground hover:bg-slate-100 dark:hover:bg-slate-800 border-2 border-border shadow-sm",
+          "bg-gradient-to-br from-indigo-600 to-indigo-700 text-white hover:from-indigo-500 hover:to-indigo-600 shadow-md hover:shadow-indigo-glow border border-indigo-500/30 rounded-2xl",
+        // Teal success — Ayush identity
         success:
-          "bg-emerald-600 text-white hover:bg-emerald-700 active:bg-emerald-800 border-2 border-emerald-500",
+          "bg-gradient-to-br from-teal-600 to-teal-700 text-white hover:from-teal-500 hover:to-teal-600 shadow-md hover:shadow-teal-glow border border-teal-500/30 rounded-2xl",
+        // Clay white secondary
+        secondary:
+          "clay-white text-foreground hover:shadow-premium rounded-2xl",
+        // Danger
         danger:
-          "bg-rose-600 text-white hover:bg-rose-700 active:bg-rose-800 border-2 border-rose-500",
+          "bg-gradient-to-br from-red-600 to-red-700 text-white hover:from-red-500 hover:to-red-600 shadow-md border border-red-500/30 rounded-2xl",
+        // Calm sky
         calmSky:
-          "bg-sky-100 dark:bg-sky-950/60 text-sky-900 dark:text-sky-100 hover:bg-sky-200 border-2 border-sky-300",
+          "bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 border border-indigo-200 dark:border-indigo-800 rounded-2xl",
       },
       size: {
-        default: "min-h-[56px] min-w-[56px] px-6 py-4 text-lg",
-        large: "min-h-[64px] min-w-[64px] px-8 py-5 text-xl",
-        giant: "min-h-[72px] min-w-[72px] px-10 py-6 text-2xl font-extrabold",
+        default: "min-h-[56px] min-w-[56px] px-6 py-3.5 text-[17px]",
+        large: "min-h-[64px] min-w-[64px] px-8 py-4 text-[18px]",
+        giant: "min-h-[72px] min-w-[72px] px-10 py-5 text-[20px] font-extrabold",
       },
     },
     defaultVariants: {
@@ -47,13 +52,13 @@ export const ExtraLargeButton = React.forwardRef<
   return (
     <motion.button
       ref={ref as any}
-      whileHover={{ scale: 1.01 }}
+      whileHover={{ scale: 1.015, y: -1 }}
       whileTap={{ scale: 0.97 }}
-      transition={{ duration: 0.15 }}
+      transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
       className={cn(extraLargeButtonVariants({ variant, size, className }))}
       {...(props as any)}
     >
-      {icon && <span className="text-2xl">{icon}</span>}
+      {icon && <span className="shrink-0">{icon}</span>}
       <span>{children}</span>
     </motion.button>
   );
