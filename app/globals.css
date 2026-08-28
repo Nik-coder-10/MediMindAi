@@ -83,18 +83,27 @@
   }
 
   html.high-contrast header {
-    background-color: #050505 !important;
+    background-color: #000000 !important;
+    background: #000000 !important;
+    border-bottom: 2px solid #ffffff !important;
+    opacity: 1 !important;
   }
 
   html.high-contrast header a,
-  html.high-contrast nav a {
+  html.high-contrast nav a,
+  html.high-contrast header span,
+  html.high-contrast nav span {
     color: #ffffff !important;
+    opacity: 1 !important;
   }
 
   html.high-contrast header a:hover,
-  html.high-contrast nav a:hover {
+  html.high-contrast nav a:hover,
+  html.high-contrast header a:hover span,
+  html.high-contrast nav a:hover span {
     color: #ffff00 !important;
   }
+
 
   html.high-contrast .bg-background,
   html.high-contrast .bg-white,

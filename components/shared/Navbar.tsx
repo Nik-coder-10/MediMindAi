@@ -18,25 +18,38 @@ export function Navbar({ locale }: { locale: string }) {
   }[contrastMode];
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-50 w-full border-b bg-background shadow-xs">
       <div className="container flex h-16 items-center justify-between">
         <div className="flex items-center gap-6">
-          <Link href={`/${locale}`} className="flex items-center space-x-2 font-bold text-lg text-ayush-green">
+          <Link href={`/${locale}`} className="flex items-center space-x-2 font-bold text-lg text-foreground hover:opacity-80">
             <span className="text-2xl">🌿</span>
-            <span>AyurSetu</span>
+            <span className="text-ayush-green font-extrabold">AyurSetu</span>
           </Link>
           <nav className="hidden md:flex gap-6 text-sm font-medium">
-            <Link href={`/${locale}/doctor`} className="flex items-center gap-1.5 hover:text-primary transition-colors">
-              <Stethoscope className="h-4 w-4 text-emerald-600" /> Doctor Consultation
+            <Link
+              href={`/${locale}/doctor`}
+              className="flex items-center gap-1.5 text-foreground/90 hover:text-foreground font-bold transition-colors"
+            >
+              <Stethoscope className="h-4 w-4 text-emerald-600 shrink-0" />
+              <span>Doctor Consultation</span>
             </Link>
-            <Link href={`/${locale}/patient`} className="flex items-center gap-1.5 hover:text-primary transition-colors">
-              <User className="h-4 w-4 text-emerald-600" /> Patient PHR
+            <Link
+              href={`/${locale}/patient`}
+              className="flex items-center gap-1.5 text-foreground/90 hover:text-foreground font-bold transition-colors"
+            >
+              <User className="h-4 w-4 text-emerald-600 shrink-0" />
+              <span>Patient PHR</span>
             </Link>
-            <Link href={`/${locale}/admin-dashboard`} className="flex items-center gap-1.5 hover:text-primary transition-colors">
-              <ShieldCheck className="h-4 w-4 text-emerald-600" /> Admin & AYUSH
+            <Link
+              href={`/${locale}/admin-dashboard`}
+              className="flex items-center gap-1.5 text-foreground/90 hover:text-foreground font-bold transition-colors"
+            >
+              <ShieldCheck className="h-4 w-4 text-emerald-600 shrink-0" />
+              <span>Admin & AYUSH</span>
             </Link>
           </nav>
         </div>
+
 
         <div className="flex items-center space-x-3">
           <LanguageSelector currentLocale={locale} />
