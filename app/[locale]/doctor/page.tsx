@@ -224,6 +224,20 @@ export default function DoctorDashboardQueuePage({
 
       {/* Patient Triage Cards Grid */}
       <div className="grid grid-cols-1 gap-4">
+        {filteredQueue.length === 0 && !loading && (
+          <Card className="p-12 text-center rounded-3xl border-2 border-dashed border-input space-y-3 bg-muted/20">
+            <div className="w-16 h-16 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 flex items-center justify-center mx-auto text-2xl">
+              ✓
+            </div>
+            <div className="space-y-1">
+              <h3 className="text-lg font-extrabold text-foreground">कोई प्रतीक्षारत रोगी नहीं है (No Patients in Queue)</h3>
+              <p className="text-xs text-muted-foreground font-semibold">
+                All triage cases have been attended or no new consultations are currently waiting.
+              </p>
+            </div>
+          </Card>
+        )}
+
         {filteredQueue.map((item, idx) => {
           const isEmergency = item.triagePriority === "EMERGENCY";
           const patientName = `${item.patient.firstName} ${item.patient.lastName}`;

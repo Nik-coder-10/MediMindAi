@@ -5,16 +5,19 @@ import { AyushFHIRBuilder } from "@/lib/fhir/ayush-resource";
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
-    const sessionId = searchParams.get("sessionId") || "sess-demo-001";
-    const patientId = searchParams.get("patientId") || "pat-demo-001";
+    const sessionId = searchParams.get("sessionId") || `sess-${Date.now()}`;
+    const patientId = searchParams.get("patientId") || "pat-anonymous";
+    const patientName = searchParams.get("name") || "Patient Record";
+    const abhaId = searchParams.get("abhaId") || "ABHA-PENDING";
+    const diagnosis = searchParams.get("diagnosis") || "General Ayurvedic Consultation";
 
     const bundle = AyushFHIRBuilder.createAyushEncounterBundle({
       patientId,
-      patientName: "Ramesh Sharma",
-      abhaId: "14-5542-8921-3410",
-      gender: "male",
-      birthDate: "1982-07-14",
-      diagnosis: "Amavata (Saama Vata-Kaphaja)",
+      patientName,
+      abhaId,
+      gender: "unknown",
+      birthDate: "1990-01-01",
+      diagnosis,
       namasteCode: "NAM-AY-DIS-0194",
     });
 

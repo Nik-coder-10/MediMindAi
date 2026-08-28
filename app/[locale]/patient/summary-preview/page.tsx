@@ -26,6 +26,7 @@ import {
   HeartHandshake,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useAuthStore } from "@/stores/use-auth-store";
 
 
 export default function PatientSummaryPreviewPage({
@@ -67,12 +68,17 @@ export default function PatientSummaryPreviewPage({
   const isHeadache = chiefComplaint.toLowerCase().includes("head") || chiefComplaint.includes("सिर") || chiefComplaint.includes("सर");
   const isMsk = chiefComplaint.toLowerCase().includes("knee") || chiefComplaint.toLowerCase().includes("joint") || chiefComplaint.includes("घुटने") || chiefComplaint.includes("जोड़");
 
+  const { user } = useAuthStore();
+  const patientDisplayName = user?.name || "रोगी (Patient)";
+  const patientAgeGender = user?.age && user?.gender ? `${user.age}Y / ${user.gender}` : "पंजीकृत रोगी (Registered)";
+  const patientAbha = user?.abhaId || "ABHA-सत्यापित (Verified)";
+
   const summaryData = {
-    patientName: "रमेश शर्मा (Ramesh Sharma)",
-    ageGender: "42 वर्ष / पुरुष (42Y / Male)",
-    abhaId: "14-5542-8921-3410",
-    chiefComplaint: chiefComplaint,
-    duration: "2-3 दिन से (Acute presentation)",
+    patientName: patientDisplayName,
+    ageGender: patientAgeGender,
+    abhaId: patientAbha,
+    chiefComplaint: chiefComplaint || "परामर्श लक्षण (Intake in progress)",
+    duration: "२-३ दिन से (Acute presentation)",
     severity: "मध्यम से तीव्र (Moderate to Severe)",
     radiation: isHeadache ? "माथे व दोनों तरफ (Forehead & Bilateral temples)" : isMsk ? "जोड़ों के आसपास (Periarticular)" : "स्थानीय (Localized)",
     associated: isHeadache ? "गले में खराश व शरीर में दर्द (Sore throat & body ache)" : "हल्की हरारत व सुस्ती (Malaise & fatigue)",
@@ -219,20 +225,12 @@ export default function PatientSummaryPreviewPage({
           <MedicalTimelineView
             events={[
               {
-                id: "1",
-                patientId: "pat-demo",
-                eventDate: "2026-08-26",
+                id: "curr-1",
+                patientId: user?.id || "pat-current",
+                eventDate: new Date().toISOString().split("T")[0],
                 title: "आज का परामर्श (Today's Case-Taking)",
-                description: "छाती में दर्द व भारीपन (Chest discomfort intake).",
+                description: `${chiefComplaint || "परामर्श सत्र प्रारंभ"} (Active clinical intake).`,
                 category: "DIAGNOSIS",
-              },
-              {
-                id: "2",
-                patientId: "pat-demo",
-                eventDate: "2024-03-15",
-                title: "मेटफॉर्मिन दवा शुरू (Metformin 500mg)",
-                description: "ब्लड शुगर नियंत्रण हेतु (Blood sugar management).",
-                category: "MEDICATION",
               },
             ]}
           />

@@ -47,6 +47,7 @@ export default function AdminClinicalConfigPage({
   });
   const [loading, setLoading] = useState(false);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
+  const [analyticsData, setAnalyticsData] = useState<any>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -66,10 +67,12 @@ export default function AdminClinicalConfigPage({
       const nData = await (await fetch("/api/admin/nodes")).json();
       const rData = await (await fetch("/api/admin/rules")).json();
       const sData = await (await fetch("/api/admin/settings")).json();
+      const aData = await (await fetch("/api/admin/analytics/overview")).json();
 
       if (nData.data?.nodes) setNodes(nData.data.nodes);
       if (rData.data?.rules) setRules(rData.data.rules);
       if (sData.data) setSettings(sData.data);
+      if (aData.data) setAnalyticsData(aData.data);
     } finally {
       setLoading(false);
     }
@@ -430,27 +433,27 @@ export default function AdminClinicalConfigPage({
       {activeTab === "ANALYTICS" && (
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
           <Card className="p-5 rounded-2xl border-2 border-emerald-300 bg-emerald-50/50 space-y-1">
-            <span className="text-xs font-bold text-emerald-800 uppercase">आज के परामर्श (Sessions Today)</span>
-            <div className="text-3xl font-extrabold text-emerald-950">142</div>
-            <span className="text-xs text-muted-foreground font-semibold">+18% from yesterday</span>
+            <span className="text-xs font-bold text-emerald-800 uppercase">कुल परामर्श (Total Sessions)</span>
+            <div className="text-3xl font-extrabold text-emerald-950">{analyticsData?.kpis?.totalIntakes ?? 0}</div>
+            <span className="text-xs text-muted-foreground font-semibold">पूर्णता दर: {analyticsData?.kpis?.completionRate ?? "0%"}</span>
           </Card>
 
           <Card className="p-5 rounded-2xl border-2 border-rose-300 bg-rose-50/50 space-y-1">
             <span className="text-xs font-bold text-rose-800 uppercase">रेड-फ्लैग दर (Red-Flag Rate)</span>
-            <div className="text-3xl font-extrabold text-rose-950">8.4%</div>
-            <span className="text-xs text-muted-foreground font-semibold">12 emergency alerts routed</span>
+            <div className="text-3xl font-extrabold text-rose-950">{analyticsData?.kpis?.redFlagEscalationRate ?? "0%"}</div>
+            <span className="text-xs text-muted-foreground font-semibold">आपातकालीन अलर्ट प्रेषित</span>
           </Card>
 
           <Card className="p-5 rounded-2xl border-2 border-amber-300 bg-amber-50/50 space-y-1">
             <span className="text-xs font-bold text-amber-800 uppercase">आयुर्वेद मोड चयन (AYUSH Mode)</span>
-            <div className="text-3xl font-extrabold text-amber-950">64%</div>
-            <span className="text-xs text-muted-foreground font-semibold">91 Dashavidha assessments</span>
+            <div className="text-3xl font-extrabold text-amber-950">{analyticsData?.kpis?.ayushAdoptionPercentage ?? "0%"}</div>
+            <span className="text-xs text-muted-foreground font-semibold">दशविध परीक्षा पद्धति</span>
           </Card>
 
           <Card className="p-5 rounded-2xl border-2 border-blue-300 bg-blue-50/50 space-y-1">
             <span className="text-xs font-bold text-blue-800 uppercase">औसत समय (Avg Intake Time)</span>
-            <div className="text-3xl font-extrabold text-blue-950">3.8 m</div>
-            <span className="text-xs text-muted-foreground font-semibold">Under 4 min per patient</span>
+            <div className="text-3xl font-extrabold text-blue-950">{analyticsData?.kpis?.averageIntakeMinutes ?? 0} m</div>
+            <span className="text-xs text-muted-foreground font-semibold">प्रति रोगी औसत समय</span>
           </Card>
         </div>
       )}
