@@ -32,9 +32,9 @@ export class AuthService {
    */
   static async getAuthenticatedUser(req: NextRequest): Promise<AuthenticatedUser | null> {
     const authHeader = req.headers.get("Authorization");
-    const testUserId = req.headers.get("x-test-user-id"); // Test bypass header for unit tests
+    const testUserId = req.headers.get("x-test-user-id") || (process.env.NODE_ENV !== "production" ? req.headers.get("x-user-id") : null); // Test bypass / dev client header
 
-    // 1. Handle unit testing header if running in non-production
+    // 1. Handle unit testing and dev client headers if running in non-production
     if (process.env.NODE_ENV !== "production" && testUserId) {
       try {
         const user = await prisma.user.findFirst({
@@ -62,7 +62,7 @@ export class AuthService {
           };
         }
       } catch (dbErr) {
-        console.warn("AuthService test user lookup skipped (DB offline):", dbErr);
+        console.warn("AuthService user lookup skipped (DB offline):", dbErr);
         return null;
       }
     }

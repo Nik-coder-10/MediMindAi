@@ -128,9 +128,13 @@ export default function AdaptiveQuestionsFlowPage({
         const storedComplaint = typeof window !== "undefined" ? sessionStorage.getItem("ayursetu_chief_complaint") : null;
         const complaint = storedComplaint || (locale === "hi" ? "सिरदर्द व शरीर में दर्द" : "Headache and body ache");
 
+        const activeUserId = "pat-104-demo";
         const res = await fetch("/api/patient/session/start", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            "x-user-id": activeUserId,
+          },
           body: JSON.stringify({
             sessionId: activeId || undefined,
             chiefComplaint: complaint,
@@ -174,9 +178,13 @@ export default function AdaptiveQuestionsFlowPage({
 
     try {
       const activeId = sessionId || (typeof window !== "undefined" ? sessionStorage.getItem("ayursetu_active_session_id") : null) || "sess-demo-001";
+      const activeUserId = "pat-104-demo";
       const res = await fetch("/api/patient/conversation/answer", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "x-user-id": activeUserId,
+        },
         body: JSON.stringify({
           sessionId: activeId,
           nodeCode: currentQuestion.nodeCode,

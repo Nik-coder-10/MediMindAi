@@ -95,9 +95,13 @@ export default function PatientSummaryPreviewPage({
     setSubmitting(true);
     try {
       const activeSessionId = (typeof window !== "undefined" && sessionStorage.getItem("ayursetu_active_session_id")) || "sess-demo-001";
+      const activeUserId = user?.id || "pat-104-demo";
       const res = await fetch("/api/patient/session/submit", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "x-user-id": activeUserId,
+        },
         body: JSON.stringify({
           sessionId: activeSessionId,
           chiefComplaint: chiefComplaint || "General consultation",

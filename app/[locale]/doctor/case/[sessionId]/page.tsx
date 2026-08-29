@@ -93,7 +93,12 @@ export default function IndividualDoctorCaseViewPage({
     async function loadCase() {
       setLoading(true);
       try {
-        const res = await fetch(`/api/doctor/case/${sessionId}`);
+        const activeDoctorId = "doc-8842-demo";
+        const res = await fetch(`/api/doctor/case/${sessionId}`, {
+          headers: {
+            "x-user-id": activeDoctorId,
+          },
+        });
         const data = await res.json();
         if (data.data) {
           setCaseData(data.data);
@@ -111,7 +116,13 @@ export default function IndividualDoctorCaseViewPage({
   const handleAccept = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/doctor/summary/${sessionId}/accept`, { method: "POST" });
+      const activeDoctorId = "doc-8842-demo";
+      const res = await fetch(`/api/doctor/summary/${sessionId}/accept`, {
+        method: "POST",
+        headers: {
+          "x-user-id": activeDoctorId,
+        },
+      });
       const data = await res.json();
       setCaseData((prev: any) => ({ ...prev, summary: data.data }));
       setActionSuccess("क्लिनिकल सारांश हस्ताक्षरित व स्वीकृत (Case Signed Off)");
@@ -123,9 +134,13 @@ export default function IndividualDoctorCaseViewPage({
   const handleSaveEdit = async () => {
     setLoading(true);
     try {
+      const activeDoctorId = "doc-8842-demo";
       const res = await fetch(`/api/doctor/summary/${sessionId}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "x-user-id": activeDoctorId,
+        },
         body: JSON.stringify({
           doctorEditedMarkdown: editedMarkdown,
           status: "REVISED",

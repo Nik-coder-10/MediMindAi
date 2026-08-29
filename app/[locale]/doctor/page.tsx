@@ -43,10 +43,15 @@ export default function DoctorDashboardQueuePage({
 
   const isDoctor = isAuthenticated && (user?.role === "DOCTOR" || user?.role === "ADMIN");
 
-  const fetchQueue = async () => {
+  const fetchQueue = React.useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/doctor/dashboard");
+      const activeDoctorId = user?.id || "doc-8842-demo";
+      const res = await fetch("/api/doctor/dashboard", {
+        headers: {
+          "x-user-id": activeDoctorId,
+        },
+      });
       const data = await res.json();
       if (data.data?.queue) {
         setQueue(data.data.queue);
@@ -54,13 +59,13 @@ export default function DoctorDashboardQueuePage({
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?.id]);
 
   useEffect(() => {
     if (mounted && isDoctor) {
       fetchQueue();
     }
-  }, [mounted, isDoctor]);
+  }, [mounted, isDoctor, fetchQueue]);
 
   if (!mounted) {
     return <div className="min-h-[80vh] flex items-center justify-center p-4" />;

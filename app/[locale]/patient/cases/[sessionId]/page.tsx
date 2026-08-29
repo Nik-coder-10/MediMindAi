@@ -22,6 +22,7 @@ import {
   Printer,
 } from "lucide-react";
 import { motion } from "framer-motion";
+import { useAuthStore } from "@/stores/use-auth-store";
 
 export default function PatientIndividualCaseDetailsPage({
   params,
@@ -37,12 +38,19 @@ export default function PatientIndividualCaseDetailsPage({
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"SUMMARY" | "ANSWERS" | "DOCS" | "TIMELINE">("SUMMARY");
 
+  const { user } = useAuthStore();
+
   useEffect(() => {
     async function loadCaseDetails() {
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch(`/api/patient/cases/${sessionId}`);
+        const activeUserId = user?.id || "pat-104-demo";
+        const res = await fetch(`/api/patient/cases/${sessionId}`, {
+          headers: {
+            "x-user-id": activeUserId,
+          },
+        });
         const data = await res.json();
         if (res.ok && data.data) {
           setCaseData(data.data);
@@ -56,7 +64,7 @@ export default function PatientIndividualCaseDetailsPage({
       }
     }
     loadCaseDetails();
-  }, [sessionId]);
+  }, [sessionId, user?.id]);
 
   if (loading) {
     return (

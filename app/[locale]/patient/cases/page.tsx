@@ -52,11 +52,16 @@ export default function PatientCasesDashboardPage({
 
   const isHindi = locale === "hi";
 
-  const fetchCases = async () => {
+  const fetchCases = React.useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/patient/cases");
+      const activeUserId = user?.id || "pat-104-demo";
+      const res = await fetch("/api/patient/cases", {
+        headers: {
+          "x-user-id": activeUserId,
+        },
+      });
       const data = await res.json();
       if (res.ok && data.data?.cases) {
         setCases(data.data.cases);
@@ -68,11 +73,11 @@ export default function PatientCasesDashboardPage({
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?.id]);
 
   useEffect(() => {
     fetchCases();
-  }, []);
+  }, [fetchCases]);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
