@@ -32,59 +32,53 @@ export async function POST(req: NextRequest) {
 
     const { user, session } = await AuthService.requireSessionAccess(req, validated.sessionId);
 
-    let result: any = null;
-    try {
-      // Atomic Database Transaction for submission
-      result = await prisma.$transaction(async (tx) => {
-        // 1. Ensure ChiefComplaint is saved in database
-        if (validated.chiefComplaint) {
-          const existingComplaint = await tx.chiefComplaint.findFirst({
-            where: { sessionId: session.id },
-          });
-
-          if (!existingComplaint) {
-            await tx.chiefComplaint.create({
-              data: {
-                sessionId: session.id,
-                symptomName: validated.chiefComplaint,
-                duration: validated.duration || "2-3 days",
-                severity: validated.severity || "MODERATE",
-                location: validated.location || "General",
-              },
-            });
-          }
-        }
-
-        // 2. Transition Session status to WAITING_FOR_DOCTOR
-        const updatedSession = await tx.clinicalSession.update({
-          where: { id: session.id },
-          data: {
-            status: SessionStatus.WAITING_FOR_DOCTOR,
-            updatedAt: new Date(),
-          },
+    // Atomic Database Transaction for submission
+    const result = await prisma.$transaction(async (tx) => {
+      // 1. Ensure ChiefComplaint is saved in database
+      if (validated.chiefComplaint) {
+        const existingComplaint = await tx.chiefComplaint.findFirst({
+          where: { sessionId: session.id },
         });
 
-        // 3. Log Audit Event inside transaction
-        await tx.auditLog.create({
-          data: {
-            actorId: user.id,
-            action: "PATIENT_SESSION_SUBMIT",
-            resourceType: "ClinicalSession",
-            resourceId: session.id,
-            ipAddress: req.headers.get("x-forwarded-for") || req.ip || "127.0.0.1",
-            metadata: {
-              status: SessionStatus.WAITING_FOR_DOCTOR,
-              chiefComplaint: validated.chiefComplaint,
+        if (!existingComplaint) {
+          await tx.chiefComplaint.create({
+            data: {
+              sessionId: session.id,
+              symptomName: validated.chiefComplaint,
+              duration: validated.duration || "2-3 days",
+              severity: validated.severity || "MODERATE",
+              location: validated.location || "General",
             },
-          },
-        });
+          });
+        }
+      }
 
-        return updatedSession;
+      // 2. Transition Session status to WAITING_FOR_DOCTOR
+      const updatedSession = await tx.clinicalSession.update({
+        where: { id: session.id },
+        data: {
+          status: SessionStatus.WAITING_FOR_DOCTOR,
+          updatedAt: new Date(),
+        },
       });
-    } catch (dbErr) {
-      console.warn("Session submit DB transaction deferred:", (dbErr as any)?.message);
-      result = { status: SessionStatus.WAITING_FOR_DOCTOR };
-    }
+
+      // 3. Log Audit Event inside transaction
+      await tx.auditLog.create({
+        data: {
+          actorId: user.id,
+          action: "PATIENT_SESSION_SUBMIT",
+          resourceType: "ClinicalSession",
+          resourceId: session.id,
+          ipAddress: req.headers.get("x-forwarded-for") || req.ip || "127.0.0.1",
+          metadata: {
+            status: SessionStatus.WAITING_FOR_DOCTOR,
+            chiefComplaint: validated.chiefComplaint,
+          },
+        },
+      });
+
+      return updatedSession;
+    });
 
     // Update in-memory clinical store
     const { inMemoryClinicalStore } = await import("@/lib/db/in-memory-store");

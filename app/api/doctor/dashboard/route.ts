@@ -15,32 +15,28 @@ export async function GET(req: NextRequest) {
 
     const statusFilter = searchParams.get("status");
 
-    let sessions: any[] = [];
-    try {
-      sessions = await prisma.clinicalSession.findMany({
-        where: {
-          deletedAt: null,
-          // Doctor queue shows submitted cases by default unless status is specified
-          status: statusFilter
-            ? (statusFilter as any)
-            : { in: ["WAITING_FOR_DOCTOR", "COMPLETED", "IN_PROGRESS"] },
-          ...(priorityFilter ? { triagePriority: priorityFilter as any } : {}),
-        },
-        include: {
-          patient: { include: { user: true } },
-          chiefComplaints: true,
-          redFlagEvents: true,
-          clinicalSummary: true,
-        },
-        orderBy: [
-          { redFlagTriggered: "desc" },
-          { startedAt: "desc" },
-        ],
-        take: 50,
-      });
-    } catch (dbErr) {
-      console.warn("Doctor dashboard queue query fallback to in-memory store:", (dbErr as any)?.message);
-    }
+    // Query PostgreSQL for active clinical encounters in the triage queue
+    const sessions = await prisma.clinicalSession.findMany({
+      where: {
+        deletedAt: null,
+        // Doctor queue shows submitted cases by default unless status is specified
+        status: statusFilter
+          ? (statusFilter as any)
+          : { in: ["WAITING_FOR_DOCTOR", "COMPLETED", "IN_PROGRESS"] },
+        ...(priorityFilter ? { triagePriority: priorityFilter as any } : {}),
+      },
+      include: {
+        patient: { include: { user: true } },
+        chiefComplaints: true,
+        redFlagEvents: true,
+        clinicalSummary: true,
+      },
+      orderBy: [
+        { redFlagTriggered: "desc" },
+        { startedAt: "desc" },
+      ],
+      take: 50,
+    });
 
     // Merge in-memory queue sessions if database is offline or local
     const { inMemoryClinicalStore } = await import("@/lib/db/in-memory-store");

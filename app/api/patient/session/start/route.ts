@@ -23,71 +23,59 @@ export async function POST(req: NextRequest) {
     // 1. Resolve or create PatientProfile for the authenticated user
     let patientProfile = user.patientProfile;
     if (!patientProfile) {
-      try {
-        patientProfile = await prisma.patientProfile.findUnique({
-          where: { userId: user.id },
+      patientProfile = await prisma.patientProfile.findUnique({
+        where: { userId: user.id },
+      });
+      if (!patientProfile) {
+        patientProfile = await prisma.patientProfile.create({
+          data: {
+            userId: user.id,
+            firstName: "Patient",
+            lastName: user.id.slice(0, 4).toUpperCase(),
+            dateOfBirth: new Date("1995-01-01"),
+            gender: "OTHER",
+            bloodGroup: "UNKNOWN",
+          },
         });
-        if (!patientProfile) {
-          patientProfile = await prisma.patientProfile.create({
-            data: {
-              userId: user.id,
-              firstName: "Patient",
-              lastName: user.id.slice(0, 4).toUpperCase(),
-              dateOfBirth: new Date("1995-01-01"),
-              gender: "OTHER",
-              bloodGroup: "UNKNOWN",
-            },
-          });
-        }
-      } catch (dbErr) {
-        // Fallback profile
-        patientProfile = {
-          id: `pat-prof-${user.id}`,
-          userId: user.id,
-          firstName: "Ramesh",
-          lastName: "Sharma",
-          dateOfBirth: new Date("1982-05-14"),
-          gender: "MALE" as any,
-          bloodGroup: "B_POSITIVE" as any,
-        } as any;
       }
     }
 
-    // 2. Resolve or create authoritative ClinicalSession
-    const resolvedSessionId = validated.sessionId || `sess-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
+    // 2. Resolve or create authoritative ClinicalSession in PostgreSQL
     let session: any = null;
+    if (validated.sessionId) {
+      session = await prisma.clinicalSession.findUnique({ where: { id: validated.sessionId } });
+    }
 
-    try {
-      if (validated.sessionId) {
-        session = await prisma.clinicalSession.findUnique({ where: { id: validated.sessionId } });
-      }
+    if (!session) {
+      session = await prisma.clinicalSession.create({
+        data: {
+          patientId: patientProfile!.id,
+          language: validated.language || "hi",
+          triagePriority: TriagePriority.ROUTINE,
+          status: SessionStatus.IN_PROGRESS,
+        },
+      });
+    } else if (session.patientId !== patientProfile!.id) {
+      session = await prisma.clinicalSession.update({
+        where: { id: session.id },
+        data: { patientId: patientProfile!.id },
+      });
+    }
 
-      if (!session) {
-        session = await prisma.clinicalSession.create({
-          data: {
-            id: resolvedSessionId,
-            patientId: patientProfile!.id,
-            language: validated.language || "hi",
-            triagePriority: TriagePriority.ROUTINE,
-            status: SessionStatus.IN_PROGRESS,
-          },
-        });
-      } else if (session.patientId !== patientProfile!.id) {
-        session = await prisma.clinicalSession.update({
-          where: { id: session.id },
-          data: { patientId: patientProfile!.id },
-        });
-      }
-    } catch (dbErr) {
-      session = {
-        id: resolvedSessionId,
-        patientId: patientProfile!.id,
-        language: validated.language || "hi",
-        triagePriority: TriagePriority.ROUTINE,
-        status: SessionStatus.IN_PROGRESS,
-        startedAt: new Date(),
-        updatedAt: new Date(),
-      };
+    // Persist chief complaint in database
+    const existingComplaint = await prisma.chiefComplaint.findFirst({
+      where: { sessionId: session.id },
+    });
+    if (!existingComplaint) {
+      await prisma.chiefComplaint.create({
+        data: {
+          sessionId: session.id,
+          symptomName: validated.chiefComplaint,
+          duration: "2-3 days",
+          severity: "MODERATE",
+          location: "General",
+        },
+      });
     }
 
     // Mirror to inMemoryClinicalStore for resilient persistence across pages

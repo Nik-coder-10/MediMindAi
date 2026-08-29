@@ -37,30 +37,29 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    let sessions: any[] = [];
-    try {
-      sessions = await prisma.clinicalSession.findMany({
-        where: {
-          patientId,
-          deletedAt: null,
-        },
-        include: {
-          chiefComplaints: true,
-          clinicalSummary: true,
-          redFlagEvents: true,
-          doctor: {
-            include: {
-              user: true,
-            },
+    // Find all clinical sessions for this patient from PostgreSQL
+    const sessions = await prisma.clinicalSession.findMany({
+      where: {
+        OR: [
+          { patientId },
+          { patient: { userId: user.id } },
+        ],
+        deletedAt: null,
+      },
+      include: {
+        chiefComplaints: true,
+        clinicalSummary: true,
+        redFlagEvents: true,
+        doctor: {
+          include: {
+            user: true,
           },
         },
-        orderBy: {
-          startedAt: "desc",
-        },
-      });
-    } catch (dbErr) {
-      console.warn("Patient cases query fallback to in-memory store:", (dbErr as any)?.message);
-    }
+      },
+      orderBy: {
+        startedAt: "desc",
+      },
+    });
 
     // Merge in-memory sessions if database is offline or local
     const { inMemoryClinicalStore } = await import("@/lib/db/in-memory-store");

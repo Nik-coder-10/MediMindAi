@@ -29,6 +29,7 @@ import {
   VolumeX,
 } from "lucide-react";
 import { motion } from "framer-motion";
+import { useAuthStore } from "@/stores/use-auth-store";
 
 export default function IndividualDoctorCaseViewPage({
   params,
@@ -89,11 +90,13 @@ export default function IndividualDoctorCaseViewPage({
   const [newRxDuration, setNewRxDuration] = useState("15 Days");
 
 
+  const { user } = useAuthStore();
+
   useEffect(() => {
     async function loadCase() {
       setLoading(true);
       try {
-        const activeDoctorId = "doc-8842-demo";
+        const activeDoctorId = user?.id || (typeof window !== "undefined" ? localStorage.getItem("ayursetu_user_id") : null) || "doc-8842-demo";
         const res = await fetch(`/api/doctor/case/${sessionId}`, {
           headers: {
             "x-user-id": activeDoctorId,
@@ -111,7 +114,7 @@ export default function IndividualDoctorCaseViewPage({
       }
     }
     loadCase();
-  }, [sessionId]);
+  }, [sessionId, user?.id]);
 
   const handleAccept = async () => {
     setLoading(true);

@@ -11,6 +11,7 @@ import { EngineQuestionDefinition, QuestionOption } from "@/lib/engine/types";
 import { EmergencyAlertModal } from "@/components/ui/patient/EmergencyAlertModal";
 import { speakWithIndianVoice } from "@/lib/voice/tts";
 import { cn } from "@/lib/utils";
+import { useAuthStore } from "@/stores/use-auth-store";
 
 export default function AdaptiveQuestionsFlowPage({
   params: { locale },
@@ -18,6 +19,7 @@ export default function AdaptiveQuestionsFlowPage({
   params: { locale: string };
 }) {
   const router = useRouter();
+  const { user } = useAuthStore();
   const [sessionId, setSessionId] = useState<string>(() => {
     if (typeof window !== "undefined") {
       const stored = sessionStorage.getItem("ayursetu_active_session_id");
@@ -128,7 +130,7 @@ export default function AdaptiveQuestionsFlowPage({
         const storedComplaint = typeof window !== "undefined" ? sessionStorage.getItem("ayursetu_chief_complaint") : null;
         const complaint = storedComplaint || (locale === "hi" ? "सिरदर्द व शरीर में दर्द" : "Headache and body ache");
 
-        const activeUserId = "pat-104-demo";
+        const activeUserId = user?.id || (typeof window !== "undefined" ? localStorage.getItem("ayursetu_user_id") : null) || "pat-104-demo";
         const res = await fetch("/api/patient/session/start", {
           method: "POST",
           headers: {
@@ -165,7 +167,7 @@ export default function AdaptiveQuestionsFlowPage({
     }
 
     initEngine();
-  }, [sessionId, locale]);
+  }, [sessionId, locale, user?.id]);
 
 
   const handleSelectOption = (option: QuestionOption) => {
@@ -178,7 +180,7 @@ export default function AdaptiveQuestionsFlowPage({
 
     try {
       const activeId = sessionId || (typeof window !== "undefined" ? sessionStorage.getItem("ayursetu_active_session_id") : null) || "sess-demo-001";
-      const activeUserId = "pat-104-demo";
+      const activeUserId = user?.id || (typeof window !== "undefined" ? localStorage.getItem("ayursetu_user_id") : null) || "pat-104-demo";
       const res = await fetch("/api/patient/conversation/answer", {
         method: "POST",
         headers: {
