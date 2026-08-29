@@ -38,7 +38,7 @@ export default function IndividualDoctorCaseViewPage({
   const router = useRouter();
   const sessionId = params.sessionId;
   const [caseData, setCaseData] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState<"SUMMARY" | "TIMELINE" | "LABS" | "AYUSH" | "DOCS" | "PRESCRIPTION">("SUMMARY");
+  const [activeTab, setActiveTab] = useState<"SUMMARY" | "TIMELINE" | "LABS" | "AYUSH" | "DOCS" | "PRESCRIPTION" | "ANSWERS">("SUMMARY");
   const [editedMarkdown, setEditedMarkdown] = useState("");
   const [isEditing, setIsEditing] = useState(false);
   const [isPlayingSummaryAudio, setIsPlayingSummaryAudio] = useState(false);
@@ -172,9 +172,16 @@ export default function IndividualDoctorCaseViewPage({
           <span>कतार पर वापस जाएं (Back to Queue)</span>
         </button>
 
-        <span className="text-xs font-extrabold px-3 py-1 bg-slate-100 dark:bg-slate-800 text-muted-foreground rounded-full">
-          सत्र आईडी: {sessionId}
-        </span>
+        <div className="flex items-center gap-2">
+          {caseData?.tokenNumber && (
+            <span className="text-xs font-black px-3 py-1 bg-indigo-100 dark:bg-indigo-950 text-indigo-900 dark:text-indigo-200 rounded-full font-mono border border-indigo-300">
+              टोकन: {caseData.tokenNumber}
+            </span>
+          )}
+          <span className="text-xs font-extrabold px-3 py-1 bg-slate-100 dark:bg-slate-800 text-muted-foreground rounded-full">
+            सत्र आईडी: {sessionId}
+          </span>
+        </div>
       </div>
 
       {/* Prominent Patient Banner (Never below fold) */}
@@ -187,13 +194,18 @@ export default function IndividualDoctorCaseViewPage({
       >
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="space-y-1">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              {caseData?.tokenNumber && (
+                <span className="text-xs font-black px-2.5 py-0.5 rounded-lg bg-indigo-600 text-white font-mono shadow-xs">
+                  {caseData.tokenNumber}
+                </span>
+              )}
               <span
                 className={`text-xs font-extrabold px-3 py-0.5 rounded-full border ${
                   isEmergency ? "bg-rose-600 text-white border-rose-300 animate-pulse" : "bg-emerald-600 text-white"
                 }`}
               >
-                {caseData?.encounter?.triagePriority || "EMERGENCY"}
+                {caseData?.encounter?.triagePriority || "ROUTINE"}
               </span>
               <span className="text-xs font-bold text-muted-foreground">ABHA ID: {patient.abhaId}</span>
             </div>
@@ -239,6 +251,7 @@ export default function IndividualDoctorCaseViewPage({
         {[
           { id: "SUMMARY", label: "क्लिनिकल सारांश (Summary)", icon: <FileText className="h-4 w-4" /> },
           { id: "PRESCRIPTION", label: "🩺 चिकित्सक नुस्खा व OPD रिपोर्ट (Rx & Report)", icon: <Stethoscope className="h-4 w-4" /> },
+          { id: "ANSWERS", label: "प्रश्नोत्तरी उत्तर (Q&A)", icon: <Activity className="h-4 w-4" /> },
           { id: "TIMELINE", label: "इतिहास (Timeline)", icon: <Calendar className="h-4 w-4" /> },
           { id: "LABS", label: "जांच रिपोर्ट (Abnormal Labs)", icon: <Activity className="h-4 w-4" /> },
           { id: "AYUSH", label: "आयुर्वेद दशविध (AYUSH)", icon: <Sparkles className="h-4 w-4" /> },
@@ -357,7 +370,50 @@ export default function IndividualDoctorCaseViewPage({
                   </div>
                 )}
               </Card>
+        )}
+
+        {/* Tab: Patient Q&A Answers */}
+        {activeTab === "ANSWERS" && (
+          <Card className="p-6 sm:p-8 rounded-3xl border-2 border-input space-y-4 bg-card shadow-sm">
+            <div className="flex items-center justify-between border-b pb-3">
+              <h3 className="text-base font-extrabold text-foreground">
+                रोगी द्वारा दर्ज प्रश्नोत्तरी उत्तर (Patient Intake Responses)
+              </h3>
+              <span className="text-xs font-bold px-2.5 py-0.5 bg-indigo-100 text-indigo-900 rounded-full">
+                {caseData.answers?.length || 0} उत्तर दर्ज
+              </span>
+            </div>
+
+            {caseData.answers?.length === 0 ? (
+              <div className="p-8 text-center text-muted-foreground text-xs font-medium">
+                इस सत्र के लिए कोई पूर्व प्रश्नोत्तर उत्तर उपलब्ध नहीं हैं।
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {caseData.answers.map((ans: any, idx: number) => (
+                  <div key={idx} className="p-4 rounded-2xl bg-muted/30 border space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-black uppercase text-emerald-700 dark:text-emerald-400">
+                        Q{idx + 1} · {ans.nodeCode}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground">
+                        {new Date(ans.answeredAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                      </span>
+                    </div>
+
+                    <p className="text-sm font-bold text-foreground">
+                      {params.locale === "hi" && ans.questionTextHindi ? ans.questionTextHindi : ans.questionText}
+                    </p>
+
+                    <div className="p-2.5 rounded-xl bg-background border text-xs font-extrabold text-emerald-950 dark:text-emerald-200">
+                      उत्तर: {typeof ans.answerValue === "object" ? JSON.stringify(ans.answerValue) : String(ans.answerValue)}
+                    </div>
+                  </div>
+                ))}
+              </div>
             )}
+          </Card>
+        )}
 
         {/* Tab 2: Medical Timeline */}
         {activeTab === "TIMELINE" && (

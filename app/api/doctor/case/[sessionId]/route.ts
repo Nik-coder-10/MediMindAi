@@ -31,6 +31,13 @@ export async function GET(
           },
         },
         chiefComplaints: true,
+        patientAnswers: {
+          orderBy: { answeredAt: "asc" },
+          include: { questionNode: true },
+        },
+        conversationTurns: {
+          orderBy: { timestamp: "asc" },
+        },
         redFlagEvents: { orderBy: { triggeredAt: "desc" } },
         medicalDocuments: {
           where: { deletedAt: null },
@@ -44,6 +51,10 @@ export async function GET(
     if (!session) {
       return apiError(AppError.notFound(`Clinical case session '${sessionId}' was not found.`));
     }
+
+    // Deterministic token matching patient portal
+    const shortToken = session.id.replace(/-/g, "").slice(0, 4).toUpperCase();
+    const tokenNumber = `#AYUR-${shortToken}`;
 
     // 2. Fetch or Generate Summary
     let summary = session.clinicalSummary;
@@ -79,6 +90,7 @@ export async function GET(
     // 4. Assemble genuine case data
     const caseData = {
       sessionId,
+      tokenNumber,
       patient: session.patient ? {
         id: session.patient.id,
         firstName: session.patient.firstName,
@@ -91,12 +103,28 @@ export async function GET(
         preferredLanguage: session.patient.user?.preferredLanguage || session.language || "hi",
       } : null,
       encounter: {
+        tokenNumber,
         triagePriority: session.triagePriority,
         redFlagTriggered: session.redFlagTriggered,
         startedAt: session.startedAt.toISOString(),
         chiefComplaint: session.chiefComplaints?.[0]?.symptomName || "Consultation Intake",
         status: session.status,
       },
+      answers: session.patientAnswers.map((pa) => ({
+        id: pa.id,
+        nodeCode: pa.nodeCode,
+        questionText: pa.questionNode?.questionText || pa.nodeCode,
+        questionTextHindi: pa.questionNode?.questionTextHindi || null,
+        clinicalDomain: pa.questionNode?.clinicalDomain || null,
+        answerValue: pa.answerValue,
+        answeredAt: pa.answeredAt.toISOString(),
+      })),
+      conversationTurns: session.conversationTurns.map((t) => ({
+        id: t.id,
+        role: t.role,
+        contentText: t.contentText,
+        timestamp: t.timestamp.toISOString(),
+      })),
       redFlags: session.redFlagEvents.map((rf: any) => ({
         ruleId: rf.ruleId,
         description: rf.description,

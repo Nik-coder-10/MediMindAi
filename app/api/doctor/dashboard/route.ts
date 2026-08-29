@@ -13,9 +13,15 @@ export async function GET(req: NextRequest) {
     const priorityFilter = searchParams.get("priority");
 
 
+    const statusFilter = searchParams.get("status");
+
     const sessions = await prisma.clinicalSession.findMany({
       where: {
         deletedAt: null,
+        // Doctor queue shows submitted cases by default unless status is specified
+        status: statusFilter
+          ? (statusFilter as any)
+          : { in: ["WAITING_FOR_DOCTOR", "COMPLETED", "IN_PROGRESS"] },
         ...(priorityFilter ? { triagePriority: priorityFilter as any } : {}),
       },
       include: {
