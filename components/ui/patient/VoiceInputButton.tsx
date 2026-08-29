@@ -23,51 +23,75 @@ export function VoiceInputButton({
   const [ambientSignal, setAmbientSignal] = useState<"EXCELLENT" | "MODERATE" | "NOISY">("EXCELLENT");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const recognitionRef = useRef<any>(null);
+  const recordingStateRef = useRef<RecordingState>("IDLE");
+  const onTranscriptionCompleteRef = useRef(onTranscriptionComplete);
+
+  // Keep callback and state ref updated
+  useEffect(() => {
+    recordingStateRef.current = recordingState;
+  }, [recordingState]);
+
+  useEffect(() => {
+    onTranscriptionCompleteRef.current = onTranscriptionComplete;
+  }, [onTranscriptionComplete]);
 
   // Initialize Speech Recognition fallback
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const SpeechRecognition =
-        (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (typeof window === "undefined") return;
 
-      if (SpeechRecognition) {
-        const recognition = new SpeechRecognition();
-        recognition.continuous = false;
-        recognition.interimResults = false;
-        recognition.lang = language;
+    const SpeechRecognition =
+      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
-        recognition.onstart = () => {
-          setRecordingState("LISTENING");
-          setErrorMessage(null);
-        };
+    if (!SpeechRecognition) return;
 
-        recognition.onresult = (event: any) => {
-          setRecordingState("PROCESSING");
-          const transcript = event.results[0][0].transcript;
-          setTimeout(() => {
-            onTranscriptionComplete(transcript);
-            setRecordingState("IDLE");
-          }, 400);
-        };
+    const recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.lang = language;
 
-        recognition.onerror = (err: any) => {
-          if (err.error !== "no-speech") {
-            setErrorMessage("आवाज स्पष्ट नहीं सुनाई दी। कृपया दोबारा बोलें।");
-          }
-          setRecordingState("ERROR");
-          setTimeout(() => setRecordingState("IDLE"), 2500);
-        };
+    recognition.onstart = () => {
+      setRecordingState("LISTENING");
+      setErrorMessage(null);
+    };
 
-        recognition.onend = () => {
-          if (recordingState === "LISTENING") {
-            setRecordingState("IDLE");
-          }
-        };
+    recognition.onresult = (event: any) => {
+      setRecordingState("PROCESSING");
+      const transcript = event.results[0][0].transcript;
+      setTimeout(() => {
+        onTranscriptionCompleteRef.current?.(transcript);
+        setRecordingState("IDLE");
+      }, 400);
+    };
 
-        recognitionRef.current = recognition;
+    recognition.onerror = (err: any) => {
+      if (err.error !== "no-speech") {
+        setErrorMessage("आवाज स्पष्ट नहीं सुनाई दी। कृपया दोबारा बोलें।");
       }
-    }
-  }, [language, onTranscriptionComplete]);
+      setRecordingState("ERROR");
+      setTimeout(() => setRecordingState("IDLE"), 2500);
+    };
+
+    recognition.onend = () => {
+      if (recordingStateRef.current === "LISTENING") {
+        setRecordingState("IDLE");
+      }
+    };
+
+    recognitionRef.current = recognition;
+
+    return () => {
+      try {
+        recognition.onstart = null;
+        recognition.onresult = null;
+        recognition.onerror = null;
+        recognition.onend = null;
+        recognition.abort();
+      } catch {
+        // Recognition already stopped
+      }
+      recognitionRef.current = null;
+    };
+  }, [language]);
 
   const handleToggleRecord = () => {
     if (disabled || recordingState === "PROCESSING") return;
