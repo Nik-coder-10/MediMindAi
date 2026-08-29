@@ -21,6 +21,9 @@ const config: Config = {
       },
     },
     extend: {
+      fontFamily: {
+        sans: ["var(--font-inter)", "var(--font-noto-sans-devanagari)", "system-ui", "sans-serif"],
+      },
       minHeight: {
         touch: "56px",
         "touch-lg": "64px",
