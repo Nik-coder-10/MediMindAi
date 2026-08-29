@@ -37,27 +37,44 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    const sessions = await prisma.clinicalSession.findMany({
-      where: {
-        patientId,
-        deletedAt: null,
-      },
-      include: {
-        chiefComplaints: true,
-        clinicalSummary: true,
-        redFlagEvents: true,
-        doctor: {
-          include: {
-            user: true,
+    let sessions: any[] = [];
+    try {
+      sessions = await prisma.clinicalSession.findMany({
+        where: {
+          patientId,
+          deletedAt: null,
+        },
+        include: {
+          chiefComplaints: true,
+          clinicalSummary: true,
+          redFlagEvents: true,
+          doctor: {
+            include: {
+              user: true,
+            },
           },
         },
-      },
-      orderBy: {
-        startedAt: "desc",
-      },
-    });
+        orderBy: {
+          startedAt: "desc",
+        },
+      });
+    } catch (dbErr) {
+      console.warn("Patient cases query fallback to in-memory store:", (dbErr as any)?.message);
+    }
 
-    const formattedCases = sessions.map((session) => {
+    // Merge in-memory sessions if database is offline or local
+    const { inMemoryClinicalStore } = await import("@/lib/db/in-memory-store");
+    const memSessions = inMemoryClinicalStore.getSessionsByPatient(patientId);
+
+    const mergedMap = new Map<string, any>();
+    memSessions.forEach((s) => mergedMap.set(s.id, s));
+    sessions.forEach((s) => mergedMap.set(s.id, s));
+
+    const finalSessions = Array.from(mergedMap.values()).sort(
+      (a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime()
+    );
+
+    const formattedCases = finalSessions.map((session) => {
       // Deterministic token number based on session ID slice
       const shortToken = session.id.replace(/-/g, "").slice(0, 4).toUpperCase();
       const tokenNumber = `#AYUR-${shortToken}`;

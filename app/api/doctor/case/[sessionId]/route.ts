@@ -18,35 +18,44 @@ export async function GET(
     await AuthService.requireSessionAccess(req, sessionId);
 
     // 1. Fetch Session with full relational graph
-
-    const session = await prisma.clinicalSession.findUnique({
-      where: { id: sessionId },
-      include: {
-        patient: {
-          include: {
-            user: true,
-            timelineEvents: { orderBy: { eventDate: "desc" }, take: 10 },
-            abhaLink: true,
-            consentRecords: { where: { revokedAt: null }, orderBy: { grantedAt: "desc" }, take: 1 },
+    let session: any = null;
+    try {
+      session = await prisma.clinicalSession.findUnique({
+        where: { id: sessionId },
+        include: {
+          patient: {
+            include: {
+              user: true,
+              timelineEvents: { orderBy: { eventDate: "desc" }, take: 10 },
+              abhaLink: true,
+              consentRecords: { where: { revokedAt: null }, orderBy: { grantedAt: "desc" }, take: 1 },
+            },
           },
+          chiefComplaints: true,
+          patientAnswers: {
+            orderBy: { answeredAt: "asc" },
+            include: { questionNode: true },
+          },
+          conversationTurns: {
+            orderBy: { timestamp: "asc" },
+          },
+          redFlagEvents: { orderBy: { triggeredAt: "desc" } },
+          medicalDocuments: {
+            where: { deletedAt: null },
+            include: { extractedEntities: true },
+          },
+          clinicalSummary: true,
+          ayurvedaAssessment: true,
         },
-        chiefComplaints: true,
-        patientAnswers: {
-          orderBy: { answeredAt: "asc" },
-          include: { questionNode: true },
-        },
-        conversationTurns: {
-          orderBy: { timestamp: "asc" },
-        },
-        redFlagEvents: { orderBy: { triggeredAt: "desc" } },
-        medicalDocuments: {
-          where: { deletedAt: null },
-          include: { extractedEntities: true },
-        },
-        clinicalSummary: true,
-        ayurvedaAssessment: true,
-      },
-    });
+      });
+    } catch (dbErr) {
+      console.warn("Doctor individual case fetch DB fallback:", (dbErr as any)?.message);
+    }
+
+    if (!session) {
+      const { inMemoryClinicalStore } = await import("@/lib/db/in-memory-store");
+      session = inMemoryClinicalStore.getSession(sessionId);
+    }
 
     if (!session) {
       return apiError(AppError.notFound(`Clinical case session '${sessionId}' was not found.`));
@@ -110,20 +119,20 @@ export async function GET(
         chiefComplaint: session.chiefComplaints?.[0]?.symptomName || "Consultation Intake",
         status: session.status,
       },
-      answers: session.patientAnswers.map((pa) => ({
+      answers: session.patientAnswers.map((pa: any) => ({
         id: pa.id,
         nodeCode: pa.nodeCode,
         questionText: pa.questionNode?.questionText || pa.nodeCode,
         questionTextHindi: pa.questionNode?.questionTextHindi || null,
         clinicalDomain: pa.questionNode?.clinicalDomain || null,
         answerValue: pa.answerValue,
-        answeredAt: pa.answeredAt.toISOString(),
+        answeredAt: pa.answeredAt ? new Date(pa.answeredAt).toISOString() : new Date().toISOString(),
       })),
-      conversationTurns: session.conversationTurns.map((t) => ({
+      conversationTurns: session.conversationTurns.map((t: any) => ({
         id: t.id,
         role: t.role,
         contentText: t.contentText,
-        timestamp: t.timestamp.toISOString(),
+        timestamp: t.timestamp ? new Date(t.timestamp).toISOString() : new Date().toISOString(),
       })),
       redFlags: session.redFlagEvents.map((rf: any) => ({
         ruleId: rf.ruleId,

@@ -25,37 +25,47 @@ export async function GET(
     const { session: authSession } = await AuthService.requireSessionAccess(req, sessionId);
 
     // 2. Fetch full clinical relation graph
-    const session = await prisma.clinicalSession.findUnique({
-      where: { id: sessionId },
-      include: {
-        patient: {
-          include: {
-            user: true,
-            timelineEvents: { orderBy: { eventDate: "desc" }, take: 10 },
+    let session: any = null;
+    try {
+      session = await prisma.clinicalSession.findUnique({
+        where: { id: sessionId },
+        include: {
+          patient: {
+            include: {
+              user: true,
+              timelineEvents: { orderBy: { eventDate: "desc" }, take: 10 },
+            },
+          },
+          chiefComplaints: true,
+          patientAnswers: {
+            orderBy: { answeredAt: "asc" },
+            include: { questionNode: true },
+          },
+          conversationTurns: {
+            orderBy: { timestamp: "asc" },
+          },
+          medicalDocuments: {
+            where: { deletedAt: null },
+            include: { extractedEntities: true },
+          },
+          redFlagEvents: {
+            orderBy: { triggeredAt: "desc" },
+          },
+          clinicalSummary: true,
+          ayurvedaAssessment: true,
+          doctor: {
+            include: { user: true },
           },
         },
-        chiefComplaints: true,
-        patientAnswers: {
-          orderBy: { answeredAt: "asc" },
-          include: { questionNode: true },
-        },
-        conversationTurns: {
-          orderBy: { timestamp: "asc" },
-        },
-        medicalDocuments: {
-          where: { deletedAt: null },
-          include: { extractedEntities: true },
-        },
-        redFlagEvents: {
-          orderBy: { triggeredAt: "desc" },
-        },
-        clinicalSummary: true,
-        ayurvedaAssessment: true,
-        doctor: {
-          include: { user: true },
-        },
-      },
-    });
+      });
+    } catch (dbErr) {
+      console.warn("Patient individual case fetch DB fallback:", (dbErr as any)?.message);
+    }
+
+    if (!session) {
+      const { inMemoryClinicalStore } = await import("@/lib/db/in-memory-store");
+      session = inMemoryClinicalStore.getSession(sessionId);
+    }
 
     if (!session) {
       throw AppError.notFound(`Case '${sessionId}' was not found.`);
@@ -66,24 +76,24 @@ export async function GET(
     const tokenNumber = `#AYUR-${shortToken}`;
 
     // 4. Transform documents with extracted entities
-    const documents = session.medicalDocuments.map((doc) => ({
+    const documents = (session.medicalDocuments || []).map((doc: any) => ({
       id: doc.id,
       fileName: doc.fileName,
       type: doc.type,
       fileSize: doc.fileSize,
-      uploadedAt: doc.uploadedAt.toISOString(),
+      uploadedAt: doc.uploadedAt ? new Date(doc.uploadedAt).toISOString() : new Date().toISOString(),
       ocrRawSnippet: doc.ocrRawText ? doc.ocrRawText.slice(0, 200) + "..." : null,
-      medications: doc.extractedEntities
-        .filter((e) => e.type === "MEDICATION")
-        .map((m) => ({
+      medications: (doc.extractedEntities || [])
+        .filter((e: any) => e.type === "MEDICATION")
+        .map((m: any) => ({
           name: (m.structuredData as any)?.normalisedName || m.rawText,
           dosage: (m.structuredData as any)?.dosage || "",
           frequency: (m.structuredData as any)?.frequency || "",
           duration: (m.structuredData as any)?.duration || "",
         })),
-      labs: doc.extractedEntities
-        .filter((e) => e.type === "LAB")
-        .map((l) => ({
+      labs: (doc.extractedEntities || [])
+        .filter((e: any) => e.type === "LAB")
+        .map((l: any) => ({
           testName: (l.structuredData as any)?.testName || l.rawText,
           value: (l.structuredData as any)?.value || l.rawText,
           unit: (l.structuredData as any)?.unit || "",
@@ -93,20 +103,20 @@ export async function GET(
     }));
 
     // 5. Transform Q&A answers
-    const answers = session.patientAnswers.map((pa) => ({
+    const answers = (session.patientAnswers || []).map((pa: any) => ({
       id: pa.id,
       nodeCode: pa.nodeCode,
       questionText: pa.questionNode?.questionText || pa.nodeCode,
       questionTextHindi: pa.questionNode?.questionTextHindi || null,
       clinicalDomain: pa.questionNode?.clinicalDomain || null,
       answerValue: pa.answerValue,
-      answeredAt: pa.answeredAt.toISOString(),
+      answeredAt: pa.answeredAt ? new Date(pa.answeredAt).toISOString() : new Date().toISOString(),
     }));
 
     // 6. Transform Timeline
-    const timeline = (session.patient?.timelineEvents || []).map((te) => ({
+    const timeline = (session.patient?.timelineEvents || []).map((te: any) => ({
       id: te.id,
-      eventDate: te.eventDate.toISOString().split("T")[0],
+      eventDate: te.eventDate ? new Date(te.eventDate).toISOString().split("T")[0] : new Date().toISOString().split("T")[0],
       title: te.title,
       description: te.description,
       category: te.category,
@@ -119,9 +129,9 @@ export async function GET(
       status: session.status,
       triagePriority: session.triagePriority,
       language: session.language,
-      startedAt: session.startedAt.toISOString(),
-      updatedAt: session.updatedAt.toISOString(),
-      completedAt: session.completedAt ? session.completedAt.toISOString() : null,
+      startedAt: session.startedAt ? new Date(session.startedAt).toISOString() : new Date().toISOString(),
+      updatedAt: session.updatedAt ? new Date(session.updatedAt).toISOString() : new Date().toISOString(),
+      completedAt: session.completedAt ? new Date(session.completedAt).toISOString() : null,
 
       patient: {
         name: session.patient ? `${session.patient.firstName} ${session.patient.lastName}` : "Patient",
@@ -130,7 +140,7 @@ export async function GET(
         abhaId: session.patient?.user?.abhaId || "N/A",
       },
 
-      chiefComplaints: session.chiefComplaints.map((cc) => ({
+      chiefComplaints: (session.chiefComplaints || []).map((cc: any) => ({
         id: cc.id,
         symptomName: cc.symptomName,
         duration: cc.duration,
@@ -142,11 +152,11 @@ export async function GET(
       documents,
       timeline,
 
-      redFlags: session.redFlagEvents.map((rf) => ({
+      redFlags: (session.redFlagEvents || []).map((rf: any) => ({
         ruleId: rf.ruleId,
         description: rf.description,
         severity: rf.severity,
-        triggeredAt: rf.triggeredAt.toISOString(),
+        triggeredAt: rf.triggeredAt ? new Date(rf.triggeredAt).toISOString() : new Date().toISOString(),
       })),
 
       summary: session.clinicalSummary

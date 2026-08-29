@@ -23,6 +23,15 @@ export async function POST(req: NextRequest) {
       validated.answerValue
     );
 
+    // Save answer to in-memory store for doctor case dossier view
+    try {
+      const { inMemoryClinicalStore } = await import("@/lib/db/in-memory-store");
+      inMemoryClinicalStore.addAnswer(validated.sessionId, {
+        nodeCode: validated.nodeCode,
+        answerValue: validated.answerValue,
+      });
+    } catch {}
+
     return apiSuccess(result, 200);
   } catch (error) {
     return apiError(error);
