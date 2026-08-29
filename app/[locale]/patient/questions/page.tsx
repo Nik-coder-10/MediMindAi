@@ -89,17 +89,27 @@ export default function AdaptiveQuestionsFlowPage({
     );
   };
 
+  // Deduplication ref to prevent duplicate initialization runs on rerenders
+  const initializedSessionRef = React.useRef<string | null>(null);
+
   // Resume or sync question load without clearing UI
   useEffect(() => {
     async function initEngine() {
-      try {
-        const activeId = sessionId || (typeof window !== "undefined" ? sessionStorage.getItem("ayursetu_active_session_id") : null);
+      const activeId = sessionId || (typeof window !== "undefined" ? sessionStorage.getItem("ayursetu_active_session_id") : null) || "";
+      const cacheKey = `${activeId}_${locale}`;
 
+      // Prevent redundant fetches if this session & locale have already been initialized
+      if (initializedSessionRef.current === cacheKey && activeId) {
+        return;
+      }
+
+      try {
         if (activeId) {
           const currentRes = await fetch(`/api/patient/conversation/current?sessionId=${activeId}`);
           const currentData = await currentRes.json();
 
           if (currentData.data?.question) {
+            initializedSessionRef.current = cacheKey;
             setCurrentQuestion(currentData.data.question);
             if (typeof window !== "undefined") {
               sessionStorage.setItem("ayursetu_current_question", JSON.stringify(currentData.data.question));
@@ -129,11 +139,16 @@ export default function AdaptiveQuestionsFlowPage({
         });
         const data = await res.json();
         if (data.data?.sessionId) {
-          setSessionId(data.data.sessionId);
+          const newSessionId = data.data.sessionId;
+          initializedSessionRef.current = `${newSessionId}_${locale}`;
+          setSessionId(newSessionId);
           if (typeof window !== "undefined") {
-            sessionStorage.setItem("ayursetu_active_session_id", data.data.sessionId);
+            sessionStorage.setItem("ayursetu_active_session_id", newSessionId);
           }
+        } else {
+          initializedSessionRef.current = cacheKey;
         }
+
         if (data.data?.firstQuestion) {
           setCurrentQuestion(data.data.firstQuestion);
           if (typeof window !== "undefined") {
@@ -146,7 +161,7 @@ export default function AdaptiveQuestionsFlowPage({
     }
 
     initEngine();
-  }, [locale]);
+  }, [sessionId, locale]);
 
 
   const handleSelectOption = (option: QuestionOption) => {
