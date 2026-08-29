@@ -39,9 +39,10 @@ export default function PatientDocumentsScanPage({
     if (!file) return;
 
     setUploading(true);
+    const activeSessionId = (typeof window !== "undefined" && sessionStorage.getItem("ayursetu_active_session_id")) || "sess-demo-001";
     const formData = new FormData();
     formData.append("file", file);
-    formData.append("sessionId", "sess-demo-001");
+    formData.append("sessionId", activeSessionId);
     formData.append("type", "PRESCRIPTION");
 
     try {

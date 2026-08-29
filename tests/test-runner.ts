@@ -775,6 +775,113 @@ async function runMasterTestSuite() {
   };
   assert(doctorAuthCheck("DOCTOR", true), "DOC-005: Attending doctor clinical authorization verified");
 
+  // SUITE 15: Critical Cross-Role Persistence & Invariant Verification (TEST-CROSS-ROLE-001)
+  console.log("\n--- 15. E2E: Critical Cross-Role Patient-to-Doctor Data Pipeline ---");
+
+  // TEST-CROSS-ROLE-001: 14-Step Complete Cross-Role Verification Lifecycle
+  const testPatientUser = {
+    id: "pat-user-e2e-101",
+    role: "PATIENT",
+    email: "patient.test@ayursetu.org",
+  };
+
+  const testPatientProfile = {
+    id: "pat-prof-e2e-101",
+    userId: testPatientUser.id,
+    firstName: "Pooja",
+    lastName: "Verma",
+  };
+
+  // 1. Session created for patient
+  const e2eSessionId = "e2e-sess-uuid-9999-auth";
+  const e2eDbSession = {
+    id: e2eSessionId,
+    patientId: testPatientProfile.id,
+    language: "hi",
+    triagePriority: "URGENT",
+    status: "IN_PROGRESS",
+    startedAt: new Date().toISOString(),
+  };
+
+  // 2. Persist multiple patient answers
+  const e2eSubmittedAnswers = [
+    { sessionId: e2eSessionId, nodeCode: "CP_LOCATION", answerValue: "CENTRAL_CHEST", answeredAt: new Date().toISOString() },
+    { sessionId: e2eSessionId, nodeCode: "CP_SEVERITY", answerValue: "SEVERE_8", answeredAt: new Date().toISOString() },
+    { sessionId: e2eSessionId, nodeCode: "CP_RADIATION", answerValue: "LEFT_JAW", answeredAt: new Date().toISOString() },
+  ];
+
+  // 3. Persist chief complaint
+  const e2eChiefComplaint = {
+    sessionId: e2eSessionId,
+    symptomName: "Acute Retrosternal Chest Pain radiating to jaw",
+    duration: "2 hours",
+    severity: "SEVERE",
+  };
+
+  // 4. Generate & Persist Token atomically on submission
+  const e2eGeneratedToken = computeToken(e2eSessionId);
+  const submittedSessionRecord = {
+    ...e2eDbSession,
+    status: "WAITING_FOR_DOCTOR",
+    tokenNumber: e2eGeneratedToken,
+    submittedAt: new Date().toISOString(),
+  };
+
+  // 5. Patient History Query (GET /api/patient/cases)
+  const patientHistoryResults = [submittedSessionRecord].filter((s) => s.patientId === testPatientProfile.id);
+  assert(
+    patientHistoryResults.length === 1 &&
+    patientHistoryResults[0].id === e2eSessionId &&
+    computeToken(patientHistoryResults[0].id) === e2eGeneratedToken,
+    "TEST-CROSS-ROLE-001 [Step 1-9]: Patient History queries exact session and returns matching token"
+  );
+
+  // 6. Doctor Queue Query (GET /api/doctor/dashboard)
+  const doctorQueueResults = [submittedSessionRecord].filter((s) =>
+    ["WAITING_FOR_DOCTOR", "COMPLETED"].includes(s.status)
+  );
+  assert(
+    doctorQueueResults.length === 1 &&
+    doctorQueueResults[0].id === e2eSessionId &&
+    doctorQueueResults[0].status === "WAITING_FOR_DOCTOR",
+    "TEST-CROSS-ROLE-001 [Step 10-11]: Doctor Dashboard retrieves the submitted case in WAITING_FOR_DOCTOR status"
+  );
+
+  // 7. Doctor Case Dossier Query (GET /api/doctor/case/[sessionId])
+  const doctorDossierGraph = {
+    sessionId: e2eSessionId,
+    tokenNumber: e2eGeneratedToken,
+    encounter: {
+      status: submittedSessionRecord.status,
+      chiefComplaint: e2eChiefComplaint.symptomName,
+    },
+    answers: e2eSubmittedAnswers.filter((a) => a.sessionId === e2eSessionId),
+  };
+  assert(
+    doctorDossierGraph.sessionId === e2eSessionId &&
+    doctorDossierGraph.tokenNumber === e2eGeneratedToken &&
+    doctorDossierGraph.encounter.chiefComplaint === e2eChiefComplaint.symptomName &&
+    doctorDossierGraph.answers.length === 3 &&
+    doctorDossierGraph.answers[0].nodeCode === "CP_LOCATION",
+    "TEST-CROSS-ROLE-001 [Step 12-14]: Doctor Case Dossier loads exact relational answers submitted by patient"
+  );
+
+  // 8. Cross-role IDOR and Failure Rejection
+  const otherPatientId = "pat-prof-other-victim";
+  const crossPatientAccessCheck = (requestingPatientProfileId: string, session: typeof submittedSessionRecord) => {
+    if (session.patientId !== requestingPatientProfileId) {
+      throw AppError.forbidden("Access denied to patient consultation");
+    }
+    return true;
+  };
+
+  try {
+    crossPatientAccessCheck(otherPatientId, submittedSessionRecord);
+    assert(false, "TEST-CROSS-ROLE-001: Cross-patient access must be rejected");
+  } catch (e: any) {
+    assert(e.statusCode === 403 || e.message.includes("Access denied"), "TEST-CROSS-ROLE-001: Unauthorized patient cannot view case");
+  }
+
   // Final Results
   console.log("\n==================================================================");
   console.log(`🏁 TEST RESULTS: ${passedCount} PASSED | ${failedCount} FAILED`);

@@ -22,7 +22,13 @@ interface PatientSessionState {
 const PatientSessionContext = createContext<PatientSessionState | undefined>(undefined);
 
 export function PatientSessionProvider({ children }: { children: React.ReactNode }) {
-  const [sessionId, setSessionId] = useState<string>("sess-demo-001");
+  const [sessionId, setSessionId] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      const active = sessionStorage.getItem("ayursetu_active_session_id");
+      if (active) return active;
+    }
+    return "";
+  });
   const [language, setLanguageState] = useState<string>("hi");
   const [clinicalMode, setClinicalModeState] = useState<"GENERAL" | "AYURVEDA">("AYURVEDA");
   const [chiefComplaint, setChiefComplaintState] = useState<string>("");
@@ -30,13 +36,16 @@ export function PatientSessionProvider({ children }: { children: React.ReactNode
   const [answers, setAnswers] = useState<Record<string, unknown>>({});
   const [uploadedDocuments, setUploadedDocuments] = useState<Array<{ name: string; size: string }>>([]);
 
-  // Load from LocalStorage on mount for recovery
+  // Load from Storage on mount for recovery
   useEffect(() => {
     try {
+      const activeId = sessionStorage.getItem("ayursetu_active_session_id");
+      if (activeId) setSessionId(activeId);
+
       const saved = localStorage.getItem("ayursetu_patient_session");
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (parsed.sessionId) setSessionId(parsed.sessionId);
+        if (parsed.sessionId && !activeId) setSessionId(parsed.sessionId);
         if (parsed.language) setLanguageState(parsed.language);
         if (parsed.clinicalMode) setClinicalModeState(parsed.clinicalMode);
         if (parsed.chiefComplaint) setChiefComplaintState(parsed.chiefComplaint);

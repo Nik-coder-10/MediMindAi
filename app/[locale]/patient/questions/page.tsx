@@ -18,7 +18,13 @@ export default function AdaptiveQuestionsFlowPage({
   params: { locale: string };
 }) {
   const router = useRouter();
-  const [sessionId] = useState<string>("sess-demo-001");
+  const [sessionId, setSessionId] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      const stored = sessionStorage.getItem("ayursetu_active_session_id");
+      if (stored) return stored;
+    }
+    return "";
+  });
   const [currentQuestion, setCurrentQuestion] = useState<EngineQuestionDefinition>(() => {
     if (typeof window !== "undefined") {
       try {
@@ -87,22 +93,26 @@ export default function AdaptiveQuestionsFlowPage({
   useEffect(() => {
     async function initEngine() {
       try {
-        const currentRes = await fetch(`/api/patient/conversation/current?sessionId=${sessionId}`);
-        const currentData = await currentRes.json();
+        const activeId = sessionId || (typeof window !== "undefined" ? sessionStorage.getItem("ayursetu_active_session_id") : null);
 
-        if (currentData.data?.question) {
-          setCurrentQuestion(currentData.data.question);
-          if (typeof window !== "undefined") {
-            sessionStorage.setItem("ayursetu_current_question", JSON.stringify(currentData.data.question));
-          }
-          if (currentData.data.state?.questionCount) {
-            const nextStep = currentData.data.state.questionCount + 1;
-            setStepNumber(nextStep);
+        if (activeId) {
+          const currentRes = await fetch(`/api/patient/conversation/current?sessionId=${activeId}`);
+          const currentData = await currentRes.json();
+
+          if (currentData.data?.question) {
+            setCurrentQuestion(currentData.data.question);
             if (typeof window !== "undefined") {
-              sessionStorage.setItem("ayursetu_current_step", nextStep.toString());
+              sessionStorage.setItem("ayursetu_current_question", JSON.stringify(currentData.data.question));
             }
+            if (currentData.data.state?.questionCount) {
+              const nextStep = currentData.data.state.questionCount + 1;
+              setStepNumber(nextStep);
+              if (typeof window !== "undefined") {
+                sessionStorage.setItem("ayursetu_current_step", nextStep.toString());
+              }
+            }
+            return;
           }
-          return;
         }
 
         const storedComplaint = typeof window !== "undefined" ? sessionStorage.getItem("ayursetu_chief_complaint") : null;
@@ -112,12 +122,18 @@ export default function AdaptiveQuestionsFlowPage({
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            sessionId,
+            sessionId: activeId || undefined,
             chiefComplaint: complaint,
             language: locale === "hi" ? "hi" : "en",
           }),
         });
         const data = await res.json();
+        if (data.data?.sessionId) {
+          setSessionId(data.data.sessionId);
+          if (typeof window !== "undefined") {
+            sessionStorage.setItem("ayursetu_active_session_id", data.data.sessionId);
+          }
+        }
         if (data.data?.firstQuestion) {
           setCurrentQuestion(data.data.firstQuestion);
           if (typeof window !== "undefined") {
@@ -130,7 +146,7 @@ export default function AdaptiveQuestionsFlowPage({
     }
 
     initEngine();
-  }, [sessionId, locale]);
+  }, [locale]);
 
 
   const handleSelectOption = (option: QuestionOption) => {
@@ -142,11 +158,12 @@ export default function AdaptiveQuestionsFlowPage({
     setLoading(true);
 
     try {
+      const activeId = sessionId || (typeof window !== "undefined" ? sessionStorage.getItem("ayursetu_active_session_id") : null) || "sess-demo-001";
       const res = await fetch("/api/patient/conversation/answer", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          sessionId,
+          sessionId: activeId,
           nodeCode: currentQuestion.nodeCode,
           answerValue: selectedAnswer,
         }),
