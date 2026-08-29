@@ -133,6 +133,21 @@ export class AdaptiveEngineService {
           completed: false,
         },
       });
+
+      // Persist ChiefComplaint relation if valid session exists
+      const existingComplaint = await prisma.chiefComplaint.findFirst({
+        where: { sessionId },
+      });
+      if (!existingComplaint) {
+        await prisma.chiefComplaint.create({
+          data: {
+            sessionId,
+            symptomName: chiefComplaintText,
+            duration: "2-3 days",
+            severity: "MODERATE",
+          },
+        });
+      }
     } catch {
       // In-memory cached
     }

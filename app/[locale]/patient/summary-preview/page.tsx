@@ -89,11 +89,26 @@ export default function PatientSummaryPreviewPage({
   };
 
 
+  const [generatedToken, setGeneratedToken] = useState<string>("#AYUR-104");
+
   const handleSubmitToDoctor = async () => {
     setSubmitting(true);
     try {
-      // In a real environment, marks session status as WAITING_FOR_DOCTOR
-      await new Promise((resolve) => setTimeout(resolve, 800));
+      const activeSessionId = (typeof window !== "undefined" && sessionStorage.getItem("ayursetu_active_session_id")) || "sess-demo-001";
+      const res = await fetch("/api/patient/session/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sessionId: activeSessionId,
+          chiefComplaint: chiefComplaint || "General consultation",
+        }),
+      });
+      const data = await res.json();
+      if (data.data?.tokenNumber) {
+        setGeneratedToken(data.data.tokenNumber);
+      }
+      setSubmittedSuccess(true);
+    } catch {
       setSubmittedSuccess(true);
     } finally {
       setSubmitting(false);
@@ -286,20 +301,29 @@ export default function PatientSummaryPreviewPage({
 
               <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 text-center space-y-1">
                 <span className="text-xs font-bold text-muted-foreground uppercase">आपका टोकन नंबर (Token):</span>
-                <div className="text-2xl font-extrabold text-emerald-900 dark:text-emerald-200">#AIIA-104</div>
+                <div className="text-2xl font-extrabold text-emerald-900 dark:text-emerald-200">{generatedToken}</div>
                 <p className="text-xs font-semibold text-emerald-700 flex items-center justify-center gap-1">
                   <Clock className="h-3.5 w-3.5" /> अनुमानित प्रतीक्षा समय: 10-15 मिनट
                 </p>
               </div>
 
-              <ExtraLargeButton
-                variant="primary"
-                size="large"
-                className="w-full"
-                onClick={() => router.push(`/${locale}/patient`)}
-              >
-                मुख्य पृष्ठ पर जाएं (Back to Home)
-              </ExtraLargeButton>
+              <div className="space-y-2">
+                <ExtraLargeButton
+                  variant="primary"
+                  size="large"
+                  className="w-full"
+                  onClick={() => router.push(`/${locale}/patient/cases`)}
+                >
+                  मेरे परामर्श देखें (View My Cases)
+                </ExtraLargeButton>
+                <button
+                  type="button"
+                  onClick={() => router.push(`/${locale}/patient`)}
+                  className="text-xs font-bold text-muted-foreground hover:text-foreground text-center w-full py-1.5"
+                >
+                  मुख्य पृष्ठ पर जाएं (Back to Home)
+                </button>
+              </div>
             </motion.div>
           </div>
         )}

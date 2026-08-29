@@ -113,6 +113,14 @@ export default function PatientShellLayout({
 
           {/* Right controls */}
           <div className="flex items-center gap-2">
+            <Link
+              href={`/${locale}/patient/cases`}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-indigo-200 dark:border-indigo-900/40 bg-indigo-50/70 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-300 font-bold text-[11px] hover:bg-indigo-100 dark:hover:bg-indigo-950/50 transition-all min-h-[34px]"
+            >
+              <Activity className="h-3.5 w-3.5" />
+              <span>मेरे परामर्श (My Cases)</span>
+            </Link>
+
             <PatientLanguageSwitcher currentLocale={locale} />
 
             <button
