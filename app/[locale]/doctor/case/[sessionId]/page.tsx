@@ -262,6 +262,135 @@ export default function IndividualDoctorCaseViewPage({
             </div>
           </div>
         )}
+
+        {/* ⚠️ Drug-Drug & Drug-Allergy Safety Cross-Check Banner */}
+        {caseData?.drugSafetyAlerts?.length > 0 && (
+          <div className="p-5 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border-2 border-amber-400 text-amber-950 dark:text-amber-200 space-y-3 shadow-sm">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-amber-300 dark:border-amber-800 pb-2">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+                <span className="text-sm font-black uppercase tracking-wide">
+                  ⚠️ दवा परस्पर-क्रिया व एलर्जी चेतावनी (Drug Interactions & Allergy Alerts)
+                </span>
+              </div>
+              <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-amber-200 dark:bg-amber-900 text-amber-900 dark:text-amber-200 w-fit">
+                {caseData.drugSafetyAlerts.length} संभावित परस्पर-क्रिया चिन्हित
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+              {caseData.drugSafetyAlerts.map((alert: any, i: number) => (
+                <div
+                  key={i}
+                  className={`p-4 rounded-xl border-2 space-y-2 bg-white dark:bg-slate-900 ${
+                    alert.severity === "CRITICAL"
+                      ? "border-rose-400 dark:border-rose-800"
+                      : "border-amber-300 dark:border-amber-700"
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="space-y-0.5">
+                      <span
+                        className={`text-[10px] font-black px-2 py-0.5 rounded-md inline-block uppercase ${
+                          alert.severity === "CRITICAL"
+                            ? "bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300"
+                            : alert.severity === "MAJOR"
+                            ? "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300"
+                            : "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300"
+                        }`}
+                      >
+                        {alert.severity} • {alert.category === "DRUG_ALLERGY" ? "एलर्जी (Allergy)" : "DDI"}
+                      </span>
+                      <h4 className="text-xs font-black text-foreground pt-1">{alert.title}</h4>
+                      <p className="text-[11px] font-bold text-muted-foreground">{alert.titleHindi}</p>
+                    </div>
+                  </div>
+
+                  <p className="text-xs text-foreground font-medium leading-relaxed">
+                    {alert.clinicalMechanism}
+                  </p>
+
+                  <div className="p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800 text-[11px] font-semibold text-foreground space-y-1">
+                    <div>
+                      <span className="font-bold text-amber-800 dark:text-amber-400">चिकित्सक परामर्श: </span>
+                      <span>{alert.physicianAdvisory}</span>
+                    </div>
+                    <div>
+                      <span className="font-bold text-indigo-700 dark:text-indigo-400">अनुशंसित कदम: </span>
+                      <span>{alert.recommendedAction}</span>
+                    </div>
+                  </div>
+
+                  {/* Doctor Dismissal & Review Action Controls */}
+                  <div className="pt-2 border-t flex flex-wrap items-center justify-between gap-2">
+                    <span className="text-[10px] text-muted-foreground font-bold">
+                      संबंधित: {alert.involvedSubstances.join(" + ")}
+                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          try {
+                            await fetch("/api/doctor/safety", {
+                              method: "POST",
+                              headers: {
+                                "Content-Type": "application/json",
+                                "x-user-id": user?.id || "doc-8842-demo",
+                              },
+                              body: JSON.stringify({
+                                sessionId,
+                                alertId: alert.id,
+                                action: "REVIEWED_NO_ACTION_NEEDED",
+                                clinicalNote: "Physician verified interaction profile.",
+                              }),
+                            });
+                            alert.isDismissed = true;
+                            setActionSuccess(`चेतावनी '${alert.title}' की समीक्षा दर्ज की गई (No Action Needed)`);
+                          } catch (e) {
+                            alert("समीक्षा सहेजने में त्रुटि हुई");
+                          }
+                        }}
+                        className="text-[11px] font-bold px-2 py-1 rounded-md bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-foreground transition-all"
+                      >
+                        ✓ समीक्षा संपन्न (Acknowledge)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          const note = window.prompt("चिकित्सकीय कार्रवाई दर्ज करें (e.g. Changed to Pantoprazole / adjusted dose):", "Prescription revised accordingly");
+                          if (note) {
+                            try {
+                              await fetch("/api/doctor/safety", {
+                                method: "POST",
+                                headers: {
+                                  "Content-Type": "application/json",
+                                  "x-user-id": user?.id || "doc-8842-demo",
+                                },
+                                body: JSON.stringify({
+                                  sessionId,
+                                  alertId: alert.id,
+                                  action: "ACTION_TAKEN",
+                                  clinicalNote: note,
+                                }),
+                              });
+                              alert.isDismissed = true;
+                              setActionSuccess(`कार्रवाई दर्ज की गई: ${note}`);
+                            } catch (e) {
+                              alert("कार्रवाई सहेजने में त्रुटि हुई");
+                            }
+                          }
+                        }}
+                        className="text-[11px] font-bold px-2 py-1 rounded-md bg-emerald-100 hover:bg-emerald-200 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-300 transition-all"
+                      >
+                        ⚡ कार्रवाई की गई (Action Taken)
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </Card>
 
       {/* Case Navigation Tabs */}

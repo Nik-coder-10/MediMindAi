@@ -516,6 +516,30 @@ async function runMasterTestSuite() {
   };
   assert(relationCheck.sessionId !== undefined && relationCheck.patientId !== undefined, "DATA-018: Relational integrity bounds all clinical entities");
 
+  // DATA-019: Drug Safety & Allergy Cross-Check Engine
+  const { DrugSafetyService } = await import("../lib/clinical/drug-safety.service");
+  
+  // DATA-019a: Drug-Drug Critical Conflict (Warfarin + Aspirin)
+  const ddiAlerts = DrugSafetyService.evaluateSafety({
+    medications: ["Tab Warfarin 5mg", "Tab Aspirin 75mg"],
+  });
+  assert(ddiAlerts.length >= 1, "DATA-019a: Warfarin + Aspirin interaction detected");
+  assert(ddiAlerts[0].severity === "CRITICAL" && ddiAlerts[0].ruleId === "DDI-001", "DATA-019b: Bleeding risk classified as CRITICAL severity");
+
+  // DATA-019c: Drug-Allergy Conflict (Penicillin Allergy + Amoxicillin)
+  const allergyAlerts = DrugSafetyService.evaluateSafety({
+    medications: ["Cap Amoxicillin 500mg"],
+    allergies: ["Penicillin severe rash and swelling"],
+  });
+  assert(allergyAlerts.length >= 1, "DATA-019c: Drug-allergy cross-reactivity detected");
+  assert(allergyAlerts[0].category === "DRUG_ALLERGY" && allergyAlerts[0].severity === "CRITICAL", "DATA-019d: Penicillin allergy conflict flagged with CRITICAL severity");
+
+  // DATA-019e: Herb-Drug Synergistic Interaction (Metformin + Yogaraj Guggulu)
+  const herbDrugAlerts = DrugSafetyService.evaluateSafety({
+    medications: ["Tab Metformin 500mg", "Tab Yogaraj Guggulu 500mg"],
+  });
+  assert(herbDrugAlerts.some((a) => a.category === "HERB_DRUG"), "DATA-019e: Herb-Drug hypoglycemic synergy detected between Allopathic antidiabetic and Ayurvedic formulation");
+
   // SUITE 12: Automated Production Security & Resilience (SEC-001 to SEC-014)
   console.log("\n--- 12. UNIT: Production Security & Compliance Boundaries (SEC-001 to SEC-014) ---");
 

@@ -12,4 +12,7 @@
    - The platform includes high-contrast pre-processing, bilingual (Hindi + English) Tesseract OCR, tabular NER, confidence scoring (0.0 to 1.0), and inline doctor correction. In high-volume tertiary hospitals with degraded penmanship, enterprise multi-page PDF pipelines hook into Azure Form Recognizer / Google Document AI via `OCR_PROVIDER` in `.env`.
 3. **ABDM Sandbox Gateway**:
    - The platform generates compliant ABDM consent artifacts and HL7 FHIR R4 Encounter Bundles. Production deployment requires live whitelisting on the NHA Production Gateway.
+4. **Clinical Drug Interaction Knowledge Base**:
+   - The engine includes a curated static rule base of high-yield Allopathic and Ayurvedic interactions tailored for Indian OPDs. In production hospital enterprise setups, it hooks into external clinical decision support services (e.g. OpenFDA, DrugBank, FDB) via `lib/clinical/drug-safety.service.ts`.
+
 

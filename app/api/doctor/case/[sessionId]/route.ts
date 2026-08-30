@@ -96,6 +96,30 @@ export async function GET(
     });
     const abnormalLabs = MedicalTimelineService.evaluateAbnormalLabs(extractedLabs);
 
+    // 3b. Evaluate Drug Interactions and Allergies
+    const { DrugSafetyService } = await import("@/lib/clinical/drug-safety.service");
+    const rawMedNames: string[] = [];
+    const allergies: string[] = [];
+    session.medicalDocuments.forEach((doc: any) => {
+      doc.extractedEntities.forEach((ent: any) => {
+        if (ent.type === "MEDICATION") {
+          rawMedNames.push(ent.structuredData?.normalisedName || ent.rawText);
+        }
+        if (ent.type === "ALLERGY") {
+          allergies.push(ent.rawText);
+        }
+      });
+    });
+    if (session.patient?.medicalHistory && (session.patient.medicalHistory as any).allergies) {
+      const histAllergies = (session.patient.medicalHistory as any).allergies;
+      if (Array.isArray(histAllergies)) allergies.push(...histAllergies);
+      else if (typeof histAllergies === "string") allergies.push(histAllergies);
+    }
+    const drugSafetyAlerts = DrugSafetyService.evaluateSafety({
+      medications: rawMedNames,
+      allergies,
+    });
+
     // 4. Assemble genuine case data
     const caseData = {
       sessionId,
@@ -140,6 +164,7 @@ export async function GET(
         severity: rf.severity,
         triggeredAt: rf.triggeredAt.toISOString(),
       })),
+      drugSafetyAlerts,
       summary,
       timeline,
       abnormalLabs,

@@ -55,17 +55,41 @@ export class SummaryService {
       : "  - No critical red flags detected during intake.";
 
     const extractedMeds: string[] = [];
+    const rawMedNames: string[] = [];
     const extractedLabs: string[] = [];
+    const allergies: string[] = [];
+
     session.medicalDocuments.forEach((doc: any) => {
       doc.extractedEntities.forEach((ent: any) => {
         if (ent.type === "MEDICATION") {
-          extractedMeds.push(`- *${ent.structuredData?.normalisedName || ent.rawText}* (${ent.structuredData?.dosage || ""}, ${ent.structuredData?.frequency || ""})`);
+          const medName = ent.structuredData?.normalisedName || ent.rawText;
+          rawMedNames.push(medName);
+          extractedMeds.push(`- *${medName}* (${ent.structuredData?.dosage || ""}, ${ent.structuredData?.frequency || ""})`);
         }
         if (ent.type === "LAB") {
           extractedLabs.push(`- **${ent.structuredData?.testName || ent.rawText}**: \`${ent.structuredData?.value || ent.rawText}\``);
         }
+        if (ent.type === "ALLERGY") {
+          allergies.push(ent.rawText);
+        }
       });
     });
+
+    if (session.patient?.medicalHistory && (session.patient.medicalHistory as any).allergies) {
+      const histAllergies = (session.patient.medicalHistory as any).allergies;
+      if (Array.isArray(histAllergies)) allergies.push(...histAllergies);
+      else if (typeof histAllergies === "string") allergies.push(histAllergies);
+    }
+
+    const { DrugSafetyService } = await import("@/lib/clinical/drug-safety.service");
+    const safetyAlerts = DrugSafetyService.evaluateSafety({
+      medications: rawMedNames,
+      allergies,
+    });
+
+    const safetyAlertsMarkdown = safetyAlerts.length > 0
+      ? safetyAlerts.map((sa) => `  - **[${sa.severity}] ${sa.title}**: ${sa.physicianAdvisory} *(Action: ${sa.recommendedAction})*`).join("\n")
+      : "  - No critical drug interactions or allergy conflicts identified.";
 
     const aiMarkdown = `
 # 📋 CLINICAL INTAKE & CASE-TAKING SUMMARY
@@ -84,22 +108,25 @@ export class SummaryService {
 - **Triggered Red Flags**:
 ${redFlagsMarkdown}
 
-## 3. Chief Complaint
+## 3. ⚠️ Potential Drug Safety & Interaction Flags – For Physician Review
+${safetyAlertsMarkdown}
+
+## 4. Chief Complaint
 - ${chiefComplaintText}
 
-## 4. History of Present Illness (HPI & SOCRATES)
+## 5. History of Present Illness (HPI & SOCRATES)
 - **Site**: ${facts.site || "Reported in complaint"}
 - **Onset**: ${facts.onset || "Acute"}
 - **Severity**: ${facts.severity || "Evaluated during intake"}
 - **Associated Symptoms**: ${facts.associated || "None reported"}
 
-## 5. Current Medications (From Uploaded Prescriptions)
+## 6. Current Medications (From Uploaded Prescriptions)
 ${extractedMeds.length > 0 ? extractedMeds.join("\n") : "- No previous medications recorded."}
 
-## 6. Relevant Investigations & Labs
+## 7. Relevant Investigations & Labs
 ${extractedLabs.length > 0 ? extractedLabs.join("\n") : "- No lab documents attached."}
 
-## 7. AYUSH & Dashavidha Pariksha Findings
+## 8. AYUSH & Dashavidha Pariksha Findings
 - **Prakriti**: ${session.ayurvedaAssessment?.prakriti || "Vata-Kapha"}
 - **Vikriti**: ${session.ayurvedaAssessment?.vikriti || "Vata-Pitta"}
 - **Agni**: ${session.ayurvedaAssessment?.anala || "Vishamagni"}
