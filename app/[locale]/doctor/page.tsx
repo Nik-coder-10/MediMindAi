@@ -64,6 +64,21 @@ export default function DoctorDashboardQueuePage({
   useEffect(() => {
     if (mounted && isDoctor) {
       fetchQueue();
+
+      // Real-time queue sync via SSE
+      let eventSource: EventSource | null = null;
+      try {
+        eventSource = new EventSource("/api/doctor/notifications/sse");
+        eventSource.addEventListener("notification", () => {
+          fetchQueue();
+        });
+      } catch (e) {}
+
+      const interval = setInterval(fetchQueue, 5000);
+      return () => {
+        clearInterval(interval);
+        if (eventSource) eventSource.close();
+      };
     }
   }, [mounted, isDoctor, fetchQueue]);
 

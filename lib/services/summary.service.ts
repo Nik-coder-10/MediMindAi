@@ -87,6 +87,35 @@ export class SummaryService {
       allergies,
     });
 
+    // Dispatch real-time Doctor notification for high-severity drug alerts
+    const criticalSafetyAlerts = safetyAlerts.filter(
+      (sa) => sa.severity === "CRITICAL" || sa.severity === "MAJOR"
+    );
+    if (criticalSafetyAlerts.length > 0) {
+      try {
+        const { NotificationService } = await import("@/lib/services/notification.service");
+        const topAlert = criticalSafetyAlerts[0];
+        const shortToken = `#AYUR-${sessionId.replace(/-/g, "").slice(0, 4).toUpperCase()}`;
+        await NotificationService.notify({
+          type: "SAFETY_ALERT",
+          severity: topAlert.severity === "CRITICAL" ? "CRITICAL" : "HIGH",
+          sessionId,
+          patientName,
+          tokenNumber: shortToken,
+          chiefComplaint: chiefComplaintText,
+          title: `⚠️ ${topAlert.title}`,
+          message: `${topAlert.clinicalMechanism} (${topAlert.physicianAdvisory})`,
+          metadata: {
+            alertId: topAlert.id,
+            category: topAlert.category,
+            recommendedAction: topAlert.recommendedAction,
+          },
+        });
+      } catch (safeNotifErr) {
+        console.warn("Safety alert notification dispatch non-fatal warning:", safeNotifErr);
+      }
+    }
+
     const safetyAlertsMarkdown = safetyAlerts.length > 0
       ? safetyAlerts.map((sa) => `  - **[${sa.severity}] ${sa.title}**: ${sa.physicianAdvisory} *(Action: ${sa.recommendedAction})*`).join("\n")
       : "  - No critical drug interactions or allergy conflicts identified.";

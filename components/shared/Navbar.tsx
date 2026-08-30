@@ -19,6 +19,7 @@ import {
 import { useAuthStore } from "@/stores/use-auth-store";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { DoctorNotificationFeed } from "@/components/ui/clinical/DoctorNotificationFeed";
 
 export function Navbar({ locale }: { locale: string }) {
   const { contrastMode, cycleContrastMode } = useThemeStore();
@@ -114,6 +115,9 @@ export function Navbar({ locale }: { locale: string }) {
               <span className="text-indigo-500">{contrastConfig.icon}</span>
               <span className="hidden sm:inline">{contrastConfig.label}</span>
             </button>
+
+            {/* Doctor Real-time Notification Bell & Drawer */}
+            <DoctorNotificationFeed locale={locale} />
 
             {/* Auth */}
             {isAuthenticated && user ? (

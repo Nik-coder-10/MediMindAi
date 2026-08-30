@@ -913,6 +913,51 @@ async function runMasterTestSuite() {
     assert(e.statusCode === 403 || e.message.includes("Access denied"), "TEST-CROSS-ROLE-001: Unauthorized patient cannot view case");
   }
 
+  // SUITE 16: Doctor Real-time Notification & Acknowledgment (NOTIF-001 to NOTIF-006)
+  console.log("\n--- 16. UNIT: Doctor Notification & Acknowledgment (NOTIF-001 to NOTIF-006) ---");
+  const { NotificationService, notificationStore } = await import("../lib/services/notification.service");
+
+  // 1. Dispatch emergency red-flag notification
+  const notif1 = await NotificationService.notify({
+    type: "RED_FLAG",
+    severity: "CRITICAL",
+    sessionId: "sess-notif-test-01",
+    patientName: "दिनेश यादव (Dinesh Yadav)",
+    title: "🚨 आपातकालीन रेड-फ्लैग (Critical ACS Alert)",
+    message: "Patient reports crushing chest pain radiating to jaw (Rule: RF_ACS_RADIATION)",
+  });
+  assert(notif1.id.startsWith("notif-") && notif1.severity === "CRITICAL", "NOTIF-001: Critical red-flag alert created successfully");
+  assert(notif1.status === "UNREAD", "NOTIF-002: New notification starts in UNREAD state");
+
+  // 2. Dispatch high drug-safety notification
+  const notif2 = await NotificationService.notify({
+    type: "SAFETY_ALERT",
+    severity: "HIGH",
+    sessionId: "sess-notif-test-02",
+    patientName: "सुनीता शर्मा (Sunita Sharma)",
+    title: "⚠️ गंभीर ड्रग इंटरैक्शन (Drug-Drug Conflict)",
+    message: "Warfarin + NSAID interaction detected",
+  });
+  assert(notif2.severity === "HIGH", "NOTIF-003: Safety alert created with HIGH severity");
+
+  // 3. Unread count and priority sorting
+  const snapshotBefore = NotificationService.getDoctorNotifications();
+  assert(snapshotBefore.unreadCount >= 2, "NOTIF-004: Unread notification count aggregates properly");
+  assert(snapshotBefore.notifications[0].severity === "CRITICAL", "NOTIF-005: Notifications sorted by clinical severity (CRITICAL first)");
+
+  // 4. Physician acknowledgment
+  const ackResult = await NotificationService.acknowledgeNotification(notif1.id, {
+    id: "doc-8842-demo",
+    name: "Dr. Rajesh Vaidya",
+  });
+  assert(
+    ackResult !== null &&
+    ackResult.status === "ACKNOWLEDGED" &&
+    ackResult.acknowledgedBy === "Dr. Rajesh Vaidya" &&
+    !!ackResult.acknowledgedAt,
+    "NOTIF-006: Physician acknowledgment updates status and writes audit log metadata"
+  );
+
   // Final Results
   console.log("\n==================================================================");
   console.log(`🏁 TEST RESULTS: ${passedCount} PASSED | ${failedCount} FAILED`);

@@ -117,6 +117,30 @@ export async function POST(req: NextRequest) {
     const shortToken = session.id.replace(/-/g, "").slice(0, 4).toUpperCase();
     const tokenNumber = `#AYUR-${shortToken}`;
 
+    // 5. Dispatch Real-time Doctor Notification for submitted case
+    try {
+      const { NotificationService } = await import("@/lib/services/notification.service");
+      const patientName = user.patientProfile
+        ? `${user.patientProfile.firstName} ${user.patientProfile.lastName}`
+        : "रोगी (Patient)";
+
+      await NotificationService.notify({
+        type: "NEW_CASE",
+        severity: session.triagePriority === "EMERGENCY" ? "CRITICAL" : session.triagePriority === "URGENT" ? "HIGH" : "LOW",
+        sessionId: session.id,
+        patientName,
+        tokenNumber,
+        chiefComplaint: validated.chiefComplaint,
+        title: "🌿 नया रोगी परामर्श प्रस्तुत (New Case Submitted)",
+        message: `${patientName} (${tokenNumber}) has submitted intake for '${validated.chiefComplaint || "Consultation"}' and is waiting in the triage queue.`,
+        metadata: {
+          triagePriority: session.triagePriority,
+        },
+      });
+    } catch (notifErr) {
+      console.warn("New case notification dispatch non-fatal warning:", notifErr);
+    }
+
     return apiSuccess({
       sessionId: session.id,
       tokenNumber,

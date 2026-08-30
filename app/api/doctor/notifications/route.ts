@@ -1,71 +1,59 @@
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { apiSuccess, apiError } from "@/lib/api/response";
+import { AppError } from "@/lib/api/errors";
 import { AuthService } from "@/lib/auth/auth-guard";
+import { NotificationService } from "@/lib/services/notification.service";
 
 export const dynamic = "force-dynamic";
 
-export interface ClinicalNotification {
-  id: string;
-  type: "RED_FLAG_CRITICAL" | "NEW_SESSION_READY" | "SUMMARY_ACCEPTED" | "CONSENT_REVOKED";
-  token: string;
-  title: string;
-  message: string;
-  urgency: "EMERGENCY" | "URGENT" | "ROUTINE";
-  timestamp: string;
-  acknowledged: boolean;
-}
-
-// In-memory shift notification log
-const shiftNotifications: ClinicalNotification[] = [
-  {
-    id: "notif-001",
-    type: "RED_FLAG_CRITICAL",
-    token: "#AIIA-104",
-    title: "🚨 आपातकालीन रेड-फ्लैग (Critical ACS Alert)",
-    message: "Patient reports crushing chest pain with left arm radiation (RF_ACS_RADIATION).",
-    urgency: "EMERGENCY",
-    timestamp: "Just now",
-    acknowledged: false,
-  },
-  {
-    id: "notif-002",
-    type: "NEW_SESSION_READY",
-    token: "#AIIA-105",
-    title: "🌿 नया आयुर्वेद केस तैयार (AYUSH Case Ready)",
-    message: "Patient completed Dashavidha Pariksha intake for chronic Amavata.",
-    urgency: "ROUTINE",
-    timestamp: "4 min ago",
-    acknowledged: false,
-  },
-];
-
+/**
+ * GET /api/doctor/notifications
+ * Returns all notifications with unread badge count for attending doctor.
+ */
 export async function GET(req: NextRequest) {
   try {
     await AuthService.requireDoctor(req);
 
-    return apiSuccess({
-      unreadCount: shiftNotifications.filter((n) => !n.acknowledged).length,
-      notifications: shiftNotifications,
-    });
+    const result = NotificationService.getDoctorNotifications();
+    return apiSuccess(result);
   } catch (error) {
     return apiError(error);
   }
 }
 
+/**
+ * POST /api/doctor/notifications
+ * Doctor acknowledges a notification (or marks all read).
+ */
 export async function POST(req: NextRequest) {
   try {
-    await AuthService.requireDoctor(req);
-
+    const doctor = await AuthService.requireDoctor(req);
     const body = await req.json();
-    const { notificationId } = body;
+    const { notificationId, markAllRead } = body;
 
-
-    const notif = shiftNotifications.find((n) => n.id === notificationId);
-    if (notif) {
-      notif.acknowledged = true;
+    if (markAllRead) {
+      const { notificationStore } = await import("@/lib/services/notification.service");
+      notificationStore.markAllAsRead();
+      return apiSuccess({ success: true, message: "All notifications marked as read." });
     }
 
-    return apiSuccess({ success: true, notification: notif });
+    if (!notificationId) {
+      throw AppError.badRequest("notificationId is required for acknowledgment");
+    }
+
+    const updated = await NotificationService.acknowledgeNotification(notificationId, {
+      id: doctor.id,
+      name: (doctor as any).name,
+      email: doctor.email || undefined,
+    });
+    if (!updated) {
+      throw AppError.notFound("Notification not found");
+    }
+
+    return apiSuccess({
+      success: true,
+      notification: updated,
+    });
   } catch (error) {
     return apiError(error);
   }

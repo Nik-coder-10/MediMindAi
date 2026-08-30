@@ -78,7 +78,7 @@ export class RedFlagService {
   /**
    * Internal webhook / notification dispatcher for Doctor clinical queue
    */
-  private static notifyDoctorTriageDesk(payload: {
+  private static async notifyDoctorTriageDesk(payload: {
     sessionId: string;
     ruleId: string;
     severity: string;
@@ -88,5 +88,23 @@ export class RedFlagService {
     console.warn(
       `🚨 [RED FLAG DISPATCH] [${payload.severity}] Session: ${payload.sessionId} -> ${payload.message}`
     );
+
+    try {
+      const { NotificationService } = await import("@/lib/services/notification.service");
+      const shortToken = `#AYUR-${payload.sessionId.replace(/-/g, "").slice(0, 4).toUpperCase()}`;
+      await NotificationService.notify({
+        type: "RED_FLAG",
+        severity: payload.severity === "CRITICAL" ? "CRITICAL" : "HIGH",
+        sessionId: payload.sessionId,
+        tokenNumber: shortToken,
+        title: payload.severity === "CRITICAL"
+          ? "🚨 आपातकालीन रेड-फ्लैग (Critical Emergency Alert)"
+          : "⚠️ उच्च प्राथमिकता चेतावनी (High Priority Alert)",
+        message: payload.message,
+        metadata: { ruleId: payload.ruleId },
+      });
+    } catch (e) {
+      console.warn("NotificationService dispatch warning:", e);
+    }
   }
 }
