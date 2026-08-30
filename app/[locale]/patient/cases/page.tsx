@@ -56,7 +56,10 @@ export default function PatientCasesDashboardPage({
     setLoading(true);
     setError(null);
     try {
-      const activeUserId = user?.id || "pat-104-demo";
+      const activeUserId =
+        user?.id ||
+        (typeof window !== "undefined" ? localStorage.getItem("ayursetu_user_id") || sessionStorage.getItem("ayursetu_user_id") : null) ||
+        "pat-104-demo";
       const res = await fetch("/api/patient/cases", {
         headers: {
           "x-user-id": activeUserId,
