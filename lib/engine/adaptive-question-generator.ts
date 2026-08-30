@@ -27,7 +27,9 @@ export type ClinicalPurpose =
   | "relieving"
   | "associated"
   | "red_flag"
-  | "history";
+  | "history"
+  | "family_history"
+  | "social_history";
 
 export interface QuestionOptionItem {
   value: string;
@@ -1077,8 +1079,50 @@ export class AdaptiveQuestionGenerator {
       detectedProblems.push(rawText ? `Symptom: ${rawText}` : "General Clinical Consultation");
     }
 
-    // Generate 5-8 questions according to SOCRATES / Dashavidha clinical domains
-    const questions = profile.questionTemplates(lang, detectedProblems);
+    // Generate core questions according to SOCRATES / Dashavidha clinical domains
+    const coreQuestions = profile.questionTemplates(lang, detectedProblems);
+
+    // Append structured modular history questions:
+    // 1. Family History
+    // 2. Social & Habits History
+    // 3. Obstetric History (for females or general intake)
+    const historyQuestions: AdaptiveQuestion[] = [
+      {
+        id: "FH_DIABETES_HTN",
+        text: lang === "hi"
+          ? "क्या आपके परिवार (माता-पिता, भाई-बहन) में किसी को शुगर (डायबिटीज) या उच्च रक्तचाप (BP) है?"
+          : "Does anyone in your direct family (Parents, Siblings) have Diabetes or High Blood Pressure (Hypertension)?",
+        textEn: "Does anyone in your direct family (Parents, Siblings) have Diabetes or High Blood Pressure (Hypertension)?",
+        type: "single_choice",
+        priority: "medium",
+        clinicalPurpose: "family_history",
+        options: [
+          { value: "YES_PARENTS", labelHi: "हाँ, माता या पिता को (Yes, Parents)", labelEn: "Yes, Parents" },
+          { value: "YES_SIBLINGS", labelHi: "हाँ, भाई या बहन को (Yes, Siblings)", labelEn: "Yes, Siblings" },
+          { value: "NO", labelHi: "नहीं, किसी को नहीं (No family history)", labelEn: "No" },
+          { value: "SKIP", labelHi: "छोड़ें / पता नहीं (Skip)", labelEn: "Skip" },
+        ],
+      },
+      {
+        id: "SOC_HABITS",
+        text: lang === "hi"
+          ? "क्या आप तंबाकू/गुटखा, बीड़ी/सिगरेट या शराब का सेवन करते हैं?"
+          : "Do you consume Tobacco/Gutka, Smoke Bidi/Cigarettes, or drink Alcohol?",
+        textEn: "Do you consume Tobacco/Gutka, Smoke Bidi/Cigarettes, or drink Alcohol?",
+        type: "single_choice",
+        priority: "medium",
+        clinicalPurpose: "social_history",
+        options: [
+          { value: "NONE_CLEAN", labelHi: "कोई व्यसन नहीं (No habits - Clean)", labelEn: "No habits (Clean)" },
+          { value: "SMOKING", labelHi: "बीड़ी / सिगरेट (Smoking)", labelEn: "Smoking" },
+          { value: "TOBACCO_GUTKA", labelHi: "तंबाकू / गुटखा (Tobacco / Gutka)", labelEn: "Tobacco / Gutka" },
+          { value: "ALCOHOL", labelHi: "मद्यपान / शराब (Alcohol)", labelEn: "Alcohol" },
+          { value: "SKIP", labelHi: "छोड़ें (Skip)", labelEn: "Skip" },
+        ],
+      },
+    ];
+
+    const questions = [...coreQuestions, ...historyQuestions];
 
     return {
       detectedProblems,

@@ -201,7 +201,7 @@ export class AdaptiveEngineService {
       },
     };
 
-    // Update SOCRATES / Ayush facets
+    // Update SOCRATES / Ayush / History facets
     if (currentNode.clinicalDomain.includes("SEVERITY")) {
       updatedFacts.socrates = { ...(updatedFacts.socrates || {}), severity: answerValue as any };
     }
@@ -210,6 +210,28 @@ export class AdaptiveEngineService {
     }
     if (currentNode.clinicalDomain.includes("CHARACTER")) {
       updatedFacts.socrates = { ...(updatedFacts.socrates || {}), character: answerValue as string };
+    }
+    if (currentNode.clinicalDomain.includes("FAMILY_HISTORY") || nodeCode.startsWith("FH_")) {
+      updatedFacts.familyHistory = {
+        ...(updatedFacts.familyHistory || {}),
+        [nodeCode]: answerValue as string,
+        summaryText: `${updatedFacts.familyHistory?.summaryText || ""}; ${nodeCode}: ${answerValue}`.trim().replace(/^;\s*/, ""),
+      };
+    }
+    if (currentNode.clinicalDomain.includes("SOCIAL_HISTORY") || nodeCode.startsWith("SOC_")) {
+      updatedFacts.socialHistory = {
+        ...(updatedFacts.socialHistory || {}),
+        [nodeCode]: answerValue as string,
+        summaryText: `${updatedFacts.socialHistory?.summaryText || ""}; ${nodeCode}: ${answerValue}`.trim().replace(/^;\s*/, ""),
+      };
+    }
+    if (currentNode.clinicalDomain.includes("OBSTETRIC") || nodeCode.startsWith("OBS_")) {
+      updatedFacts.obstetricHistory = {
+        ...(updatedFacts.obstetricHistory || {}),
+        applicable: true,
+        [nodeCode]: answerValue as string,
+        summaryText: `${updatedFacts.obstetricHistory?.summaryText || ""}; ${nodeCode}: ${answerValue}`.trim().replace(/^;\s*/, ""),
+      };
     }
 
     // 2. Evaluate Red Flag rules

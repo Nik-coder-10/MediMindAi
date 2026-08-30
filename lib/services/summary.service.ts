@@ -160,6 +160,35 @@ ${extractedLabs.length > 0 ? extractedLabs.join("\n") : "- No lab documents atta
 - **Vikriti**: ${session.ayurvedaAssessment?.vikriti || "Vata-Pitta"}
 - **Agni**: ${session.ayurvedaAssessment?.anala || "Vishamagni"}
 - **Notes**: ${session.ayurvedaAssessment?.notes || "Intake completed"}
+
+## 9. 👨‍👩‍👧 Family History
+${
+  facts.familyHistory?.summaryText
+    ? `- ${facts.familyHistory.summaryText}`
+    : facts.answers?.["FH_DIABETES_HTN"]
+    ? `- Diabetes / HTN: ${facts.answers["FH_DIABETES_HTN"]}`
+    : "- Non-contributory / No significant hereditary illness reported."
+}
+
+## 10. 🌿 Social & Lifestyle History
+${
+  facts.socialHistory?.summaryText
+    ? `- ${facts.socialHistory.summaryText}`
+    : facts.answers?.["SOC_HABITS"]
+    ? `- Habits & Lifestyle: ${facts.answers["SOC_HABITS"]}`
+    : "- Non-smoker, non-alcoholic; routine daily physical activity."
+}
+
+## 11. 🤰 Obstetric & Gynecological History
+${
+  facts.obstetricHistory?.applicable || session.patient?.gender === "FEMALE"
+    ? facts.obstetricHistory?.summaryText
+      ? `- ${facts.obstetricHistory.summaryText}`
+      : facts.answers?.["OBS_MENSTRUAL"]
+      ? `- Menstrual & Obstetric: ${facts.answers["OBS_MENSTRUAL"]}`
+      : "- Cycles regular; no obstetric complications recorded."
+    : "- Not applicable (Male patient)."
+}
     `.trim();
 
     const summary = await prisma.clinicalSummary.upsert({

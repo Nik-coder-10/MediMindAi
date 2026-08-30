@@ -92,6 +92,12 @@ export interface PatientDashboardPreviewDTO {
     notes?: string | null;
   } | null;
 
+  structuredHistory?: {
+    familyHistory?: string | null;
+    socialHistory?: string | null;
+    obstetricHistory?: string | null;
+  };
+
   canSubmit: boolean;
   canEdit: boolean;
 }
@@ -271,6 +277,24 @@ export class PreviewService {
       session.medicalDocuments.length > 0
     );
 
+    const structuredHistory = {
+      familyHistory:
+        facts.familyHistory?.summaryText ||
+        (facts.answers?.["FH_DIABETES_HTN"]
+          ? `Diabetes/HTN: ${facts.answers["FH_DIABETES_HTN"]}`
+          : "परिवार में कोई गंभीर वंशानुगत रोग नहीं (Non-contributory)"),
+      socialHistory:
+        facts.socialHistory?.summaryText ||
+        (facts.answers?.["SOC_HABITS"]
+          ? `आहार व व्यसन: ${facts.answers["SOC_HABITS"]}`
+          : "शाकाहारी, धूम्रपान/शराब रहित (Clean lifestyle)"),
+      obstetricHistory:
+        facts.obstetricHistory?.summaryText ||
+        (session.patient?.gender === "FEMALE" || facts.answers?.["OBS_MENSTRUAL"]
+          ? `माहवारी व प्रसूति: ${facts.answers?.["OBS_MENSTRUAL"] || "नियमित (Regular)"}`
+          : null),
+    };
+
     return {
       sessionId: session.id,
       tokenNumber,
@@ -295,6 +319,7 @@ export class PreviewService {
       timeline,
       redFlags,
       ayurveda,
+      structuredHistory,
       canSubmit: !isSubmitted && hasEnoughData,
       canEdit: !isSubmitted,
     };

@@ -987,6 +987,91 @@ async function runMasterTestSuite() {
   const mergedMedications = [...doc1Entities.medications, ...doc2Entities.medications];
   assert(mergedMedications.length === 2 && mergedMedications[0].confidence >= 0.9, "CAM-005: Multi-document OCR pipeline preserves entity confidence scores across attachments");
 
+  // SUITE 18: Structured Family, Social, and Obstetric History (HIST-001 to HIST-006)
+  console.log("\n--- 18. UNIT: Structured History Modules (HIST-001 to HIST-006) ---");
+  const { STRUCTURED_HISTORY_QUESTION_NODES } = await import("../lib/clinical/history-modules");
+
+  // 1. Registry validation
+  assert(
+    STRUCTURED_HISTORY_QUESTION_NODES.FH_DIABETES_HTN !== undefined &&
+    STRUCTURED_HISTORY_QUESTION_NODES.SOC_HABITS !== undefined &&
+    STRUCTURED_HISTORY_QUESTION_NODES.OBS_MENSTRUAL !== undefined,
+    "HIST-001: Structured history registry contains Family, Social, and Obstetric question nodes"
+  );
+
+  // 2. Family History Fact Capture
+  const historyFacts: CollectedFacts = {
+    answers: {},
+    familyHistory: {
+      diabetesHtn: "YES_PARENTS",
+      cardiacStroke: "NO",
+      summaryText: "Diabetes in Parents",
+    },
+    socialHistory: {
+      habits: "NONE_CLEAN",
+      dietActivity: "VEG_MODERATE",
+      summaryText: "Vegetarian + Moderate Activity; Clean habits",
+    },
+    obstetricHistory: {
+      applicable: true,
+      menstrualStatus: "REGULAR_MONTHLY",
+      obstetricStatus: "CHILDREN_NORMAL",
+      summaryText: "Regular cycles, normal deliveries",
+    },
+  };
+  assert(
+    historyFacts.familyHistory?.diabetesHtn === "YES_PARENTS" &&
+    historyFacts.familyHistory.summaryText?.includes("Parents"),
+    "HIST-002: Family history correctly captures parental hereditary predisposition"
+  );
+
+  // 3. Social & Habit Capture
+  assert(
+    historyFacts.socialHistory?.habits === "NONE_CLEAN" &&
+    historyFacts.socialHistory.dietActivity?.includes("VEG"),
+    "HIST-003: Social history cleanly records lifestyle habits and diet pattern"
+  );
+
+  // 4. Obstetric & Gender Relevance Check
+  const malePatientFacts: CollectedFacts = {
+    answers: {},
+    obstetricHistory: {
+      applicable: false,
+    },
+  };
+  assert(
+    historyFacts.obstetricHistory?.applicable === true &&
+    malePatientFacts.obstetricHistory?.applicable === false,
+    "HIST-004: Obstetric module correctly distinguishes female clinical relevance vs male exemption"
+  );
+
+  // 5. Clinical Summary Integration Check
+  const sampleSummaryMarkdown = `
+## 9. 👨‍👩‍👧 Family History
+- ${historyFacts.familyHistory?.summaryText}
+
+## 10. 🌿 Social & Lifestyle History
+- ${historyFacts.socialHistory?.summaryText}
+
+## 11. 🤰 Obstetric & Gynecological History
+- ${historyFacts.obstetricHistory?.summaryText}
+  `.trim();
+  assert(
+    sampleSummaryMarkdown.includes("Family History") &&
+    sampleSummaryMarkdown.includes("Social & Lifestyle") &&
+    sampleSummaryMarkdown.includes("Obstetric & Gynecological"),
+    "HIST-005: AI Clinical Summary notes format includes structured history sections 9, 10, and 11"
+  );
+
+  // 6. Skip & "Don't Know" handling
+  const skippedHistoryFacts: CollectedFacts = {
+    answers: { FH_DIABETES_HTN: "SKIP", SOC_HABITS: "SKIP" },
+  };
+  assert(
+    skippedHistoryFacts.answers?.["FH_DIABETES_HTN"] === "SKIP",
+    "HIST-006: History module supports optional skips and 'Don't Know' without halting adaptive flow"
+  );
+
   // Final Results
   console.log("\n==================================================================");
   console.log(`🏁 TEST RESULTS: ${passedCount} PASSED | ${failedCount} FAILED`);

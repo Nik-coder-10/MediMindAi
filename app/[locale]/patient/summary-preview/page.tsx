@@ -471,11 +471,36 @@ export default function PatientSummaryPreviewDashboardPage({
           </div>
         )}
 
-        {/* 6. AYUSH / Dashavidha Findings (If AYUSH Mode) */}
+        {/* 6. Structured Family & Social History */}
+        {d?.structuredHistory && (
+          <div className="p-4 rounded-2xl bg-indigo-50/60 dark:bg-indigo-950/20 border-2 border-indigo-200 dark:border-indigo-900 space-y-2">
+            <span className="text-xs font-black text-indigo-950 dark:text-indigo-300 uppercase tracking-wider flex items-center gap-1.5">
+              <Activity className="h-4 w-4 text-indigo-700" /> {isHindi ? "५. पारिवारिक व जीवनशैली इतिहास (Family & Social History)" : "5. Family, Social & Lifestyle History"}
+            </span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 text-xs">
+              <div className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border space-y-0.5 shadow-2xs">
+                <span className="text-muted-foreground block text-[10px] font-bold">पारिवारिक इतिहास (Family History):</span>
+                <span className="font-extrabold text-foreground">{d.structuredHistory.familyHistory}</span>
+              </div>
+              <div className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border space-y-0.5 shadow-2xs">
+                <span className="text-muted-foreground block text-[10px] font-bold">जीवनशैली व व्यसन (Social & Habits):</span>
+                <span className="font-extrabold text-foreground">{d.structuredHistory.socialHistory}</span>
+              </div>
+              {d.structuredHistory.obstetricHistory && (
+                <div className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border space-y-0.5 shadow-2xs sm:col-span-2">
+                  <span className="text-muted-foreground block text-[10px] font-bold">प्रसूति व माहवारी (Obstetric / Gynecological):</span>
+                  <span className="font-extrabold text-foreground">{d.structuredHistory.obstetricHistory}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* 7. AYUSH / Dashavidha Findings (If AYUSH Mode) */}
         {d?.ayurveda && (
           <div className="p-4 rounded-2xl bg-teal-50/70 dark:bg-teal-950/20 border-2 border-teal-300 space-y-2">
             <span className="text-xs font-black text-teal-950 dark:text-teal-300 uppercase tracking-wider flex items-center gap-1.5">
-              <Flower2 className="h-4 w-4 text-teal-700" /> {isHindi ? "५. आयुर्वेद दशविध परीक्षा व प्रकृति (AYUSH Profile)" : "5. Ayurveda & Dashavidha Profile"}
+              <Flower2 className="h-4 w-4 text-teal-700" /> {isHindi ? "६. आयुर्वेद दशविध परीक्षा व प्रकृति (AYUSH Profile)" : "6. Ayurveda & Dashavidha Profile"}
             </span>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-1 text-xs">
               <div className="p-2 rounded-xl bg-white dark:bg-slate-900 border">
@@ -494,10 +519,10 @@ export default function PatientSummaryPreviewDashboardPage({
           </div>
         )}
 
-        {/* 7. Longitudinal Medical Timeline */}
+        {/* 8. Longitudinal Medical Timeline */}
         <div className="space-y-2 pt-1">
           <span className="text-xs font-black text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-            <Calendar className="h-3.5 w-3.5 text-indigo-600" /> {isHindi ? "६. स्वास्थ्य यात्रा टाइमलाइन (Medical Timeline)" : "6. Medical History Timeline"}
+            <Calendar className="h-3.5 w-3.5 text-indigo-600" /> {isHindi ? "७. स्वास्थ्य यात्रा टाइमलाइन (Medical Timeline)" : "7. Medical History Timeline"}
           </span>
           <MedicalTimelineView
             events={(d?.timeline || []).map((t) => ({

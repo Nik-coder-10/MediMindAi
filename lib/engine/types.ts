@@ -63,6 +63,23 @@ export interface CollectedFacts {
     nidra?: string;
     koshtha?: string;
   };
+  familyHistory?: {
+    diabetesHtn?: string;
+    cardiacStroke?: string;
+    summaryText?: string;
+  };
+  socialHistory?: {
+    habits?: string;
+    dietActivity?: string;
+    smokingPackYears?: number;
+    summaryText?: string;
+  };
+  obstetricHistory?: {
+    applicable?: boolean;
+    menstrualStatus?: string;
+    obstetricStatus?: string;
+    summaryText?: string;
+  };
   answers?: Record<string, unknown>;
   triggeredRedFlags?: Array<{ ruleId: string; description: string; severity: string }>;
 }
