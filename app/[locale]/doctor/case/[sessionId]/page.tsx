@@ -844,23 +844,183 @@ export default function IndividualDoctorCaseViewPage({
           </div>
         )}
 
-        {/* Tab 5: Documents */}
+        {/* Tab 5: Documents with AI Confidence Scores & Doctor Inline Corrections */}
         {activeTab === "DOCS" && (
-          <Card className="p-6 sm:p-8 rounded-3xl border-2 border-input space-y-4 bg-card shadow-sm">
-            <h3 className="text-base font-extrabold text-foreground">अपलोड किए गए नुस्खे व पर्चे (Prescriptions)</h3>
+          <Card className="p-6 sm:p-8 rounded-3xl border-2 border-input space-y-6 bg-card shadow-sm">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b pb-4">
+              <div>
+                <h3 className="text-base font-extrabold text-foreground flex items-center gap-2">
+                  <FileText className="h-5 w-5 text-emerald-600" />
+                  <span>अपलोड किए गए नुस्खे व पर्चे (Prescription OCR & Medical Extraction)</span>
+                </h3>
+                <p className="text-xs text-muted-foreground font-semibold">
+                  Handwritten & printed OPD record extractions with confidence scores and physician verification controls.
+                </p>
+              </div>
+              <span className="text-xs font-bold px-3 py-1 bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 rounded-full border border-emerald-300">
+                {caseData?.documents?.length || 0} दस्तावेज़ उपलब्ध
+              </span>
+            </div>
+
+            {(!caseData?.documents || caseData.documents.length === 0) && (
+              <div className="p-8 text-center text-muted-foreground text-sm font-medium">
+                कोई संलग्न दस्तावेज़ उपलब्ध नहीं है (No attached medical documents).
+              </div>
+            )}
+
             {caseData?.documents?.map((doc: any, i: number) => (
-              <div key={i} className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900 border space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-extrabold text-foreground">{doc.fileName}</span>
-                  <span className="text-xs font-bold px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded-full">
-                    {doc.type}
-                  </span>
+              <div key={i} className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b pb-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold text-xs">
+                      📄
+                    </div>
+                    <div>
+                      <span className="text-sm font-black text-foreground block">{doc.fileName}</span>
+                      <span className="text-[11px] text-muted-foreground font-semibold">
+                        अपलोड: {new Date(doc.uploadedAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold px-2.5 py-0.5 bg-emerald-100 text-emerald-800 rounded-full">
+                      {doc.type}
+                    </span>
+                    {doc.temporaryAccessUrl && (
+                      <a
+                        href={doc.temporaryAccessUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-xs font-extrabold text-indigo-600 hover:text-indigo-800 underline px-2 py-1"
+                      >
+                        मूल फ़ाइल देखें (View Original)
+                      </a>
+                    )}
+                  </div>
                 </div>
-                <div className="text-xs space-y-1 text-muted-foreground font-semibold">
-                  {doc.medications?.map((m: any, idx: number) => (
-                    <div key={idx}>• {m.name} ({m.frequency} • {m.duration})</div>
-                  ))}
-                </div>
+
+                {/* Extracted Medications with Confidence & Inline Edit */}
+                {doc.medications && doc.medications.length > 0 && (
+                  <div className="space-y-2">
+                    <span className="text-xs font-extrabold text-muted-foreground uppercase flex items-center gap-1.5">
+                      <Pill className="h-4 w-4 text-emerald-700" /> पहचानी गई दवाइयां (Medications) व AI विश्वसनीयता स्कोर:
+                    </span>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {doc.medications.map((m: any, idx: number) => {
+                        const conf = m.confidence ?? 0.88;
+                        const confPercent = Math.round(conf * 100);
+                        const isHigh = conf >= 0.85;
+                        const isMedium = conf >= 0.6 && conf < 0.85;
+
+                        return (
+                          <div
+                            key={idx}
+                            className="p-3.5 rounded-xl bg-white dark:bg-slate-800 border-2 border-input space-y-2 shadow-2xs"
+                          >
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="space-y-0.5">
+                                <span className="font-extrabold text-foreground text-xs block">{m.name}</span>
+                                <span className="text-muted-foreground font-medium text-[11px]">
+                                  {m.dosage} {m.frequency && `• ${m.frequency}`} {m.duration && `• ${m.duration}`}
+                                </span>
+                              </div>
+                              <span
+                                className={`text-[10px] font-black px-2 py-0.5 rounded-full shrink-0 ${
+                                  isHigh
+                                    ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+                                    : isMedium
+                                    ? "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300"
+                                    : "bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300"
+                                }`}
+                                title={`Extraction confidence: ${confPercent}%`}
+                              >
+                                {confPercent}% {isHigh ? "विश्वसनीय" : isMedium ? "मध्यम" : "कम"}
+                              </span>
+                            </div>
+
+                            {/* Physician Verification Alert & Quick Correction Button */}
+                            {(!isHigh || m.isVerifiedByDoctor) && (
+                              <div className="pt-2 border-t flex items-center justify-between gap-2">
+                                <span className="text-[11px] font-bold text-amber-700 dark:text-amber-400">
+                                  {m.isVerifiedByDoctor ? "✓ चिकित्सक द्वारा सत्यापित" : "⚠ चिकित्सक सत्यापन अपेक्षित"}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={async () => {
+                                    const corrected = window.prompt("चिकित्सक संशोधन दर्ज करें (Edit medication name):", m.name);
+                                    if (corrected && corrected !== m.name) {
+                                      try {
+                                        await fetch("/api/doctor/document/correct", {
+                                          method: "POST",
+                                          headers: {
+                                            "Content-Type": "application/json",
+                                            "x-user-id": user?.id || "doc-8842-demo",
+                                          },
+                                          body: JSON.stringify({
+                                            documentId: doc.id,
+                                            entityId: m.id,
+                                            originalValue: m.name,
+                                            correctedValue: corrected,
+                                            entityType: "MEDICATION",
+                                          }),
+                                        });
+                                        m.name = corrected;
+                                        m.isVerifiedByDoctor = true;
+                                        m.confidence = 1.0;
+                                        setActionSuccess(`दवा का नाम '${corrected}' सफलतापूर्वक संशोधित किया गया`);
+                                      } catch (err) {
+                                        alert("संशोधन सहेजने में त्रुटि हुई");
+                                      }
+                                    }
+                                  }}
+                                  className="text-[11px] font-extrabold text-indigo-600 hover:text-indigo-800 underline px-2 py-0.5"
+                                >
+                                  संशोधन करें (Edit)
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Extracted Labs with Confidence */}
+                {doc.labResults && doc.labResults.length > 0 && (
+                  <div className="space-y-2 pt-2">
+                    <span className="text-xs font-extrabold text-muted-foreground uppercase flex items-center gap-1.5">
+                      <Activity className="h-4 w-4 text-emerald-700" /> निकाली गई जांच रिपोर्ट (Lab Values):
+                    </span>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {doc.labResults.map((l: any, idx: number) => {
+                        const conf = l.confidence ?? 0.9;
+                        const confPercent = Math.round(conf * 100);
+                        return (
+                          <div key={idx} className="p-3 rounded-xl bg-white dark:bg-slate-800 border text-xs flex justify-between items-center shadow-2xs">
+                            <div>
+                              <span className="font-extrabold text-foreground block">{l.testName}</span>
+                              <span className="text-muted-foreground font-semibold text-[11px]">
+                                {l.value} {l.unit} ({l.referenceRange})
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {l.flag === "HIGH" && (
+                                <span className="px-1.5 py-0.5 rounded text-[10px] font-black bg-rose-100 text-rose-800">
+                                  HIGH
+                                </span>
+                              )}
+                              <span className="text-[10px] font-bold px-1.5 py-0.5 bg-slate-100 dark:bg-slate-700 text-muted-foreground rounded">
+                                {confPercent}%
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
           </Card>

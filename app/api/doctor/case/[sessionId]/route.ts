@@ -166,9 +166,23 @@ export async function GET(
             uploadedAt: doc.uploadedAt.toISOString(),
             temporaryAccessUrl,
             medications: doc.extractedEntities.filter((e: any) => e.type === "MEDICATION").map((m: any) => ({
+              id: m.id,
               name: m.structuredData?.normalisedName || m.rawText,
+              dosage: m.structuredData?.dosage || "",
               frequency: m.structuredData?.frequency || "",
               duration: m.structuredData?.duration || "",
+              confidence: m.confidence ?? 0.9,
+              isVerifiedByDoctor: m.isVerifiedByDoctor || false,
+            })),
+            labResults: doc.extractedEntities.filter((e: any) => e.type === "LAB").map((l: any) => ({
+              id: l.id,
+              testName: l.structuredData?.testName || l.rawText,
+              value: l.structuredData?.value || l.rawText,
+              unit: l.structuredData?.unit || "",
+              referenceRange: l.structuredData?.referenceRange || "",
+              flag: l.structuredData?.flag || "NORMAL",
+              confidence: l.confidence ?? 0.9,
+              isVerifiedByDoctor: l.isVerifiedByDoctor || false,
             })),
           };
         })

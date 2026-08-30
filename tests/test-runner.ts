@@ -484,6 +484,13 @@ async function runMasterTestSuite() {
   const { MedicalEntityExtractor } = await import("../lib/ocr/ocr.service");
   const extractedMeds = MedicalEntityExtractor.extractEntities("Tab Paracetamol 650mg 1-0-1 5 days");
   assert(extractedMeds.medications.length === 1 && extractedMeds.medications[0].normalisedName === "Paracetamol", "DATA-013: OCR Entity Extractor dynamically parses prescription without demo fallback");
+  assert(extractedMeds.medications[0].confidence !== undefined && extractedMeds.medications[0].confidence >= 0.85, "DATA-013b: Printed prescription extracts with high confidence (>= 0.85)");
+
+  // DATA-013c: Handwritten / low-clarity prescription generates realistic lower confidence & review flag
+  const handwrittenSample = MedicalEntityExtractor.extractEntities("tab yograj guggulu ? bd 15 d");
+  assert(handwrittenSample.medications.length >= 1, "DATA-013c: Handwritten prescription extracted successfully");
+  assert(handwrittenSample.medications[0].confidence !== undefined && handwrittenSample.medications[0].confidence < 0.85, "DATA-013d: Low-clarity handwriting receives realistic confidence (< 0.85)");
+  assert(handwrittenSample.medications[0].needsReview === true, "DATA-013e: Ambiguous extraction marked needsReview: true for physician sign-off");
 
   // DATA-014: Unparseable text lines are flagged for review rather than invented
   const unparseableExtraction = MedicalEntityExtractor.extractEntities("Random non-medical gibberish text line");

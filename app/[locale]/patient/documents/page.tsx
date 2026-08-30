@@ -226,47 +226,93 @@ export default function PatientDocumentsScanPage({
               </span>
             </div>
 
-            {/* Extracted Medications */}
+            {/* Extracted Medications with Confidence Scores */}
             {extractedEntities.medications.length > 0 && (
               <div className="space-y-2">
                 <span className="text-xs font-extrabold text-muted-foreground uppercase flex items-center gap-1">
                   <Pill className="h-3.5 w-3.5 text-emerald-700" /> पहचानी गई दवाइयां (Medications):
                 </span>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {extractedEntities.medications.map((med, i) => (
-                    <div key={i} className="p-2.5 rounded-xl bg-white border text-xs space-y-0.5 shadow-2xs">
-                      <div className="font-extrabold text-foreground">{med.name}</div>
-                      <div className="text-muted-foreground font-semibold">
-                        {med.dosage} • {med.frequency} • {med.duration}
+                  {extractedEntities.medications.map((med, i) => {
+                    const conf = med.confidence ?? 0.9;
+                    const confPercent = Math.round(conf * 100);
+                    const isHigh = conf >= 0.85;
+                    const isMedium = conf >= 0.6 && conf < 0.85;
+
+                    return (
+                      <div key={i} className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border text-xs space-y-1 shadow-2xs">
+                        <div className="flex items-start justify-between gap-1">
+                          <div className="font-extrabold text-foreground">{med.name}</div>
+                          <span
+                            className={`text-[10px] font-black px-1.5 py-0.5 rounded-md shrink-0 ${
+                              isHigh
+                                ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+                                : isMedium
+                                ? "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300"
+                                : "bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300"
+                            }`}
+                            title={`Extraction confidence: ${confPercent}%`}
+                          >
+                            {confPercent}% {isHigh ? "✓" : isMedium ? "⚠" : "!"}
+                          </span>
+                        </div>
+                        <div className="text-muted-foreground font-semibold text-[11px]">
+                          {med.dosage} • {med.frequency} • {med.duration}
+                        </div>
+                        {med.needsReview && (
+                          <span className="text-[10px] font-bold text-amber-700 dark:text-amber-400 block pt-0.5">
+                            * चिकित्सक सत्यापन अपेक्षित (Review suggested)
+                          </span>
+                        )}
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
 
-            {/* Extracted Lab Reports */}
+            {/* Extracted Lab Reports with Confidence Scores */}
             {extractedEntities.labResults.length > 0 && (
               <div className="space-y-2 pt-1">
                 <span className="text-xs font-extrabold text-muted-foreground uppercase flex items-center gap-1">
                   <Activity className="h-3.5 w-3.5 text-emerald-700" /> खून की जांच रिपोर्ट (Lab Values):
                 </span>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {extractedEntities.labResults.map((lab, i) => (
-                    <div key={i} className="p-2.5 rounded-xl bg-white border text-xs flex justify-between items-center shadow-2xs">
-                      <div>
-                        <div className="font-extrabold text-foreground">{lab.testName}</div>
-                        <div className="text-muted-foreground font-semibold">
-                          {lab.value} {lab.unit} ({lab.referenceRange})
+                  {extractedEntities.labResults.map((lab, i) => {
+                    const conf = lab.confidence ?? 0.9;
+                    const confPercent = Math.round(conf * 100);
+                    const isHigh = conf >= 0.85;
+                    const isMedium = conf >= 0.6 && conf < 0.85;
+
+                    return (
+                      <div key={i} className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border text-xs flex justify-between items-center shadow-2xs">
+                        <div className="space-y-0.5">
+                          <div className="font-extrabold text-foreground">{lab.testName}</div>
+                          <div className="text-muted-foreground font-semibold text-[11px]">
+                            {lab.value} {lab.unit} ({lab.referenceRange})
+                          </div>
+                        </div>
+                        <div className="flex flex-col items-end gap-1">
+                          {lab.flag === "HIGH" && (
+                            <span className="px-2 py-0.5 rounded-full text-xs font-extrabold bg-amber-100 text-amber-800">
+                              उच्च (High)
+                            </span>
+                          )}
+                          <span
+                            className={`text-[9px] font-black px-1.5 py-0.5 rounded-md ${
+                              isHigh
+                                ? "bg-emerald-100 text-emerald-800"
+                                : isMedium
+                                ? "bg-amber-100 text-amber-800"
+                                : "bg-rose-100 text-rose-800"
+                            }`}
+                          >
+                            {confPercent}%
+                          </span>
                         </div>
                       </div>
-                      {lab.flag === "HIGH" && (
-                        <span className="px-2 py-0.5 rounded-full text-xs font-extrabold bg-amber-100 text-amber-800">
-                          उच्च (High)
-                        </span>
-                      )}
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
