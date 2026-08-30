@@ -46,7 +46,10 @@ export default function PatientDocumentsScanPage({
     formData.append("type", "PRESCRIPTION");
 
     try {
-      const activeUserId = "pat-104-demo";
+      const activeUserId =
+        (typeof window !== "undefined" && (localStorage.getItem("ayursetu_user_id") || sessionStorage.getItem("ayursetu_user_id"))) ||
+        "pat-104-demo";
+
       const res = await fetch("/api/patient/documents/upload", {
         method: "POST",
         headers: {
