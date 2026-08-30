@@ -18,9 +18,15 @@ import {
   ArrowRight,
   Sparkles,
   Loader2,
+  Plus,
+  Trash2,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ExtractedEntitiesResult } from "@/lib/ocr/ocr.service";
+import {
+  DocumentCameraCapture,
+  EnhancedDocumentResult,
+} from "@/components/ui/patient/DocumentCameraCapture";
 
 export default function PatientDocumentsScanPage({
   params: { locale },
@@ -28,18 +34,21 @@ export default function PatientDocumentsScanPage({
   params: { locale: string };
 }) {
   const router = useRouter();
+  const [showCameraModal, setShowCameraModal] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<
-    Array<{ name: string; size: string; status: "EXTRACTED" | "PROCESSING" }>
+    Array<{ name: string; size: string; status: "EXTRACTED" | "PROCESSING"; previewUrl?: string }>
   >([]);
   const [extractedEntities, setExtractedEntities] = useState<ExtractedEntitiesResult | null>(null);
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const isHindi = locale === "hi";
 
+  // Process File through OCR endpoint
+  const processUploadedFile = async (file: File, previewUrl?: string) => {
     setUploading(true);
-    const activeSessionId = (typeof window !== "undefined" && sessionStorage.getItem("ayursetu_active_session_id")) || "sess-demo-001";
+    const activeSessionId =
+      (typeof window !== "undefined" && sessionStorage.getItem("ayursetu_active_session_id")) ||
+      "sess-demo-001";
     const formData = new FormData();
     formData.append("file", file);
     formData.append("sessionId", activeSessionId);
@@ -47,7 +56,9 @@ export default function PatientDocumentsScanPage({
 
     try {
       const activeUserId =
-        (typeof window !== "undefined" && (localStorage.getItem("ayursetu_user_id") || sessionStorage.getItem("ayursetu_user_id"))) ||
+        (typeof window !== "undefined" &&
+          (localStorage.getItem("ayursetu_user_id") ||
+            sessionStorage.getItem("ayursetu_user_id"))) ||
         "pat-104-demo";
 
       const res = await fetch("/api/patient/documents/upload", {
@@ -65,12 +76,25 @@ export default function PatientDocumentsScanPage({
           name: file.name,
           size: `${(file.size / 1024).toFixed(1)} KB`,
           status: "EXTRACTED" as const,
+          previewUrl,
         },
       ];
       setUploadedFiles(newFiles);
 
       if (data.data?.entities) {
-        setExtractedEntities(data.data.entities);
+        // Merge with existing entities if multiple documents are added
+        setExtractedEntities((prev) => {
+          if (!prev) return data.data.entities;
+          return {
+            medications: [...prev.medications, ...(data.data.entities.medications || [])],
+            labResults: [...prev.labResults, ...(data.data.entities.labResults || [])],
+            diagnoses: [...(prev.diagnoses || []), ...(data.data.entities.diagnoses || [])],
+            vitals: { ...(prev.vitals || {}), ...(data.data.entities.vitals || {}) },
+            procedures: [...(prev.procedures || []), ...(data.data.entities.procedures || [])],
+            allergies: [...(prev.allergies || []), ...(data.data.entities.allergies || [])],
+          };
+        });
+
         // Persist for summary preview page & doctor review
         try {
           if (typeof window !== "undefined") {
@@ -90,23 +114,63 @@ export default function PatientDocumentsScanPage({
           name: file.name,
           size: `${(file.size / 1024).toFixed(1)} KB`,
           status: "EXTRACTED" as const,
+          previewUrl,
         },
       ];
       setUploadedFiles(fallbackFiles);
 
       const fallbackEntities: ExtractedEntitiesResult = {
         medications: [
-          { name: "Tab Yogaraj Guggulu 500mg", dosage: "500mg", frequency: "1-0-1", duration: "15 days" },
-          { name: "Syp Amritarishta 15ml", dosage: "15ml", frequency: "BD", duration: "15 days" },
-          { name: "Tab Paracetamol 650mg", dosage: "650mg", frequency: "SOS", duration: "10 days" },
+          {
+            name: "Tab Yogaraj Guggulu 500mg",
+            dosage: "500mg",
+            frequency: "1-0-1",
+            duration: "15 days",
+            confidence: 0.94,
+          },
+          {
+            name: "Syp Amritarishta 15ml",
+            dosage: "15ml",
+            frequency: "BD",
+            duration: "15 days",
+            confidence: 0.88,
+          },
+          {
+            name: "Tab Paracetamol 650mg",
+            dosage: "650mg",
+            frequency: "SOS",
+            duration: "10 days",
+            confidence: 0.95,
+          },
         ],
         diagnoses: ["Amavata (Joint pain & stiffness)", "Amlapitta"],
         labResults: [
-          { testName: "HbA1c", value: 6.8, unit: "%", referenceRange: "4.0 - 5.6", flag: "HIGH" },
-          { testName: "Serum Uric Acid", value: 7.8, unit: "mg/dL", referenceRange: "3.5 - 7.2", flag: "HIGH" },
-          { testName: "ESR", value: 38, unit: "mm/hr", referenceRange: "0 - 15", flag: "HIGH" },
+          {
+            testName: "HbA1c",
+            value: 6.8,
+            unit: "%",
+            referenceRange: "4.0 - 5.6",
+            flag: "HIGH",
+            confidence: 0.96,
+          },
+          {
+            testName: "Serum Uric Acid",
+            value: 7.8,
+            unit: "mg/dL",
+            referenceRange: "3.5 - 7.2",
+            flag: "HIGH",
+            confidence: 0.91,
+          },
+          {
+            testName: "ESR",
+            value: 38,
+            unit: "mm/hr",
+            referenceRange: "0 - 15",
+            flag: "HIGH",
+            confidence: 0.89,
+          },
         ],
-        vitals: { "Blood Pressure": "130/84 mmHg", "Pulse": "78 bpm" },
+        vitals: { "Blood Pressure": "130/84 mmHg", Pulse: "78 bpm" },
         procedures: [],
         allergies: ["No Known Drug Allergies (NKDA)"],
         clinicalSummaryText: "Extracted 3 medications and 3 abnormal lab values.",
@@ -121,7 +185,18 @@ export default function PatientDocumentsScanPage({
       } catch (e) {}
     } finally {
       setUploading(false);
+      setShowCameraModal(false);
     }
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    await processUploadedFile(file);
+  };
+
+  const handleCameraCapture = async (result: EnhancedDocumentResult) => {
+    await processUploadedFile(result.file, result.previewUrl);
   };
 
 
@@ -147,45 +222,93 @@ export default function PatientDocumentsScanPage({
           </p>
         </div>
 
-        {/* Big Camera / File Upload Box */}
-        <label className="block cursor-pointer">
-          <input
-            type="file"
-            accept="image/*,.pdf"
-            capture="environment"
-            onChange={handleFileUpload}
-            disabled={uploading}
-            className="hidden"
-          />
-          <motion.div
-            whileHover={{ scale: 1.01 }}
+        {/* Two-Option Capture Choice: Live Camera with Guidance Overlay OR Direct Upload */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+          {/* Option A: Dedicated Guided Camera */}
+          <motion.button
+            type="button"
+            whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            className={`border-4 border-dashed rounded-3xl p-8 flex flex-col items-center justify-center gap-4 transition-all ${
-              uploading
-                ? "bg-amber-50/50 border-amber-400 text-amber-900"
-                : "bg-emerald-50/50 hover:bg-emerald-100/50 border-ayush-green text-ayush-green"
-            }`}
+            onClick={() => setShowCameraModal(true)}
+            disabled={uploading}
+            className="p-6 rounded-3xl border-3 border-emerald-500 bg-emerald-50/70 dark:bg-emerald-950/30 hover:bg-emerald-100/70 text-emerald-950 dark:text-emerald-200 flex flex-col items-center justify-center gap-3 shadow-md transition-all text-center min-h-[160px]"
           >
-            {uploading ? (
-              <div className="flex flex-col items-center gap-3">
-                <Loader2 className="h-14 w-14 animate-spin text-amber-600" />
-                <span className="text-lg font-extrabold">दस्तावेज़ पढ़ा जा रहा है (Processing OCR...)...</span>
+            <div className="w-16 h-16 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shadow-lg shadow-emerald-700/20">
+              <Camera className="h-8 w-8" />
+            </div>
+            <div>
+              <span className="text-lg font-black block">
+                {isHindi ? "कैमरे से फोटो लें (Live Camera)" : "Take Photo with Camera"}
+              </span>
+              <span className="text-xs font-semibold text-muted-foreground block">
+                {isHindi ? "मार्गदर्शक फ्रेम व लिखावट स्पष्टता के साथ" : "With guidance frame & handwriting auto-crop"}
+              </span>
+            </div>
+          </motion.button>
+
+          {/* Option B: Direct File / PDF Picker */}
+          <label className="block cursor-pointer">
+            <input
+              type="file"
+              accept="image/*,.pdf"
+              onChange={handleFileUpload}
+              disabled={uploading}
+              className="hidden"
+            />
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className="p-6 rounded-3xl border-3 border-border bg-card hover:bg-muted/50 text-foreground flex flex-col items-center justify-center gap-3 shadow-sm transition-all text-center min-h-[160px]"
+            >
+              <div className="w-16 h-16 rounded-2xl bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 flex items-center justify-center shadow-sm">
+                <UploadCloud className="h-8 w-8" />
               </div>
-            ) : (
-              <>
-                <div className="w-20 h-20 rounded-full bg-emerald-100 flex items-center justify-center text-ayush-green shadow-inner">
-                  <Camera className="h-10 w-10" />
-                </div>
-                <div className="space-y-1">
-                  <span className="text-xl font-extrabold block">फोटो खींचें / स्कैन करें (Scan Report)</span>
-                  <span className="text-xs font-bold text-muted-foreground block">
-                    कैमरे से फोटो लें या PDF फाइल चुनें (Tap to capture)
-                  </span>
-                </div>
-              </>
-            )}
-          </motion.div>
-        </label>
+              <div>
+                <span className="text-lg font-black block">
+                  {isHindi ? "फ़ाइल / PDF अपलोड करें (Upload File)" : "Upload File / PDF"}
+                </span>
+                <span className="text-xs font-semibold text-muted-foreground block">
+                  {isHindi ? "गैलरी या स्टोरेज से पर्चा चुनें" : "Select from device storage or gallery"}
+                </span>
+              </div>
+            </motion.div>
+          </label>
+        </div>
+
+        {/* Live Camera Viewfinder Modal */}
+        <AnimatePresence>
+          {showCameraModal && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-6"
+            >
+              <div className="w-full max-w-lg">
+                <DocumentCameraCapture
+                  isHindi={isHindi}
+                  onCaptureComplete={handleCameraCapture}
+                  onCancel={() => setShowCameraModal(false)}
+                />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Processing Indicator */}
+        {uploading && (
+          <div className="p-6 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border-2 border-amber-300 text-amber-900 dark:text-amber-200 flex flex-col items-center gap-3 animate-pulse">
+            <Loader2 className="h-10 w-10 animate-spin text-amber-600" />
+            <div className="space-y-0.5">
+              <span className="text-base font-black block">
+                {isHindi ? "दस्तावेज़ पढ़ा जा रहा है (Processing OCR & NER)..." : "Reading Document & Extracting Entities..."}
+              </span>
+              <span className="text-xs font-semibold text-muted-foreground block">
+                {isHindi ? "दवाइयां और जांच परिणाम निकाले जा रहे हैं" : "Extracting medications and lab investigations"}
+              </span>
+            </div>
+          </div>
+        )}
 
         {/* Uploaded Documents List */}
         {uploadedFiles.length > 0 && (
