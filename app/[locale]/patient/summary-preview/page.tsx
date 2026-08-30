@@ -35,6 +35,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useAuthStore } from "@/stores/use-auth-store";
 import { speakWithIndianVoice } from "@/lib/voice/tts";
 import { PatientDashboardPreviewDTO } from "@/lib/services/preview.service";
+import { SessionRecoveryStore } from "@/lib/offline/session-recovery.store";
+import { OfflineBannerSync } from "@/components/ui/patient/OfflineBannerSync";
 
 export default function PatientSummaryPreviewDashboardPage({
   params: { locale },
@@ -221,6 +223,16 @@ export default function PatientSummaryPreviewDashboardPage({
   // Submit to Doctor Queue
   const handleSubmitToDoctor = async () => {
     if (!previewData) return;
+
+    if (typeof window !== "undefined" && !navigator.onLine) {
+      setError(
+        isHindi
+          ? "आप ऑफ़लाइन हैं। डॉक्टर को केस भेजने के लिए इंटरनेट कनेक्शन आवश्यक है। कृपया नेटवर्क आने पर पुनः प्रयास करें।"
+          : "You are currently offline. An active internet connection is required to submit your final case to the doctor."
+      );
+      return;
+    }
+
     setSubmitting(true);
     setError(null);
 
@@ -254,10 +266,13 @@ export default function PatientSummaryPreviewDashboardPage({
       if (res.ok && data.data?.tokenNumber) {
         setGeneratedToken(data.data.tokenNumber);
         setSubmittedSuccess(true);
+        // Clear durable recovery store
+        await SessionRecoveryStore.clearActiveSession(activeSessionId);
       } else {
         // If already submitted, still show success
         if (data.error?.message?.includes("already") || data.data?.tokenNumber) {
           setSubmittedSuccess(true);
+          await SessionRecoveryStore.clearActiveSession(activeSessionId);
         } else {
           setError(data.error?.message || "Failed to submit case. Please try again.");
         }
@@ -286,6 +301,7 @@ export default function PatientSummaryPreviewDashboardPage({
 
   return (
     <div className="space-y-6 max-w-2xl mx-auto pb-16 px-1 sm:px-0">
+      <OfflineBannerSync />
       <ProgressStepper currentStep={6} />
 
       {/* Audio Prompt & Listen Control */}

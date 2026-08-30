@@ -12,6 +12,8 @@ import { EmergencyAlertModal } from "@/components/ui/patient/EmergencyAlertModal
 import { speakWithIndianVoice } from "@/lib/voice/tts";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/use-auth-store";
+import { SessionRecoveryStore } from "@/lib/offline/session-recovery.store";
+import { OfflineBannerSync } from "@/components/ui/patient/OfflineBannerSync";
 
 export default function AdaptiveQuestionsFlowPage({
   params: { locale },
@@ -181,6 +183,54 @@ export default function AdaptiveQuestionsFlowPage({
     try {
       const activeId = sessionId || (typeof window !== "undefined" ? sessionStorage.getItem("ayursetu_active_session_id") : null) || "sess-demo-001";
       const activeUserId = user?.id || (typeof window !== "undefined" ? localStorage.getItem("ayursetu_user_id") : null) || "pat-104-demo";
+
+      // 1. Update durable snapshot in IndexedDB
+      const existingSnap = await SessionRecoveryStore.getActiveSessionSnapshot();
+      const updatedAnswers = [
+        ...(existingSnap?.collectedAnswers || []),
+        {
+          nodeCode: currentQuestion.nodeCode,
+          questionText: currentQuestion.questionText,
+          questionTextHindi: currentQuestion.questionTextHindi || "",
+          answerValue: selectedAnswer,
+          answeredAt: Date.now(),
+        },
+      ];
+
+      await SessionRecoveryStore.saveActiveSessionSnapshot({
+        sessionId: activeId,
+        patientId: activeUserId,
+        language: locale,
+        chiefComplaint: existingSnap?.chiefComplaint || "Consultation",
+        currentNodeCode: currentQuestion.nodeCode,
+        collectedAnswers: updatedAnswers,
+        uploadedDocSummaries: existingSnap?.uploadedDocSummaries || [],
+        triagePriority: existingSnap?.triagePriority || "ROUTINE",
+        lastActiveTimestamp: Date.now(),
+        step: "QUESTIONS",
+      });
+
+      // 2. Check online status before network dispatch
+      if (typeof window !== "undefined" && !navigator.onLine) {
+        // Enqueue offline action
+        await SessionRecoveryStore.enqueueOfflineAction({
+          sessionId: activeId,
+          actionType: "ANSWER",
+          endpoint: "/api/patient/conversation/answer",
+          payload: {
+            sessionId: activeId,
+            nodeCode: currentQuestion.nodeCode,
+            answerValue: selectedAnswer,
+          },
+        });
+
+        // Advance to next step or documents
+        const nextStep = stepNumber + 1;
+        setStepNumber(nextStep);
+        setSelectedAnswer(null);
+        return;
+      }
+
       const res = await fetch("/api/patient/conversation/answer", {
         method: "POST",
         headers: {
@@ -213,6 +263,17 @@ export default function AdaptiveQuestionsFlowPage({
         router.push(`/${locale}/patient/documents`);
       }
     } catch {
+      // Graceful offline fallback
+      await SessionRecoveryStore.enqueueOfflineAction({
+        sessionId: sessionId || "sess-demo-001",
+        actionType: "ANSWER",
+        endpoint: "/api/patient/conversation/answer",
+        payload: {
+          sessionId: sessionId || "sess-demo-001",
+          nodeCode: currentQuestion.nodeCode,
+          answerValue: selectedAnswer,
+        },
+      });
       router.push(`/${locale}/patient/documents`);
     } finally {
       setLoading(false);
@@ -253,6 +314,7 @@ export default function AdaptiveQuestionsFlowPage({
 
   return (
     <div className="space-y-5 max-w-xl mx-auto">
+      <OfflineBannerSync />
       <ProgressStepper currentStep={4} />
 
       {/* Red Flag Alert Modal */}

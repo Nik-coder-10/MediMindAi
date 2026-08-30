@@ -6,6 +6,9 @@ import { ProgressStepper } from "@/components/ui/patient/ProgressStepper";
 import { AudioPrompt } from "@/components/ui/patient/AudioPrompt";
 import { ExtraLargeButton } from "@/components/ui/patient/ExtraLargeButton";
 import { VoiceInputButton } from "@/components/ui/patient/VoiceInputButton";
+import { ResumeSessionModal } from "@/components/ui/patient/ResumeSessionModal";
+import { OfflineBannerSync } from "@/components/ui/patient/OfflineBannerSync";
+import { SessionRecoveryStore } from "@/lib/offline/session-recovery.store";
 import { Card } from "@/components/ui/card";
 import { ArrowLeft, ArrowRight, HeartPulse, Sparkles, Keyboard } from "lucide-react";
 import { motion } from "framer-motion";
@@ -31,19 +34,33 @@ export default function PatientComplaintVoicePage({
     setComplaintText(transcript);
   };
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     if (!complaintText) return;
     if (typeof window !== "undefined") {
       sessionStorage.setItem("ayursetu_chief_complaint", complaintText);
       sessionStorage.removeItem("ayursetu_current_question");
       sessionStorage.removeItem("ayursetu_current_step");
     }
+
+    // Persist durable session snapshot
+    await SessionRecoveryStore.saveActiveSessionSnapshot({
+      sessionId: `sess_${Date.now()}`,
+      language: locale,
+      chiefComplaint: complaintText,
+      collectedAnswers: [],
+      uploadedDocSummaries: [],
+      triagePriority: "ROUTINE",
+      lastActiveTimestamp: Date.now(),
+      step: "QUESTIONS",
+    });
+
     router.push(`/${locale}/patient/questions`);
   };
 
-
   return (
     <div className="space-y-6">
+      <ResumeSessionModal locale={locale} onStartNew={() => setComplaintText("")} />
+      <OfflineBannerSync />
       <ProgressStepper currentStep={3} />
 
       <AudioPrompt
