@@ -1072,6 +1072,34 @@ async function runMasterTestSuite() {
     "HIST-006: History module supports optional skips and 'Don't Know' without halting adaptive flow"
   );
 
+  // SUITE 19: Printable Branded PDF Clinical Summary (PDF-001 to PDF-004)
+  console.log("\n--- 19. UNIT: Printable PDF Clinical Summary (PDF-001 to PDF-004) ---");
+  const { PdfSummaryService } = await import("../lib/services/pdf-summary.service");
+
+  // 1. Generate PDF byte array from in-memory session
+  const pdfBytes = await PdfSummaryService.generateClinicalSummaryPdf({
+    sessionId: "sess-demo-001",
+    doctorName: "Dr. Rajesh Vaidya, MD (Ayu)",
+    hospitalName: "ALL INDIA INSTITUTE OF AYURVEDA (AIIA)",
+  });
+  assert(pdfBytes instanceof Uint8Array && pdfBytes.length > 1000, "PDF-001: PDF document renders as valid non-empty byte buffer");
+
+  // 2. Validate PDF Magic Header (%PDF-1.)
+  const pdfHeader = Buffer.from(pdfBytes.slice(0, 8)).toString("utf-8");
+  assert(pdfHeader.startsWith("%PDF-"), "PDF-002: Byte buffer contains standard compliant PDF magic header");
+
+  // 3. Check for PDF load and trailer structure
+  const loadedPdf = await (await import("pdf-lib")).PDFDocument.load(pdfBytes);
+  assert(loadedPdf.getPageCount() >= 1, "PDF-003: PDF contains valid clinical page tree objects");
+
+  // 4. Verification with missing session handling
+  try {
+    await PdfSummaryService.generateClinicalSummaryPdf({ sessionId: "non-existent-sess" });
+    assert(false, "PDF-004: Missing session should throw notFound error");
+  } catch (err: any) {
+    assert(err.statusCode === 404 || err.message.includes("not found"), "PDF-004: Non-existent session cleanly throws 404 error");
+  }
+
   // Final Results
   console.log("\n==================================================================");
   console.log(`🏁 TEST RESULTS: ${passedCount} PASSED | ${failedCount} FAILED`);

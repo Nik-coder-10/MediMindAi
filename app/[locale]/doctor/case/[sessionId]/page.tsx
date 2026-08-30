@@ -437,7 +437,7 @@ export default function IndividualDoctorCaseViewPage({
                     </span>
                   </div>
 
-                  <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2">
                     {/* Audio Read-Out Button with Language Switching */}
                     <button
                       type="button"
@@ -482,6 +482,16 @@ export default function IndividualDoctorCaseViewPage({
                           : params.locale === "hi" ? "आवाज में सुनें (Listen)" : "Listen Summary"}
                       </span>
                     </button>
+
+                    {/* PDF Download Button */}
+                    <a
+                      href={`/api/doctor/summary/${sessionId}/pdf`}
+                      download
+                      className="min-h-[38px] px-3 py-1.5 rounded-xl border-2 border-emerald-600 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs inline-flex items-center gap-1.5 transition-all shadow-xs"
+                    >
+                      <FileText className="h-3.5 w-3.5" />
+                      <span>{params.locale === "hi" ? "PDF डाउनलोड करें" : "Download PDF"}</span>
+                    </a>
 
                     <button
                       type="button"
