@@ -134,13 +134,23 @@ export function Navbar({ locale }: { locale: string }) {
                       : "Ministry Admin"}
                   </span>
                 </div>
+                {user.role === "PATIENT" && (
+                  <Link
+                    href={`/${locale}/patient/cases`}
+                    title="मेरे परामर्श (My Cases)"
+                    className="hidden sm:flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-indigo-200 dark:border-indigo-900/40 bg-indigo-50/70 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-300 font-bold text-[11px] hover:bg-indigo-100 dark:hover:bg-indigo-950/50 transition-all min-h-[34px]"
+                  >
+                    <Activity className="h-3.5 w-3.5" />
+                    <span>{locale === "hi" ? "मेरे परामर्श" : "My Cases"}</span>
+                  </Link>
+                )}
                 <button
                   onClick={logout}
                   title="Log out"
                   className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-red-200 dark:border-red-900/40 bg-red-50/60 dark:bg-red-950/20 text-[11px] font-bold text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-950/40 transition-all min-h-[34px]"
                 >
                   <LogOut className="h-3.5 w-3.5" />
-                  <span className="hidden sm:inline">Logout</span>
+                  <span className="hidden sm:inline">{locale === "hi" ? "लॉगआउट" : "Logout"}</span>
                 </button>
               </div>
             ) : (

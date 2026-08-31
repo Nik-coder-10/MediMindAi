@@ -88,54 +88,7 @@ export default function PatientShellLayout({
   // This ensures language switch never produces a blank screen
 
   return (
-    <div className="min-h-screen flex flex-col patient-mesh font-sans">
-      {/* ── Patient Portal Header ── */}
-      <header className="sticky top-0 z-40 glass-panel border-b border-white/50 dark:border-white/06">
-        <div className="container max-w-4xl mx-auto px-4 h-[60px] flex items-center justify-between gap-3">
-
-          {/* Brand */}
-          <Link
-            href={`/${locale}/patient`}
-            className="flex items-center gap-2.5 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 p-1"
-          >
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-teal-500 to-teal-700 flex items-center justify-center shadow-sm">
-              <Activity className="h-4.5 w-4.5 text-white" strokeWidth={2.5} />
-            </div>
-            <div className="leading-none">
-              <span className="block text-[14px] font-black text-foreground tracking-tight">
-                आयुर्वेद सेतु
-              </span>
-              <span className="block text-[10px] font-semibold text-muted-foreground">
-                Patient Care Portal
-              </span>
-            </div>
-          </Link>
-
-          {/* Right controls */}
-          <div className="flex items-center gap-2">
-            <Link
-              href={`/${locale}/patient/cases`}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-indigo-200 dark:border-indigo-900/40 bg-indigo-50/70 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-300 font-bold text-[11px] hover:bg-indigo-100 dark:hover:bg-indigo-950/50 transition-all min-h-[34px]"
-            >
-              <Activity className="h-3.5 w-3.5" />
-              <span>मेरे परामर्श (My Cases)</span>
-            </Link>
-
-            <PatientLanguageSwitcher currentLocale={locale} />
-
-            <button
-              type="button"
-              onClick={() => router.push(`/${locale}/login`)}
-              aria-label="Logout"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-200 dark:border-red-900/40 bg-red-50/60 dark:bg-red-950/20 text-red-600 dark:text-red-400 font-bold text-[11px] hover:bg-red-100 dark:hover:bg-red-950/40 transition-all min-h-[34px]"
-            >
-              <LogOut className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">लॉगआउट</span>
-            </button>
-          </div>
-        </div>
-      </header>
-
+    <div className="min-h-[calc(100vh-60px)] flex flex-col patient-mesh font-sans">
       {/* Main Content */}
       <main className="flex-1 container max-w-4xl mx-auto px-4 py-8">
         <motion.div
@@ -146,23 +99,7 @@ export default function PatientShellLayout({
           {children}
         </motion.div>
       </main>
-
-      {/* Footer */}
-      <footer className="glass-panel border-t border-white/40 dark:border-white/06 py-3.5">
-        <div className="container max-w-4xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <div className="flex items-center gap-2 text-[11px] font-semibold text-muted-foreground">
-            <HeartHandshake className="h-3.5 w-3.5 text-teal-600" />
-            <span>Ministry of Ayush / AIIA · 100% Free &amp; Secure</span>
-          </div>
-          <a
-            href="tel:1075"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-teal-300 dark:border-teal-800 bg-teal-50/60 dark:bg-teal-950/20 text-teal-800 dark:text-teal-300 font-bold text-[11px] hover:bg-teal-100 dark:hover:bg-teal-950/40 transition-all min-h-[36px]"
-          >
-            <PhoneCall className="h-3.5 w-3.5" />
-            Ayush Helpline: 1075
-          </a>
-        </div>
-      </footer>
     </div>
   );
 }
+
