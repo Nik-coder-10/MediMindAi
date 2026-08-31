@@ -448,6 +448,18 @@ export const COMPREHENSIVE_QUESTION_REGISTRY: Record<string, EngineQuestionDefin
 export class ComprehensiveQuestionProvider implements QuestionProvider {
   async classifyComplaint(text: string): Promise<ComplaintCategory> {
     const lower = text.toLowerCase();
+    if (lower.includes("chest") || lower.includes("सीना") || lower.includes("छाती") || lower.includes("heart") || lower.includes("हृदय") || lower.includes("cardiac") || lower.includes("angina")) {
+      return "CHEST_PAIN";
+    }
+    if (lower.includes("head") || lower.includes("सिर") || lower.includes("migraine") || lower.includes("headache") || lower.includes("आधासीसी") || lower.includes("sir dard") || lower.includes("sar dard")) {
+      return "HEADACHE";
+    }
+    if (lower.includes("stomach") || lower.includes("पेट") || lower.includes("abdomen") || lower.includes("gas") || lower.includes("acidity") || lower.includes("अम्लपित्त") || lower.includes("dast") || lower.includes("दस्त") || lower.includes("kabz") || lower.includes("कब्ज") || lower.includes("jalan") || lower.includes("उल्टी") || lower.includes("vomit")) {
+      return "ABDOMINAL_PAIN";
+    }
+    if (lower.includes("fever") || lower.includes("बुखार") || lower.includes("ताप") || lower.includes("jvara") || lower.includes("chills") || lower.includes("thand") || lower.includes("ठंड")) {
+      return "FEVER";
+    }
     if (
       lower.includes("joint") ||
       lower.includes("घुटने") ||
@@ -461,25 +473,37 @@ export class ComprehensiveQuestionProvider implements QuestionProvider {
       lower.includes("kamar") ||
       lower.includes("कमर") ||
       lower.includes("पीठ") ||
+      lower.includes("leg") ||
+      lower.includes("taang") ||
+      lower.includes("टांग") ||
+      lower.includes("pair") ||
+      lower.includes("पैर") ||
+      lower.includes("hand") ||
+      lower.includes("hath") ||
+      lower.includes("हाथ") ||
+      lower.includes("arm") ||
+      lower.includes("shoulder") ||
+      lower.includes("kandha") ||
+      lower.includes("कंधा") ||
+      lower.includes("neck") ||
+      lower.includes("gardan") ||
+      lower.includes("गर्दन") ||
       lower.includes("stiff") ||
       lower.includes("jakdan") ||
       lower.includes("जकड़न") ||
       lower.includes("sujan") ||
-      lower.includes("सूजन")
+      lower.includes("सूजन") ||
+      lower.includes("bone") ||
+      lower.includes("हड्डी") ||
+      lower.includes("muscle") ||
+      lower.includes("मांसपेशी") ||
+      lower.includes("foot") ||
+      lower.includes("feet") ||
+      lower.includes("pain") ||
+      lower.includes("dard") ||
+      lower.includes("दर्द")
     ) {
       return "JOINT_PAIN";
-    }
-    if (lower.includes("chest") || lower.includes("सीना") || lower.includes("छाती") || lower.includes("heart") || lower.includes("हृदय") || lower.includes("cardiac")) {
-      return "CHEST_PAIN";
-    }
-    if (lower.includes("head") || lower.includes("सिर") || lower.includes("migraine") || lower.includes("headache") || lower.includes("आधासीसी")) {
-      return "HEADACHE";
-    }
-    if (lower.includes("stomach") || lower.includes("पेट") || lower.includes("abdomen") || lower.includes("gas") || lower.includes("acidity") || lower.includes("अम्लपित्त") || lower.includes("dast") || lower.includes("दस्त") || lower.includes("kabz") || lower.includes("कब्ज")) {
-      return "ABDOMINAL_PAIN";
-    }
-    if (lower.includes("fever") || lower.includes("बुखार") || lower.includes("ताप") || lower.includes("jvara") || lower.includes("chills") || lower.includes("thand") || lower.includes("ठंड")) {
-      return "FEVER";
     }
     return "GENERAL";
   }

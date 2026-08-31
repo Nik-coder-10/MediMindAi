@@ -77,8 +77,13 @@ const CATEGORY_PROFILES: Record<ClinicalCategory, CategoryProfile> = {
       "knee", "joint", "back", "neck", "shoulder", "hip", "ankle", "wrist", "elbow", "bone",
       "arthritis", "sandhivata", "amavata", "ghutna", "ghutne", "jod", "jodon", "kamar",
       "dard", "sujan", "swelling", "stiffness", "jakdan", "ligament", "sprain", "myalgia",
+      "leg", "leg pain", "hand", "hand pain", "arm", "arm pain", "body", "body pain", "body ache", "bodyache",
+      "foot", "foot pain", "feet", "heel", "heel pain", "muscle", "muscle pain", "cramp", "cramps",
+      "spine", "spinal", "lower back", "lumbago", "sciatica", "gout", "uric acid",
+      "pair", "taang", "hath", "kandha", "gardan", "peeda", "jhanjhanahat", "sunnpann",
       "घुटने", "घुटना", "जोड़", "जोड़ों", "कमर", "हड्डी", "पीठ", "गर्दन", "कंधा", "जकड़न",
-      "गठिया", "संधिवात", "आमवात", "मांसपेशी", "सूजन"
+      "गठिया", "संधिवात", "आमवात", "मांसपेशी", "सूजन", "पैर", "पैर में दर्द", "टांग", "हाथ",
+      "हाथ में दर्द", "एड़ी", "पिंडली", "बदन दर्द", "शरीर में दर्द", "साइटिका", "झनझनाहट", "सुन्नपन"
     ],
     problemsDetector: (text: string) => {
       const problems: string[] = [];
@@ -1023,18 +1028,168 @@ export class AdaptiveQuestionGenerator {
   static classifyChiefComplaint(text: string): ClinicalCategory {
     if (!text || !text.trim()) return "General";
 
-    const normalized = text.toLowerCase();
+    const normalized = text.toLowerCase().trim();
 
-    // Priority ordering with matched score evaluation
+    // Priority evaluation with specific anatomical keyword checks
     const categories: ClinicalCategory[] = [
+      "Chest Pain",
       "Headache",
-      "Respiratory",
       "Abdominal Pain",
+      "Respiratory",
       "Fever",
       "Musculoskeletal",
-      "Chest Pain",
       "General",
     ];
+
+    // Direct strong phrase matches
+    if (
+      normalized.includes("chest") ||
+      normalized.includes("seena") ||
+      normalized.includes("chhati") ||
+      text.includes("छाती") ||
+      text.includes("सीना") ||
+      normalized.includes("heart") ||
+      text.includes("हृदय") ||
+      normalized.includes("angina") ||
+      normalized.includes("cardiac") ||
+      normalized.includes("palpitation")
+    ) {
+      return "Chest Pain";
+    }
+
+    if (
+      normalized.includes("head") ||
+      normalized.includes("sir dard") ||
+      normalized.includes("sirdard") ||
+      normalized.includes("sar dard") ||
+      normalized.includes("sardard") ||
+      text.includes("सिर") ||
+      text.includes("सर दर्द") ||
+      text.includes("सिरदर्द") ||
+      normalized.includes("migraine") ||
+      text.includes("माइग्रेन") ||
+      normalized.includes("cephalea")
+    ) {
+      return "Headache";
+    }
+
+    if (
+      normalized.includes("stomach") ||
+      normalized.includes("abdomen") ||
+      normalized.includes("pet") ||
+      text.includes("पेट") ||
+      normalized.includes("belly") ||
+      normalized.includes("gastric") ||
+      normalized.includes("acidity") ||
+      normalized.includes("acid") ||
+      normalized.includes("jalan") ||
+      text.includes("जलन") ||
+      normalized.includes("gas") ||
+      text.includes("गैस") ||
+      normalized.includes("constipat") ||
+      normalized.includes("kabz") ||
+      text.includes("कब्ज") ||
+      normalized.includes("diarrhea") ||
+      normalized.includes("dast") ||
+      text.includes("दस्त") ||
+      normalized.includes("vomit") ||
+      normalized.includes("ulti") ||
+      text.includes("उल्टी")
+    ) {
+      return "Abdominal Pain";
+    }
+
+    if (
+      normalized.includes("cough") ||
+      normalized.includes("khansi") ||
+      text.includes("खांसी") ||
+      normalized.includes("breath") ||
+      normalized.includes("saans") ||
+      text.includes("सांस") ||
+      normalized.includes("asthma") ||
+      normalized.includes("wheez") ||
+      normalized.includes("throat") ||
+      normalized.includes("gala") ||
+      text.includes("गला") ||
+      normalized.includes("phlegm") ||
+      normalized.includes("sputum") ||
+      normalized.includes("balgam") ||
+      text.includes("बलगम")
+    ) {
+      return "Respiratory";
+    }
+
+    if (
+      normalized.includes("fever") ||
+      normalized.includes("bukhar") ||
+      text.includes("बुखार") ||
+      normalized.includes("temperature") ||
+      normalized.includes("chill") ||
+      normalized.includes("thand") ||
+      text.includes("ठंड") ||
+      normalized.includes("shiver") ||
+      normalized.includes("pyrexia") ||
+      normalized.includes("taap") ||
+      text.includes("ताप")
+    ) {
+      return "Fever";
+    }
+
+    if (
+      normalized.includes("knee") ||
+      normalized.includes("ghutn") ||
+      text.includes("घुटने") ||
+      text.includes("घुटना") ||
+      normalized.includes("joint") ||
+      normalized.includes("jod") ||
+      text.includes("जोड़") ||
+      normalized.includes("back") ||
+      normalized.includes("kamar") ||
+      text.includes("कमर") ||
+      text.includes("पीठ") ||
+      normalized.includes("leg") ||
+      normalized.includes("taang") ||
+      text.includes("टांग") ||
+      normalized.includes("pair") ||
+      text.includes("पैर") ||
+      normalized.includes("foot") ||
+      normalized.includes("feet") ||
+      normalized.includes("hand") ||
+      normalized.includes("hath") ||
+      text.includes("हाथ") ||
+      normalized.includes("arm") ||
+      normalized.includes("shoulder") ||
+      normalized.includes("kandha") ||
+      text.includes("कंधा") ||
+      normalized.includes("neck") ||
+      normalized.includes("gardan") ||
+      text.includes("गर्दन") ||
+      normalized.includes("ankle") ||
+      normalized.includes("wrist") ||
+      normalized.includes("elbow") ||
+      normalized.includes("heel") ||
+      normalized.includes("bone") ||
+      text.includes("हड्डी") ||
+      normalized.includes("muscle") ||
+      text.includes("मांसपेशी") ||
+      normalized.includes("stiff") ||
+      normalized.includes("jakdan") ||
+      text.includes("जकड़न") ||
+      normalized.includes("swelling") ||
+      normalized.includes("sujan") ||
+      text.includes("सूजन") ||
+      normalized.includes("arthritis") ||
+      normalized.includes("gathiya") ||
+      text.includes("गठिया") ||
+      normalized.includes("pain") ||
+      normalized.includes("dard") ||
+      text.includes("दर्द") ||
+      normalized.includes("body ache") ||
+      normalized.includes("body pain") ||
+      text.includes("बदन दर्द")
+    ) {
+      return "Musculoskeletal";
+    }
 
     let bestCategory: ClinicalCategory = "General";
     let maxScore = 0;
@@ -1047,8 +1202,7 @@ export class AdaptiveQuestionGenerator {
       for (const kw of profile.keywords) {
         const kwLower = kw.toLowerCase();
         if (normalized.includes(kwLower) || text.includes(kw)) {
-          // Boost exact phrase matches or strong identifiers
-          score += kwLower.length >= 6 ? 2 : 1;
+          score += kwLower.length >= 5 ? 3 : 1;
         }
       }
 

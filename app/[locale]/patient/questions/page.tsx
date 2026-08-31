@@ -29,7 +29,7 @@ export default function AdaptiveQuestionsFlowPage({
     }
     return "";
   });
-  const [currentQuestion, setCurrentQuestion] = useState<EngineQuestionDefinition>(() => {
+  const [currentQuestion, setCurrentQuestion] = useState<EngineQuestionDefinition | null>(() => {
     if (typeof window !== "undefined") {
       try {
         const saved = sessionStorage.getItem("ayursetu_current_question");
@@ -39,19 +39,7 @@ export default function AdaptiveQuestionsFlowPage({
         }
       } catch {}
     }
-    return {
-      nodeCode: "CP_SEVERITY",
-      chiefComplaintCategory: "CHEST_PAIN",
-      clinicalDomain: "SOCRATES_SEVERITY",
-      questionText: "On a scale of 1 to 10, how severe is your chest pain?",
-      questionTextHindi: "१ से १० के पैमाने पर, आपकी छाती का दर्द कितना तीव्र है?",
-      questionType: "SINGLE_CHOICE",
-      options: [
-        { value: "MILD_1_3", labelHi: "हल्का (१ से ३)", labelEn: "Mild (1-3)" },
-        { value: "MODERATE_4_6", labelHi: "मध्यम (४ से ६)", labelEn: "Moderate (4-6)" },
-        { value: "SEVERE_7_10", labelHi: "अत्यधिक तेज (७ से १०)", labelEn: "Severe (7-10)" },
-      ],
-    };
+    return null;
   });
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [isPaused, setIsPaused] = useState(false);
@@ -325,7 +313,17 @@ export default function AdaptiveQuestionsFlowPage({
         />
       )}
 
-      {currentQuestion && (
+      {!currentQuestion ? (
+        <div className="clay-white rounded-3xl p-12 text-center space-y-4">
+          <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto" />
+          <h3 className="text-base font-extrabold text-foreground">
+            {locale === "hi" ? "अनुकूलित प्रश्न तैयार किए जा रहे हैं..." : "Preparing tailored clinical questions..."}
+          </h3>
+          <p className="text-xs text-muted-foreground font-medium">
+            {locale === "hi" ? "आपकी मुख्य समस्या के अनुसार प्रश्न लोड हो रहे हैं" : "Analyzing chief complaint to generate specific questions"}
+          </p>
+        </div>
+      ) : (
         <AnimatePresence mode="wait">
           <motion.div
             key={currentQuestion.nodeCode}

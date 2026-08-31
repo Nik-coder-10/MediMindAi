@@ -38,6 +38,7 @@ export default function PatientComplaintVoicePage({
     if (!complaintText) return;
     if (typeof window !== "undefined") {
       sessionStorage.setItem("ayursetu_chief_complaint", complaintText);
+      sessionStorage.removeItem("ayursetu_active_session_id");
       sessionStorage.removeItem("ayursetu_current_question");
       sessionStorage.removeItem("ayursetu_current_step");
     }
