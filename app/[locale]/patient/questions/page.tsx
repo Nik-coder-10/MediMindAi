@@ -88,9 +88,11 @@ export default function AdaptiveQuestionsFlowPage({
   useEffect(() => {
     async function initEngine() {
       const activeId = sessionId || (typeof window !== "undefined" ? sessionStorage.getItem("ayursetu_active_session_id") : null) || "";
-      const cacheKey = `${activeId}_${locale}`;
+      const storedComplaint = typeof window !== "undefined" ? sessionStorage.getItem("ayursetu_chief_complaint") : null;
+      const complaint = storedComplaint || (locale === "hi" ? "सिरदर्द व शरीर में दर्द" : "Headache and body ache");
+      const cacheKey = `${activeId}_${complaint}_${locale}`;
 
-      // Prevent redundant fetches if this session & locale have already been initialized
+      // Prevent redundant fetches if this session & complaint & locale have already been initialized
       if (initializedSessionRef.current === cacheKey && activeId) {
         return;
       }
@@ -117,9 +119,6 @@ export default function AdaptiveQuestionsFlowPage({
           }
         }
 
-        const storedComplaint = typeof window !== "undefined" ? sessionStorage.getItem("ayursetu_chief_complaint") : null;
-        const complaint = storedComplaint || (locale === "hi" ? "सिरदर्द व शरीर में दर्द" : "Headache and body ache");
-
         const activeUserId = user?.id || (typeof window !== "undefined" ? localStorage.getItem("ayursetu_user_id") : null) || "pat-104-demo";
         const res = await fetch("/api/patient/session/start", {
           method: "POST",
@@ -136,7 +135,7 @@ export default function AdaptiveQuestionsFlowPage({
         const data = await res.json();
         if (data.data?.sessionId) {
           const newSessionId = data.data.sessionId;
-          initializedSessionRef.current = `${newSessionId}_${locale}`;
+          initializedSessionRef.current = `${newSessionId}_${complaint}_${locale}`;
           setSessionId(newSessionId);
           if (typeof window !== "undefined") {
             sessionStorage.setItem("ayursetu_active_session_id", newSessionId);
