@@ -1,18 +1,24 @@
-# Known Limitations & Production Scaling Roadmap
-
-**Smart India Hackathon 2026 – Problem ID 26047**
+# 🔍 Known Limitations & Production Scaling Roadmap
+### Smart India Hackathon 2026 – Problem ID 26047
 
 ---
 
-## 🔍 Prototype Boundaries & Scoping
+## 🎯 Current Prototype Scope & Production Pathways
 
-1. **Acoustic Speech Models in Live Demo**:
-   - The application supports Google Web Speech API natively on modern browsers. For offline rural kiosks without Chromium speech support, integration with Bhashini on-premise inference engines or OpenAI Whisper is ready via `.env`.
-2. **Medical OCR & Handwritten Prescription Recognition**:
-   - The platform includes high-contrast pre-processing, bilingual (Hindi + English) Tesseract OCR, tabular NER, confidence scoring (0.0 to 1.0), and inline doctor correction. In high-volume tertiary hospitals with degraded penmanship, enterprise multi-page PDF pipelines hook into Azure Form Recognizer / Google Document AI via `OCR_PROVIDER` in `.env`.
+1. **Acoustic Speech Models**:
+   - **Current**: Google Web Speech API natively in modern Chromium/WebKit browsers + responsive speech fallback.
+   - **Production Transition**: Ready to integrate with Bhashini on-premise ASR models or OpenAI Whisper via `.env` configuration for local PHC server hardware.
+
+2. **Multimodal Medical OCR**:
+   - **Current**: High-contrast pre-processing canvas, bilingual (Hindi + English) Tesseract OCR, regex/tabular entity extraction, and confidence scoring.
+   - **Production Transition**: `OCR_PROVIDER` adapter ready for cloud document services (Azure Form Recognizer, Google Cloud Document AI) for heavily deteriorated tertiary hospital records.
+
 3. **ABDM Sandbox Gateway**:
-   - The platform generates compliant ABDM consent artifacts and HL7 FHIR R4 Encounter Bundles. Production deployment requires live whitelisting on the NHA Production Gateway.
-4. **Clinical Drug Interaction Knowledge Base**:
-   - The engine includes a curated static rule base of high-yield Allopathic and Ayurvedic interactions tailored for Indian OPDs. In production hospital enterprise setups, it hooks into external clinical decision support services (e.g. OpenFDA, DrugBank, FDB) via `lib/clinical/drug-safety.service.ts`.
+   - **Current**: Generates 100% compliant HL7 FHIR R4 Encounter Bundles, digital consent records, and ABHA identifiers.
+   - **Production Transition**: Production whitelisting on NHA Production Gateway required for live national health exchange.
+
+4. **Clinical Drug Interaction Engine**:
+   - **Current**: Curated static rule-engine of high-yield Allopathic and Ayurvedic interactions (e.g., Warfarin + Aspirin, Ashwagandha + Immunosuppressants).
+   - **Production Transition**: Pluggable adapter to external clinical CDSS databases (OpenFDA, DrugBank, FDB) in `lib/clinical/drug-safety.service.ts`.
 
 

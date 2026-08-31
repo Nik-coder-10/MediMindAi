@@ -1,69 +1,79 @@
-# ⏱️ SIH 2026 Problem 26047 Winning Live Demonstration Script
-### AI-Powered Patient Case-Taking Software (Ministry of Ayush / AIIA)
+# ⏱️ SIH 2026 Problem 26047 — Winning Live Demonstration Script
+### AyurSetu / MediMind AI • Ministry of Ayush & AIIA Case-Taking Software
 
-**Total Duration**: 12 Minutes | **Target Audience**: SIH Technical & Medical Evaluators
-
----
-
-## 🎯 Timing & Stage Breakdown
-
-### ⏳ Phase 1: Problem Positioning & Core Stance (0:00 – 2:00)
-- **Opening Line**: *"Honorable Judges, in overcrowded OPDs, doctors spend up to 70% of consultation time manually asking repetitive questions and deciphering old handwritten papers. AyurSetu transforms this by serving as an intelligent multilingual clinical case-taking assistant where the doctor is always in complete diagnostic control."*
-- **Key Differentiators**:
-  1. Zero-training usability for elderly and rural citizens (large touch targets $\ge 56$px, bilingual voice-first).
-  2. Classical Charaka Samhita *Dashavidha Pariksha* embedded for Ministry of Ayush.
-  3. Strict non-diagnostic safety guardrails with 12 real-time emergency red-flag triggers.
+**Target Duration**: 4–6 Minutes | **Target Audience**: SIH Evaluators & Medical Jury
 
 ---
 
-### ⏳ Phase 2: Live Patient Voice Flow & Emergency Safety (2:00 – 6:00)
-- **Action**: Open `/patient` on mobile simulation (or laptop browser).
-- **Step 1: Language & Consent**: Select **हिंदी (Hindi)**. Show the ABDM-style audio prompt reading the consent purpose.
-- **Step 2: AYUSH Clinical Mode**: Tap **"आयुर्वेद परामर्श (AYUSH Mode)"**.
-- **Step 3: Voice Intake**: Tap the huge 80px microphone button and speak in Hindi:
-  - *Say*: *"कल रात से मेरी छाती में बहुत तेज दर्द और भारीपन हो रहा है, जो बाएं हाथ में जा रहा है।"*
-- **Step 4: Adaptive SOCRATES Branching**:
-  - Show how the engine dynamically adapts next questions (Duration $\rightarrow$ Severity $\rightarrow$ Radiation $\rightarrow$ Cold Sweating).
-- **Step 5: Emergency Red-Flag Alert**:
-  - Point out the **Calm Emergency Modal** (`RF_ACS_RADIATION` detected) offering instant 108 emergency escalation.
-- **Step 6: Document Scanner**:
-  - Upload `sample_prescription_aiia.txt` and showcase instant OCR NER extraction of *Tab Yogaraj Guggulu* and *Syp Amritarishta*.
-- **Step 7: Final Summary Preview**:
-  - Show the plain-language *"What the Doctor Will See"* screen and tap **"डॉक्टर को भेजें (Submit to Doctor)"**. Show OPD Token `#AIIA-104`.
+## 🎯 Quick Credentials & Setup
+
+| Portal | URL | Demo Account / Credentials |
+|---|---|---|
+| 🌐 **Live Web Deployment** | `https://medi-mind-ai-eight.vercel.app/` | *(Auto-configured)* |
+| 👤 **Patient Kiosk / Mobile** | `/patient/consent` or `/kiosk` | Pre-filled: Ramesh Sharma (`14-5542-8921-3410`) |
+| 🩺 **Doctor Triage Desk** | `/doctor` | Pre-filled: Dr. Arvind K. Sharma (AIIA Vaidya) |
+| 📊 **Admin Morbidity Analytics** | `/admin/analytics` | Pre-filled: Ministry Admin / Nodal Officer |
 
 ---
 
-### ⏳ Phase 3: Doctor Triage Dashboard & Clinical Review (6:00 – 9:00)
-- **Action**: Switch to `/doctor`.
-- **Triage Queue**:
-  - Show live sorting: **🚨 EMERGENCY** patient (Ramesh Sharma) pulsing at the top of the queue.
-- **Open Patient Case Dossier (`/doctor/case/[id]`)**:
-  - **Top Bar**: Demographics, ABHA ID, and prominent Red-Flag Alert banner (never below the fold).
-  - **Tab 1 - AI Clinical Summary**: Show structured 9-section markdown draft. Demonstrate live inline physician editing and version increment from `DRAFT (v1)` to `REVISED (v2)`.
-  - **Tab 2 - Longitudinal Timeline**: Multi-year history (*Diabetes 2019 $\rightarrow$ Metformin 2024 $\rightarrow$ Chest Pain 2026*).
-  - **Tab 3 - Abnormal Labs**: Color-coded out-of-range indicators (*HbA1c 8.9% HIGH, Serum Creatinine 2.1 HIGH*).
-  - **Action**: Click **"स्वीकृत व हस्ताक्षर करें (Accept & Sign)"**.
+## ⏱️ Step-by-Step 5-Minute Demonstration Walkthrough
+
+### ⏳ Minute 1: Problem Context & Patient Consent (0:00 – 1:00)
+1. **Pitch**: *"Judges, in crowded government & Ayush OPDs, doctors spend up to 70% of time manually recording basic history. AyurSetu gives rural and elderly patients a multilingual voice-first intake, while keeping the physician in 100% diagnostic control."*
+2. **Open** `/[locale]/patient/consent` (or `/kiosk`).
+3. Select **हिंदी (Hindi)** or **English**. Tap the audio speaker icon to demonstrate bilingual voice read-out of the DPDP / ABDM consent notice.
+4. Tap **"स्वीकार करें (Consent & Continue)"** (large 64px touch target).
 
 ---
 
-### ⏳ Phase 4: AYUSH Mode & ABDM / FHIR Interoperability (9:00 – 10:30)
-- **Ayush Dashavidha Pariksha Tab**:
-  - Showcase structured capture of *Prakriti (Vata-Kapha)*, *Vikriti*, *Agni (Vishamagni)*, *Koshtha (Krura)*, and *Sattva*.
-- **Interoperability & FHIR Export**:
-  - Demonstrate instant export of full **HL7 FHIR R4 Bundle** at `/api/fhir/session/:sessionId` containing `Composition`, `Patient`, `Encounter`, `Condition`, `MedicationStatement`, and `Observation`.
-  - Click **"Send to Hospital HIS"** and show cryptographic audit trail.
+### ⏳ Minute 2: Clinical Mode, Voice Complaint & Adaptive SOCRATES Intake (1:00 – 2:30)
+1. **Mode Selection**: Choose **आयुर्वेद परामर्श (AYUSH Mode)** to enable Dashavidha Pariksha + modern medical SOCRATES trees.
+2. **Chief Complaint**: Tap the microphone icon or quick-select *"छाती में तेज दर्द और भारीपन"* (Chest Pain & Heaviness) or *"जोड़ों में दर्द"* (Joint Pain).
+3. **Adaptive Branching**: Walk through 3–4 SOCRATES questions:
+   - Onset $\rightarrow$ Character $\rightarrow$ Radiation to left arm $\rightarrow$ Cold Sweating.
+4. **Emergency Red Flag Hook**:
+   - When radiation/dyspnea is selected, show the calm **Clinical Red Flag Warning** with the **Alert Medical Staff / Call 108** instant action button.
 
 ---
 
-### ⏳ Phase 5: Admin Panel & Security Governance (10:30 – 11:30)
-- **Action**: Open `/admin-dashboard`.
-- **Dynamic Content Manager**:
-  - Show how Ministry administrators can add new question nodes or modify safety red-flag rules without touching source code.
-- **Security & DPDP 2023**:
-  - Mention application-level **AES-256-GCM** encryption at rest, secure HTTP headers, and tamper-evident `AuditLog`.
+### ⏳ Minute 3: Document Scanner & Structured History (2:30 – 3:30)
+1. **Document Capture**: Open `/patient/documents`.
+   - Use the **Camera Document Capture** or upload a sample prescription.
+   - Show instant on-device contrast enhancement + bilingual OCR extraction of medications (*Yogaraja Guggulu*, *Aspirin*) and lab tests.
+2. **Structured History Modules**:
+   - Showcase captured **Family History** (Parental HTN/CAD), **Social History** (Diet/Tobacco), and **Gynecological History** (when applicable).
+3. **Patient Summary Preview**:
+   - Review the patient-facing plain-language summary. Tap **"डॉक्टर को भेजें (Submit to Doctor)"**.
+   - Note the generated OPD Token: `#AYUR-9842`.
 
 ---
 
-### ⏳ Phase 6: Conclusion & Impact Summary (11:30 – 12:00)
-- **Closing**: *"AyurSetu delivers a clinically safe, culturally grounded, ABDM-compliant case-taking solution that saves valuable physician time while ensuring zero diagnostic errors in primary healthcare."*
-- **Open for Evaluator Q&A**.
+### ⏳ Minute 4: Real-time Doctor Desk, Notifications & AI Dossier (3:30 – 4:45)
+1. **Open** `/[locale]/doctor` in another tab.
+2. **Real-time SSE Notification**: Show the high-priority red-flag banner and audio notification chime.
+3. **Doctor Queue**: Highlight patient Ramesh Sharma sorted to the top under **🚨 EMERGENCY / URGENT**.
+4. **Open Case Dossier** (`/doctor/case/[sessionId]`):
+   - **AI-Drafted Summary**: Prominent *"AI-Drafted — Physician Reviewed"* badge.
+   - **Inline Physician Editing**: Edit a recommendation, click Save, and show version incrementing.
+   - **One-Click PDF Export**: Click **"Download Dossier PDF"** to generate the official branded AIIA summary dossier.
+   - **Sign-Off**: Click **"स्वीकृत व हस्ताक्षर करें (Accept & Sign)"**.
+
+---
+
+### ⏳ Minute 5: Administrative Morbidity Analytics & FHIR Interoperability (4:45 – 5:30)
+1. **Open** `/[locale]/admin/analytics`.
+2. **Showcase KPIs**: Total Intakes, Red-flag rate, AYUSH adoption %, Average intake duration (3.8 min), Top 8 Chief Complaints bar chart, Red-flag rule breakdown, and 1-click **CSV Export**.
+3. **Privacy Compliance**: Point out strict DPDP 2023 aggregation — zero PHI exposed on analytics views.
+4. **Conclude**: *"AyurSetu delivers a safe, accessible, and standards-compliant bridge between patients and doctors for modern India."*
+
+---
+
+## 🏆 Key Talking Points for Evaluator Questions
+
+- **Q: Does the AI make autonomous diagnoses?**
+  *A: Absolutely not. AyurSetu drafts structured objective findings and non-diagnostic summaries. The attending physician must review, edit, and sign off on all prescriptions and diagnoses.*
+- **Q: How does it work in rural areas with poor connectivity?**
+  *A: The intake flow uses IndexedDB durable snapshots, auto-queues answers offline, and synchronizes automatically upon network reconnection.*
+- **Q: How is patient privacy safeguarded?**
+  *A: End-to-end AES-256-GCM encryption, purpose-limited ABDM consent artifacts, and strict role-based access control with tamper-evident audit trails.*
+
