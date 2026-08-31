@@ -37,6 +37,7 @@ import { speakWithIndianVoice } from "@/lib/voice/tts";
 import { PatientDashboardPreviewDTO } from "@/lib/services/preview.service";
 import { SessionRecoveryStore } from "@/lib/offline/session-recovery.store";
 import { OfflineBannerSync } from "@/components/ui/patient/OfflineBannerSync";
+import { AlertStaffButton } from "@/components/ui/patient/AlertStaffButton";
 
 export default function PatientSummaryPreviewDashboardPage({
   params: { locale },
@@ -386,18 +387,28 @@ export default function PatientSummaryPreviewDashboardPage({
 
         {/* 3. Red-Flag Warning (Presented calmly if any) */}
         {d?.redFlags && d.redFlags.length > 0 && (
-          <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border-2 border-amber-300 space-y-2">
-            <div className="flex items-center gap-2 text-amber-900 dark:text-amber-200">
-              <AlertTriangle className="h-5 w-5 shrink-0" />
-              <span className="text-xs font-black uppercase">
-                {isHindi ? "विशेष ध्यान देने योग्य लक्षण (Safety Notes)" : "Clinical Safety Notes Identified"}
-              </span>
+          <div className="space-y-3">
+            <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border-2 border-amber-300 space-y-2">
+              <div className="flex items-center gap-2 text-amber-900 dark:text-amber-200">
+                <AlertTriangle className="h-5 w-5 shrink-0" />
+                <span className="text-xs font-black uppercase">
+                  {isHindi ? "विशेष ध्यान देने योग्य लक्षण (Safety Notes)" : "Clinical Safety Notes Identified"}
+                </span>
+              </div>
+              <ul className="text-xs font-bold text-amber-950 dark:text-amber-100 list-disc list-inside space-y-1">
+                {d.redFlags.map((rf, idx) => (
+                  <li key={idx}>{rf.description}</li>
+                ))}
+              </ul>
             </div>
-            <ul className="text-xs font-bold text-amber-950 dark:text-amber-100 list-disc list-inside space-y-1">
-              {d.redFlags.map((rf, idx) => (
-                <li key={idx}>{rf.description}</li>
-              ))}
-            </ul>
+
+            {/* Alert Staff Button — shown when any red flag exists */}
+            <AlertStaffButton
+              sessionId={d.sessionId || "sess-preview"}
+              chiefComplaint={d.chiefComplaint?.symptomName}
+              tokenNumber={d.tokenNumber}
+              locale={locale}
+            />
           </div>
         )}
 
@@ -594,6 +605,15 @@ export default function PatientSummaryPreviewDashboardPage({
 
         {/* High Touch-Target Action Buttons (64px - 80px) */}
         <div className="space-y-3 pt-4 border-t">
+          {/* If no red flags but triage is HIGH/EMERGENCY, still show alert button */}
+          {(!d?.redFlags || d.redFlags.length === 0) && (d?.triagePriority === "EMERGENCY") && (
+            <AlertStaffButton
+              sessionId={d?.sessionId || "sess-preview"}
+              chiefComplaint={d?.chiefComplaint?.symptomName}
+              tokenNumber={d?.tokenNumber}
+              locale={locale}
+            />
+          )}
           {/* Primary Action: Big Submit Button */}
           <ExtraLargeButton
             variant="primary"

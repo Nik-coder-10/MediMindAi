@@ -1,18 +1,23 @@
 "use client";
 
 import React from "react";
-import { AlertTriangle, PhoneCall, Volume2, ShieldAlert, X } from "lucide-react";
+import { AlertTriangle, Volume2, ShieldAlert, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ExtraLargeButton } from "./ExtraLargeButton";
+import { AlertStaffButton } from "./AlertStaffButton";
 
 interface EmergencyAlertModalProps {
   description: string;
   onDismiss: () => void;
+  sessionId?: string;
+  locale?: string;
 }
 
 export function EmergencyAlertModal({
   description,
   onDismiss,
+  sessionId,
+  locale = "en",
 }: EmergencyAlertModalProps) {
   const speechText =
     "सावधानी! आपके लक्षणों में तुरंत डॉक्टरी सहायता की आवश्यकता हो सकती है। कृपया शांत रहें और तुरंत पास के अस्पताल या आपातकालीन हेल्पलाइन से संपर्क करें।";
@@ -106,25 +111,21 @@ export function EmergencyAlertModal({
                 </span>
               </button>
 
-              {/* Actions */}
-              <div className="space-y-2.5 pt-1">
-                <a
-                  href="tel:108"
-                  className="w-full min-h-[58px] rounded-xl bg-gradient-to-r from-red-600 to-red-700 text-white font-black text-[17px] flex items-center justify-center gap-3 shadow-lg hover:from-red-500 hover:to-red-600 active:scale-[0.98] transition-all"
-                >
-                  <PhoneCall className="h-5 w-5" />
-                  <span>Call 108 — Emergency Ambulance</span>
-                </a>
+              {/* Alert Staff Button (replaces plain tel:108 link) */}
+              <AlertStaffButton
+                sessionId={sessionId || "sess-emergency"}
+                chiefComplaint={description}
+                locale={locale}
+              />
 
-                <ExtraLargeButton
-                  variant="secondary"
-                  size="default"
-                  className="w-full"
-                  onClick={onDismiss}
-                >
-                  परामर्श जारी रखें (I understand, continue)
-                </ExtraLargeButton>
-              </div>
+              <ExtraLargeButton
+                variant="secondary"
+                size="default"
+                className="w-full"
+                onClick={onDismiss}
+              >
+                परामर्श जारी रखें (I understand, continue)
+              </ExtraLargeButton>
             </div>
           </div>
         </motion.div>
@@ -132,3 +133,4 @@ export function EmergencyAlertModal({
     </AnimatePresence>
   );
 }
+
