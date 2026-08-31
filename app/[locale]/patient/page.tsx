@@ -29,6 +29,9 @@ export default function PatientLauncherPage({
   const isHindi = locale === "hi";
 
   const handleStart = () => {
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem("ayursetu_intake_mode", selectedMode);
+    }
     router.push(`/${locale}/patient/consent?mode=${selectedMode}`);
   };
 

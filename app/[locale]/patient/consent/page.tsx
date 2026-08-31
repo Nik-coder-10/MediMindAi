@@ -52,7 +52,10 @@ export default function PatientConsentPage({
     try {
       // In Next.js client, read search params if available or default to AYURVEDA
       const urlParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
-      const mode = urlParams?.get("mode") || "AYURVEDA";
+      const mode = urlParams?.get("mode") || (typeof window !== "undefined" ? sessionStorage.getItem("ayursetu_intake_mode") : null) || "AYURVEDA";
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem("ayursetu_intake_mode", mode);
+      }
       router.push(`/${selectedLang}/patient/complaint?mode=${mode}`);
     } finally {
       setIsSubmitting(false);

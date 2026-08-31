@@ -36,8 +36,11 @@ export default function PatientComplaintVoicePage({
 
   const handleContinue = async () => {
     if (!complaintText) return;
+    const mode = (typeof window !== "undefined" ? sessionStorage.getItem("ayursetu_intake_mode") : null) || "AYURVEDA";
+
     if (typeof window !== "undefined") {
       sessionStorage.setItem("ayursetu_chief_complaint", complaintText);
+      sessionStorage.setItem("ayursetu_intake_mode", mode);
       sessionStorage.removeItem("ayursetu_active_session_id");
       sessionStorage.removeItem("ayursetu_current_question");
       sessionStorage.removeItem("ayursetu_current_step");
@@ -55,7 +58,7 @@ export default function PatientComplaintVoicePage({
       step: "QUESTIONS",
     });
 
-    router.push(`/${locale}/patient/questions`);
+    router.push(`/${locale}/patient/questions?mode=${mode}`);
   };
 
   return (

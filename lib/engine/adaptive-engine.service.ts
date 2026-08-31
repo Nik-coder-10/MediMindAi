@@ -39,16 +39,18 @@ export class AdaptiveEngineService {
   static async startSession(
     sessionId: string,
     chiefComplaintText: string,
-    language: "hi" | "en" = "hi"
+    language: "hi" | "en" = "hi",
+    intakeMode: "AYURVEDA" | "GENERAL" = "AYURVEDA"
   ): Promise<{ state: EngineStateDTO; firstQuestion: EngineQuestionDefinition | null }> {
     if (!sessionId || !chiefComplaintText) {
       throw AppError.badRequest("sessionId and chiefComplaintText are required");
     }
 
-    // 1. Generate dynamic tailored adaptive questions based on chief complaint
+    // 1. Generate dynamic tailored adaptive questions based on chief complaint & clinic intake mode
     const dynamicGen = await AdaptiveQuestionGenerator.generateQuestions({
       chiefComplaint: chiefComplaintText,
       language,
+      intakeMode,
       sessionId,
     });
 

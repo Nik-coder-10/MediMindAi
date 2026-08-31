@@ -12,6 +12,7 @@ const startEngineSchema = z.object({
   sessionId: z.string().optional(),
   chiefComplaint: z.string().min(1, "chiefComplaint is required"),
   language: z.enum(["hi", "en", "mr"]).default("hi").optional(),
+  intakeMode: z.enum(["AYURVEDA", "GENERAL"]).default("AYURVEDA").optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -146,7 +147,8 @@ export async function POST(req: NextRequest) {
     const result = await AdaptiveEngineService.startSession(
       session.id,
       validated.chiefComplaint,
-      (validated.language as any) || "hi"
+      (validated.language as any) || "hi",
+      (validated.intakeMode as any) || "AYURVEDA"
     );
 
     return apiSuccess({

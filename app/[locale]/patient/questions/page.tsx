@@ -90,9 +90,11 @@ export default function AdaptiveQuestionsFlowPage({
       const activeId = sessionId || (typeof window !== "undefined" ? sessionStorage.getItem("ayursetu_active_session_id") : null) || "";
       const storedComplaint = typeof window !== "undefined" ? sessionStorage.getItem("ayursetu_chief_complaint") : null;
       const complaint = storedComplaint || (locale === "hi" ? "सिरदर्द व शरीर में दर्द" : "Headache and body ache");
-      const cacheKey = `${activeId}_${complaint}_${locale}`;
+      const urlParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
+      const intakeMode = urlParams?.get("mode") || (typeof window !== "undefined" ? sessionStorage.getItem("ayursetu_intake_mode") : null) || "AYURVEDA";
+      const cacheKey = `${activeId}_${complaint}_${intakeMode}_${locale}`;
 
-      // Prevent redundant fetches if this session & complaint & locale have already been initialized
+      // Prevent redundant fetches if this session & complaint & mode & locale have already been initialized
       if (initializedSessionRef.current === cacheKey && activeId) {
         return;
       }
@@ -130,12 +132,13 @@ export default function AdaptiveQuestionsFlowPage({
             sessionId: activeId || undefined,
             chiefComplaint: complaint,
             language: locale === "hi" ? "hi" : "en",
+            intakeMode: intakeMode,
           }),
         });
         const data = await res.json();
         if (data.data?.sessionId) {
           const newSessionId = data.data.sessionId;
-          initializedSessionRef.current = `${newSessionId}_${complaint}_${locale}`;
+          initializedSessionRef.current = `${newSessionId}_${complaint}_${intakeMode}_${locale}`;
           setSessionId(newSessionId);
           if (typeof window !== "undefined") {
             sessionStorage.setItem("ayursetu_active_session_id", newSessionId);

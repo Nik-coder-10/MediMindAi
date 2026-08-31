@@ -51,6 +51,7 @@ export interface AdaptiveQuestion {
 export interface AdaptiveQuestionGeneratorInput {
   chiefComplaint: string;
   language?: "hi" | "en";
+  intakeMode?: "AYURVEDA" | "GENERAL";
   sessionId?: string;
   alreadyCollectedFacts?: Record<string, unknown>;
 }
@@ -1236,10 +1237,105 @@ export class AdaptiveQuestionGenerator {
     // Generate core questions according to SOCRATES / Dashavidha clinical domains
     const coreQuestions = profile.questionTemplates(lang, detectedProblems);
 
+    const isAyushMode = input.intakeMode === "AYURVEDA" || !input.intakeMode;
+
+    let tailoredCoreQuestions: AdaptiveQuestion[] = [];
+
+    if (isAyushMode) {
+      // AYUSH Mode: Emphasize Dosha dynamics, Agni (digestive fire), Prakriti, and Ama indicators
+      const ayushQuestions: AdaptiveQuestion[] = [
+        {
+          id: "AYU_PRAKRITI_DYNAMIC",
+          text: lang === "hi"
+            ? "आपकी शारीरिक प्रकृति और स्वभाव कैसा है? (वात: दुबला/चंचल, पित्त: मध्यम/गर्मी सहन न होना, कफ: भारी/शांत)"
+            : "What is your primary physical constitution (Prakriti)? (Vata: Lean/Dry, Pitta: Medium/Heat-sensitive, Kapha: Solid/Calm)",
+          textEn: "What is your primary physical constitution (Prakriti)? (Vata: Lean/Dry, Pitta: Medium/Heat-sensitive, Kapha: Solid/Calm)",
+          type: "single_choice",
+          priority: "high",
+          clinicalPurpose: "associated",
+          options: [
+            { value: "VATA_DOMINANT", labelHi: "वात प्रधान (रूखी त्वचा, ठंड लगना, जोड़ों में चटकन)", labelEn: "Vata Dominant (Dry skin, joint crackling, cold sensitive)" },
+            { value: "PITTA_DOMINANT", labelHi: "पित्त प्रधान (जलन, पसीना, गुस्सा/चिड़चिड़ापन, खट्टी डकार)", labelEn: "Pitta Dominant (Burning sensation, sweating, acidity)" },
+            { value: "KAPHA_DOMINANT", labelHi: "कफ प्रधान (भारीपन, सुस्ती, कफ/बलगम, धीमी भूख)", labelEn: "Kapha Dominant (Heaviness, sluggishness, phlegm)" },
+            { value: "SAMA_BALANCED", labelHi: "सम प्रकृति (संतुलित स्वभाव)", labelEn: "Balanced (Samadosha)" },
+          ],
+        },
+        {
+          id: "AYU_AGNI_DYNAMIC",
+          text: lang === "hi"
+            ? "आपकी जठराग्नि (भूख व पाचन शक्ति) की वर्तमान स्थिति क्या है?"
+            : "What is the state of your digestive fire (Agni) and appetite?",
+          textEn: "What is the state of your digestive fire (Agni) and appetite?",
+          type: "single_choice",
+          priority: "high",
+          clinicalPurpose: "associated",
+          options: [
+            { value: "SAMAGNI", labelHi: "समाग्नि - समय पर नियमित भूख व उत्तम पाचन", labelEn: "Samagni (Balanced, regular appetite & digestion)" },
+            { value: "MANDAGNI", labelHi: "मंदाग्नि - भूख कम लगना, भोजन देर से पचना व पेट भारी रहना", labelEn: "Mandagni (Low appetite, delayed digestion, heaviness)" },
+            { value: "TIKSHNAGNI", labelHi: "तीक्ष्णाग्नि - बहुत तेज भूख, सीने व गले में तीखी जलन", labelEn: "Tikshnagni (Intense hunger, severe burning reflux)" },
+            { value: "VISHAMAGNI", labelHi: "विषमाग्नि - कभी तेज भूख कभी बिल्कुल नहीं, पेट में गैस/अफरा", labelEn: "Vishamagni (Irregular hunger, gas & bloating)" },
+          ],
+        },
+        {
+          id: "AYU_AMA_LAKSHANA",
+          text: lang === "hi"
+            ? "क्या जीभ पर सफेद मैल (लिप्तता), सुबह उठने पर भारीपन, शरीर में जकड़न या मुंह में अरुचि है? (साम लक्षण)"
+            : "Do you notice a coated tongue, morning stiffness/sluggishness, or metallic/foul taste? (Ama signs)",
+          textEn: "Do you notice a coated tongue, morning stiffness/sluggishness, or metallic/foul taste? (Ama signs)",
+          type: "single_choice",
+          priority: "high",
+          clinicalPurpose: "associated",
+          options: [
+            { value: "AMA_PRESENT", labelHi: "हाँ, जीभ पर सफेद परत व शरीर में भारीपन/आलस्य है (Ama present)", labelEn: "Yes, coated tongue & sluggish heaviness (Ama+)" },
+            { value: "NIRAMA_CLEAR", labelHi: "नहीं, जीभ साफ है और शरीर हल्का महसूस होता है (Nirama / Clear)", labelEn: "No, clean tongue & light body (Nirama)" },
+          ],
+        },
+      ];
+
+      tailoredCoreQuestions = [...coreQuestions, ...ayushQuestions];
+    } else {
+      // GENERAL Clinic Mode: Standard clinical organ/pain triage (SOCRATES, Radiation, Aggravating triggers, General history)
+      const clinicQuestions: AdaptiveQuestion[] = [
+        {
+          id: "GEN_ORGAN_DAILY_IMPACT",
+          text: lang === "hi"
+            ? "इस दर्द/लक्षण से आपकी दैनिक दिनचर्या या काम पर कितना असर पड़ रहा है?"
+            : "How much does this symptom or pain interfere with your daily routine and work?",
+          textEn: "How much does this symptom or pain interfere with your daily routine and work?",
+          type: "single_choice",
+          priority: "medium",
+          clinicalPurpose: "severity",
+          options: [
+            { value: "MILD_INTERFERENCE", labelHi: "हल्का असर - काम सामान्य रूप से कर पाते हैं (Mild)", labelEn: "Mild - Can perform normal activities" },
+            { value: "MODERATE_INTERFERENCE", labelHi: "मध्यम असर - काम में रुकावट व आराम की जरूरत (Moderate)", labelEn: "Moderate - Daily activities affected" },
+            { value: "SEVERE_BEDREST", labelHi: "गंभीर असर - सामान्य चलना-फिरना या काम करना असंभव (Severe)", labelEn: "Severe - Unable to perform basic tasks" },
+          ],
+        },
+        {
+          id: "GEN_MEDICATION_RELIEF",
+          text: lang === "hi"
+            ? "क्या आपने इस दर्द के लिए कोई पेनकिलर, एंटासिड या अन्य दवा ली और क्या उससे आराम मिला?"
+            : "Have you taken any painkiller, antacid, or other medication for relief?",
+          textEn: "Have you taken any painkiller, antacid, or other medication for relief?",
+          type: "single_choice",
+          priority: "medium",
+          clinicalPurpose: "relieving",
+          options: [
+            { value: "RELIEF_WITH_MEDS", labelHi: "हाँ, दवा लेने पर कुछ समय के लिए आराम मिला", labelEn: "Yes, temporary relief with medication" },
+            { value: "NO_RELIEF_WITH_MEDS", labelHi: "दवा ली लेकिन कोई आराम नहीं मिला", labelEn: "Took medication, but no relief" },
+            { value: "NO_MEDICATION_TAKEN", labelHi: "कोई दवा नहीं ली", labelEn: "No medication taken yet" },
+          ],
+        },
+      ];
+
+      // Filter out any purely ayurvedic specific tokens from core questions for General mode
+      const generalCore = coreQuestions.filter((q) => !q.id.includes("ayush_ama"));
+      tailoredCoreQuestions = [...generalCore, ...clinicQuestions];
+    }
+
     // Append structured modular history questions:
     // 1. Family History
     // 2. Social & Habits History
-    // 3. Obstetric History (for females or general intake)
     const historyQuestions: AdaptiveQuestion[] = [
       {
         id: "FH_DIABETES_HTN",
@@ -1276,7 +1372,7 @@ export class AdaptiveQuestionGenerator {
       },
     ];
 
-    const questions = [...coreQuestions, ...historyQuestions];
+    const questions = [...tailoredCoreQuestions, ...historyQuestions];
 
     return {
       detectedProblems,
