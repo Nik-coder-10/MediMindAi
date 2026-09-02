@@ -120,6 +120,19 @@ export async function GET(
       allergies,
     });
 
+    // 3c. Synthesize Longitudinal Comparison & Trajectories
+    let longitudinalComparison = null;
+    let symptomTrajectories: any[] = [];
+    try {
+      const { LongitudinalIntelligenceService } = await import("@/lib/clinical/longitudinal.service");
+      longitudinalComparison = await LongitudinalIntelligenceService.compareConsultations(sessionId);
+      if (session.patient?.id) {
+        symptomTrajectories = await LongitudinalIntelligenceService.buildPatientTrajectories(session.patient.id);
+      }
+    } catch (longErr) {
+      console.warn("Longitudinal comparison computation deferred:", (longErr as any)?.message);
+    }
+
     // 4. Assemble genuine case data
     const caseData = {
       sessionId,
@@ -165,6 +178,8 @@ export async function GET(
         triggeredAt: rf.triggeredAt.toISOString(),
       })),
       drugSafetyAlerts,
+      longitudinalComparison,
+      symptomTrajectories,
       summary,
       timeline,
       abnormalLabs,

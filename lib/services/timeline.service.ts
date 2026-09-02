@@ -15,7 +15,7 @@ export interface TimelineEventDTO {
 
 export class MedicalTimelineService {
   /**
-   * Synthesizes longitudinal events from documents, extracted entities, and encounters
+   * Synthesizes longitudinal events from documents, extracted entities, structured observations, and encounters
    */
   static async getPatientTimeline(patientId: string): Promise<TimelineEventDTO[]> {
     let dbEvents: any[] = [];
@@ -28,21 +28,41 @@ export class MedicalTimelineService {
       // In-memory fallback
     }
 
-    if (dbEvents.length > 0) {
-      return dbEvents.map((e) => ({
-        id: e.id,
-        patientId: e.patientId,
-        eventDate: e.eventDate.toISOString().split("T")[0],
-        title: e.title,
-        description: e.description || "",
-        category: e.category as any,
-        sourceDocumentId: e.sourceDocumentId || undefined,
-        metadata: e.metadata as any,
-      }));
+    const legacyEvents: TimelineEventDTO[] = dbEvents.map((e) => ({
+      id: e.id,
+      patientId: e.patientId,
+      eventDate: e.eventDate.toISOString().split("T")[0],
+      title: e.title,
+      description: e.description || "",
+      category: e.category as any,
+      sourceDocumentId: e.sourceDocumentId || undefined,
+      metadata: e.metadata as any,
+    }));
+
+    // Incorporate dynamic projected events from LongitudinalIntelligenceService
+    try {
+      const { LongitudinalIntelligenceService } = await import("@/lib/clinical/longitudinal.service");
+      const derived = await LongitudinalIntelligenceService.getLongitudinalTimeline(patientId, { limit: 20 });
+      for (const d of derived) {
+        let cat: "DIAGNOSIS" | "MEDICATION" | "LAB" | "ENCOUNTER" | "PROCEDURE" = "ENCOUNTER";
+        if (d.type === "RED_FLAG_ALERT" || d.type === "DOCTOR_ASSESSMENT") cat = "DIAGNOSIS";
+        if (d.type === "DOCUMENT_ANALYZED") cat = "PROCEDURE";
+        legacyEvents.push({
+          id: d.id,
+          patientId,
+          eventDate: d.date,
+          title: d.title,
+          description: d.description,
+          category: cat,
+          isAbnormal: d.isAbnormal,
+          metadata: d.metadata,
+        });
+      }
+    } catch {
+      // Non-fatal fallback
     }
 
-    // Return empty list when patient has no historical events
-    return [];
+    return legacyEvents.sort((a, b) => new Date(b.eventDate).getTime() - new Date(a.eventDate).getTime());
   }
 
   /**

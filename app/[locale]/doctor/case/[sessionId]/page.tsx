@@ -572,12 +572,150 @@ export default function IndividualDoctorCaseViewPage({
           </Card>
         )}
 
-        {/* Tab 2: Medical Timeline */}
+        {/* Tab 2: Medical Timeline & Longitudinal Patient Journey */}
         {activeTab === "TIMELINE" && (
-          <Card className="p-6 sm:p-8 rounded-3xl border-2 border-input space-y-4 bg-card shadow-sm">
-            <h3 className="text-base font-extrabold text-foreground">दीर्घकालिक इतिहास (Longitudinal History)</h3>
-            <MedicalTimelineView events={caseData?.timeline || []} />
-          </Card>
+          <div className="space-y-6">
+            {/* Consultation Comparison Banner: "What changed since last visit?" */}
+            {caseData?.longitudinalComparison && (
+              <Card className="p-6 sm:p-8 rounded-3xl border-2 border-emerald-300 dark:border-emerald-800 bg-emerald-50/40 dark:bg-emerald-950/20 space-y-4 shadow-sm">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-emerald-200 dark:border-emerald-800 pb-3">
+                  <div className="flex items-center gap-2">
+                    <Activity className="h-5 w-5 text-emerald-700 dark:text-emerald-400" />
+                    <h3 className="text-base font-extrabold text-foreground">
+                      पिछले परामर्श से परिवर्तन (Since Last Consultation Comparison)
+                    </h3>
+                  </div>
+                  {caseData.longitudinalComparison.previousConsultationDate && (
+                    <span className="text-xs font-bold text-muted-foreground">
+                      अंतिम परामर्श: {new Date(caseData.longitudinalComparison.previousConsultationDate).toLocaleDateString()}
+                    </span>
+                  )}
+                </div>
+
+                {caseData.longitudinalComparison.status === "NO_COMPARABLE_PREVIOUS_CONSULTATION" ? (
+                  <p className="text-xs font-semibold text-muted-foreground">
+                    यह रोगी का प्रारंभिक परामर्श (Baseline Assessment) है।
+                  </p>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 pt-1">
+                    {/* Improved */}
+                    <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-emerald-200 dark:border-emerald-900 space-y-2">
+                      <span className="text-xs font-black text-emerald-700 dark:text-emerald-400 uppercase tracking-wide flex items-center gap-1">
+                        ↓ सुधार देखा गया (Improved)
+                      </span>
+                      {caseData.longitudinalComparison.improved.length > 0 ? (
+                        caseData.longitudinalComparison.improved.map((item: any, i: number) => (
+                          <div key={i} className="text-xs space-y-0.5">
+                            <span className="font-extrabold text-foreground block">{item.symptom}</span>
+                            <span className="text-2xs font-semibold text-emerald-600 block">
+                              {item.previousValue} → {item.currentValue}
+                            </span>
+                          </div>
+                        ))
+                      ) : (
+                        <span className="text-2xs text-muted-foreground">कोई स्पष्ट सुधार दर्ज नहीं</span>
+                      )}
+                    </div>
+
+                    {/* Worsened */}
+                    <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-rose-200 dark:border-rose-900 space-y-2">
+                      <span className="text-xs font-black text-rose-700 dark:text-rose-400 uppercase tracking-wide flex items-center gap-1">
+                        ↑ वृद्धि / तीव्रता (Worsened)
+                      </span>
+                      {caseData.longitudinalComparison.worsened.length > 0 ? (
+                        caseData.longitudinalComparison.worsened.map((item: any, i: number) => (
+                          <div key={i} className="text-xs space-y-0.5">
+                            <span className="font-extrabold text-foreground block">{item.symptom}</span>
+                            <span className="text-2xs font-semibold text-rose-600 block">
+                              {item.previousValue} → {item.currentValue}
+                            </span>
+                          </div>
+                        ))
+                      ) : (
+                        <span className="text-2xs text-muted-foreground">कोई तीव्रता नहीं</span>
+                      )}
+                    </div>
+
+                    {/* Newly Reported */}
+                    <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-blue-200 dark:border-blue-900 space-y-2">
+                      <span className="text-xs font-black text-blue-700 dark:text-blue-400 uppercase tracking-wide flex items-center gap-1">
+                        ● नए लक्षण (Newly Reported)
+                      </span>
+                      {caseData.longitudinalComparison.newlyReported.length > 0 ? (
+                        caseData.longitudinalComparison.newlyReported.map((item: any, i: number) => (
+                          <div key={i} className="text-xs space-y-0.5">
+                            <span className="font-extrabold text-foreground block">{item.symptom}</span>
+                            <span className="text-2xs text-muted-foreground block">{item.currentValue}</span>
+                          </div>
+                        ))
+                      ) : (
+                        <span className="text-2xs text-muted-foreground">कोई नया लक्षण नहीं</span>
+                      )}
+                    </div>
+
+                    {/* Persistent */}
+                    <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-amber-200 dark:border-amber-900 space-y-2">
+                      <span className="text-xs font-black text-amber-700 dark:text-amber-400 uppercase tracking-wide flex items-center gap-1">
+                        ⟳ स्थिर / निरंतर (Persistent)
+                      </span>
+                      {caseData.longitudinalComparison.persistent.length > 0 ? (
+                        caseData.longitudinalComparison.persistent.map((item: any, i: number) => (
+                          <div key={i} className="text-xs space-y-0.5">
+                            <span className="font-extrabold text-foreground block">{item.symptom}</span>
+                            <span className="text-2xs text-muted-foreground block">{item.currentValue}</span>
+                          </div>
+                        ))
+                      ) : (
+                        <span className="text-2xs text-muted-foreground">कोई निरंतर लक्षण नहीं</span>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </Card>
+            )}
+
+            {/* Symptom Trajectories Visualization Card */}
+            {caseData?.symptomTrajectories?.length > 0 && (
+              <Card className="p-6 sm:p-8 rounded-3xl border-2 border-input space-y-4 bg-card shadow-sm">
+                <h3 className="text-base font-extrabold text-foreground flex items-center gap-2">
+                  <Activity className="h-4 w-4 text-emerald-600" />
+                  <span>लक्षण प्रक्षेपवक्र व रुझान (Symptom Trajectories & Severity Trends)</span>
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {caseData.symptomTrajectories.map((traj: any, idx: number) => (
+                    <div key={idx} className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-extrabold text-foreground">{traj.canonicalName}</span>
+                        <span
+                          className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
+                            traj.severityTrend === "IMPROVING"
+                              ? "bg-emerald-100 text-emerald-800"
+                              : traj.severityTrend === "WORSENING"
+                              ? "bg-rose-100 text-rose-800"
+                              : "bg-slate-200 text-slate-800"
+                          }`}
+                        >
+                          {traj.severityTrend}
+                        </span>
+                      </div>
+                      <p className="text-xs text-muted-foreground font-medium">{traj.explanation}</p>
+                      <div className="text-[11px] font-semibold text-muted-foreground flex items-center gap-2 pt-1 border-t">
+                        <span>अभिलेख संख्या: {traj.encounterCount}</span>
+                        <span>•</span>
+                        <span>स्थिति: {traj.evolutionState}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            )}
+
+            {/* Unified Chronological Timeline Card */}
+            <Card className="p-6 sm:p-8 rounded-3xl border-2 border-input space-y-4 bg-card shadow-sm">
+              <h3 className="text-base font-extrabold text-foreground">दीर्घकालिक इतिहास (Longitudinal History)</h3>
+              <MedicalTimelineView events={caseData?.timeline || []} />
+            </Card>
+          </div>
         )}
 
         {/* Tab 3: Abnormal Labs */}
