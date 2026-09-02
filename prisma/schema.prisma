@@ -179,6 +179,58 @@ enum DoctorReviewDecision {
   OVERRIDDEN
 }
 
+/// Clinical knowledge domain taxonomy
+enum KnowledgeConceptDomain {
+  AYURVEDA
+  HOMEOPATHY
+  SHARED_CLINICAL
+}
+
+/// Concept category classification within knowledge graph
+enum KnowledgeConceptCategory {
+  SYMPTOM
+  SIGN
+  DOSHA
+  GUNA
+  PRAKRITI
+  VIKRITI
+  AGNI
+  AMA
+  DHATU
+  SROTAS
+  HERB
+  FORMULATION
+  MODALITY
+  MIASM
+  CONSTITUTION
+  OTHER
+}
+
+/// Semantic relationship type between knowledge graph concepts
+enum KnowledgeRelationshipType {
+  ASSOCIATED_WITH
+  CHARACTERISTIC_OF
+  HAS_MODALITY
+  RELIEVED_BY
+  AGGRAVATED_BY
+  RELATED_TO
+  SUBTYPE_OF
+  PART_OF
+  CONTRASTS_WITH
+  SUPPORTS
+  INCONSISTENT_WITH
+  DERIVED_FROM
+  EQUIVALENT_TO
+}
+
+/// Lifecycle status for versioned knowledge concepts, packs, and relationships
+enum KnowledgeStatus {
+  DRAFT
+  ACTIVE
+  DEPRECATED
+  RETIRED
+}
+
 // ==============================================================================
 // 1. CORE IDENTITY & USER MANAGEMENT
 // ==============================================================================
@@ -725,8 +777,9 @@ model ClinicalObservation {
   createdAt             DateTime            @default(now())
   updatedAt             DateTime            @updatedAt
 
-  // Relationships to Explainable Evidence
+  // Relationships to Explainable Evidence & Knowledge Links
   evidenceItems         ClinicalEvidence[]
+  knowledgeLinks        ObservationKnowledgeLink[]
 
   @@index([patientId])
   @@index([sessionId])
@@ -798,4 +851,152 @@ model ClinicalInsight {
   @@index([reviewedById])
   @@index([generatedAt])
   @@map("clinical_insights")
+}
+
+// ==============================================================================
+// 11. AYUSH CLINICAL KNOWLEDGE GRAPH & EVIDENCE LAYER
+// ==============================================================================
+
+/// Curated knowledge source / bibliographic reference for AYUSH and clinical assertions
+model KnowledgeSource {
+  id                    String              @id @default(uuid()) @db.Uuid
+  sourceKey             String              @unique // e.g. "CHARAKA_SAMHITA_SUTRA", "ORGANON_MEDICINE", "ICMR_CLINICAL_STANDARDS"
+  title                 String              // Full title of traditional text or standard
+  publisher             String?             // e.g. "Central Council for Research in Ayurvedic Sciences (CCRAS)"
+  sourceType            String              // "TRADITIONAL_TEXT", "PHARMACOPOEIA", "CLINICAL_GUIDELINE", "STANDARDIZED_ONTOLOGY"
+  citation              String?             @db.Text
+  version               String              @default("v1.0")
+  language              String              @default("sa")
+  status                KnowledgeStatus     @default(ACTIVE)
+  
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+
+  knowledgePacks        KnowledgePack[]
+  concepts              KnowledgeConcept[]
+  relationships         KnowledgeRelationship[]
+
+  @@index([sourceKey])
+  @@index([status])
+  @@map("knowledge_sources")
+}
+
+/// Versioned bundle of curated concepts and relationships
+model KnowledgePack {
+  id                    String                  @id @default(uuid()) @db.Uuid
+  packKey               String                  @unique // e.g. "AYURVEDA_CORE_PACK_V1", "HOMEOPATHY_CORE_PACK_V1"
+  name                  String
+  domain                KnowledgeConceptDomain  @default(AYURVEDA)
+  version               String                  @default("v1.0")
+  description           String?                 @db.Text
+  status                KnowledgeStatus         @default(ACTIVE)
+
+  sourceId              String?                 @db.Uuid
+  source                KnowledgeSource?        @relation(fields: [sourceId], references: [id], onDelete: SetNull)
+
+  createdAt             DateTime                @default(now())
+  updatedAt             DateTime                @updatedAt
+
+  concepts              KnowledgeConcept[]
+  relationships         KnowledgeRelationship[]
+
+  @@index([packKey])
+  @@index([domain])
+  @@index([status])
+  @@map("knowledge_packs")
+}
+
+/// Curated AYUSH / Clinical Concept node in the Knowledge Graph
+model KnowledgeConcept {
+  id                    String                    @id @default(uuid()) @db.Uuid
+  conceptKey            String                    @unique // e.g. "concept.dosha.pitta", "concept.symptom.burning_sensation"
+  name                  String                    // Label in English / Romanized Sanskrit (e.g. "Pitta Dosha", "Daha / Burning")
+  nameHindi             String?                   // Label in Devanagari (e.g. "पित्त दोष", "दाह / जलन")
+  nameSanskrit          String?                   // Sanskrit transliteration
+  normalizedName        String                    // Lowercase indexable string
+  description           String                    @db.Text
+  
+  domain                KnowledgeConceptDomain    @default(AYURVEDA)
+  category              KnowledgeConceptCategory  @default(OTHER)
+  status                KnowledgeStatus           @default(ACTIVE)
+  version               String                    @default("v1.0")
+
+  packId                String?                   @db.Uuid
+  pack                  KnowledgePack?            @relation(fields: [packId], references: [id], onDelete: SetNull)
+
+  sourceId              String?                   @db.Uuid
+  source                KnowledgeSource?          @relation(fields: [sourceId], references: [id], onDelete: SetNull)
+  sourceReference       String?                   // Chapter/Verse citation e.g. "Charaka Sutrasthana 12/11"
+
+  metadata              Json?                     @db.JsonB
+  createdAt             DateTime                  @default(now())
+  updatedAt             DateTime                  @updatedAt
+
+  // Graph Edges
+  outgoingRelationships KnowledgeRelationship[]   @relation("SourceConcept")
+  incomingRelationships KnowledgeRelationship[]   @relation("TargetConcept")
+
+  // Observation links
+  observationLinks      ObservationKnowledgeLink[]
+
+  @@index([conceptKey])
+  @@index([normalizedName])
+  @@index([domain])
+  @@index([category])
+  @@index([status])
+  @@map("knowledge_concepts")
+}
+
+/// Typed, directed semantic relationship edge between knowledge concepts
+model KnowledgeRelationship {
+  id                    String                    @id @default(uuid()) @db.Uuid
+  sourceConceptId       String                    @db.Uuid
+  sourceConcept         KnowledgeConcept          @relation("SourceConcept", fields: [sourceConceptId], references: [id], onDelete: Cascade)
+  
+  targetConceptId       String                    @db.Uuid
+  targetConcept         KnowledgeConcept          @relation("TargetConcept", fields: [targetConceptId], references: [id], onDelete: Cascade)
+
+  relationshipType      KnowledgeRelationshipType @default(ASSOCIATED_WITH)
+  clinicalRationale     String?                   @db.Text
+  weight                Float                     @default(1.0) // Relative confidence / relevance weight [0.0 - 1.0]
+  status                KnowledgeStatus           @default(ACTIVE)
+  version               String                    @default("v1.0")
+
+  packId                String?                   @db.Uuid
+  pack                  KnowledgePack?            @relation(fields: [packId], references: [id], onDelete: SetNull)
+
+  sourceId              String?                   @db.Uuid
+  source                KnowledgeSource?          @relation(fields: [sourceId], references: [id], onDelete: SetNull)
+  sourceReference       String?                   // Textual citation e.g. "Ashtanga Hridaya Sutrasthana 1/7"
+
+  createdAt             DateTime                  @default(now())
+  updatedAt             DateTime                  @updatedAt
+
+  @@unique([sourceConceptId, targetConceptId, relationshipType, version])
+  @@index([sourceConceptId])
+  @@index([targetConceptId])
+  @@index([relationshipType])
+  @@index([status])
+  @@map("knowledge_relationships")
+}
+
+/// Link mapping a patient's discrete ClinicalObservation to an established KnowledgeConcept
+model ObservationKnowledgeLink {
+  id                    String              @id @default(uuid()) @db.Uuid
+  observationId         String              @db.Uuid
+  observation           ClinicalObservation @relation(fields: [observationId], references: [id], onDelete: Cascade)
+
+  conceptId             String              @db.Uuid
+  concept               KnowledgeConcept    @relation(fields: [conceptId], references: [id], onDelete: Cascade)
+
+  resolutionMethod      String              @default("DETERMINISTIC_KEY_MATCH") // "DETERMINISTIC_KEY_MATCH", "SYNONYM_RESOLVED", "DOCTOR_LINKED"
+  confidence            Float               @default(1.0)
+  knowledgeVersion      String              @default("v1.0")
+
+  createdAt             DateTime            @default(now())
+
+  @@unique([observationId, conceptId])
+  @@index([observationId])
+  @@index([conceptId])
+  @@map("observation_knowledge_links")
 }

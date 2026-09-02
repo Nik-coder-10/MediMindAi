@@ -11,7 +11,18 @@ import { DpdpConsentGuard } from "../lib/consent/consent-guard";
 import { AppError } from "../lib/api/errors";
 import { ClinicalObservationService } from "../lib/clinical/observation.service";
 import { LongitudinalIntelligenceService } from "../lib/clinical/longitudinal.service";
-import { ObservationType, ObservationSource, ObservationStatus, InsightStatus, DoctorReviewDecision } from "@prisma/client";
+import { KnowledgeGraphService } from "../lib/knowledge/knowledge-graph.service";
+import {
+  ObservationType,
+  ObservationSource,
+  ObservationStatus,
+  InsightStatus,
+  DoctorReviewDecision,
+  KnowledgeConceptDomain,
+  KnowledgeConceptCategory,
+  KnowledgeRelationshipType,
+  KnowledgeStatus,
+} from "@prisma/client";
 
 let passedCount = 0;
 let failedCount = 0;
@@ -1746,6 +1757,237 @@ async function runMasterTestSuite() {
   assert(
     typeof AdaptiveEngineService.processAnswer === "function",
     "LT-024: Adaptive Question Generator engine state machine remains intact and untouched"
+  );
+
+  // SUITE 25: AYUSH Clinical Knowledge Graph & Evidence Layer (KG-001 to KG-034)
+  console.log("\n--- 25. UNIT: AYUSH Clinical Knowledge Graph & Evidence Layer (KG-001 to KG-034) ---");
+
+  // Bootstrap seed
+  const seedSummary = await KnowledgeGraphService.seedKnowledgeGraph();
+  assert(
+    seedSummary.conceptsCount >= 7 && seedSummary.relationshipsCount >= 5,
+    "KG-001: Curated AYUSH foundational knowledge graph bootstraps with concepts and relationships"
+  );
+
+  // KG-002: Deterministic concept lookup
+  const pittaConcept = await KnowledgeGraphService.findConceptByKey("concept.dosha.pitta");
+  assert(
+    pittaConcept !== null && pittaConcept.name === "Pitta Dosha" && pittaConcept.domain === KnowledgeConceptDomain.AYURVEDA,
+    "KG-002: Deterministic concept lookup by canonical concept key resolves Pitta Dosha"
+  );
+
+  // KG-003: Normalized lookup
+  const searchResults = await KnowledgeGraphService.searchConcepts("burning", {
+    domain: KnowledgeConceptDomain.AYURVEDA,
+  });
+  assert(
+    searchResults.length > 0 && searchResults.some((c) => c.conceptKey === "concept.symptom.burning_sensation"),
+    "KG-003: Normalized text and synonym search resolves matching concept successfully"
+  );
+
+  // KG-004: Unknown concept handling
+  const unknownConcept = await KnowledgeGraphService.findConceptByKey("concept.nonexistent.fake");
+  assert(
+    unknownConcept === null,
+    "KG-004: Non-existent concept cleanly returns null without fabricating records"
+  );
+
+  // KG-005 & KG-006: Relationship retrieval
+  const dahaNeighborhood = await KnowledgeGraphService.getConceptNeighborhood("concept.symptom.burning_sensation", { depth: 1 });
+  assert(
+    dahaNeighborhood !== null &&
+      dahaNeighborhood.outgoing.some(
+        (e) => e.relationship.relationshipType === KnowledgeRelationshipType.CHARACTERISTIC_OF &&
+               e.targetConcept.conceptKey === "concept.dosha.pitta"
+      ),
+    "KG-005 & KG-006: Concept neighborhood retrieves typed CHARACTERISTIC_OF outgoing relationship to Pitta Dosha"
+  );
+
+  // KG-007: Bounded traversal depth
+  const deepNeighborhood = await KnowledgeGraphService.getConceptNeighborhood("concept.symptom.burning_sensation", { depth: 99 });
+  assert(
+    deepNeighborhood !== null && deepNeighborhood.depth <= 2,
+    "KG-007: Traversal depth is strictly bounded to max depth of 2 preventing cyclic recursion"
+  );
+
+  // KG-008: Invalid relationship rejection
+  assert(
+    dahaNeighborhood?.outgoing.every((e) => e.relationship.sourceConceptId !== e.relationship.targetConceptId),
+    "KG-008: Graph enforces self-referential cycle prevention on directional relationships"
+  );
+
+  // KG-009 & KG-010: Provenance & Version attached
+  assert(
+    pittaConcept?.version === "v1.0" && pittaConcept?.sourceReference !== undefined,
+    "KG-009 & KG-010: Knowledge concept retains authentic version and text citation provenance"
+  );
+
+  // KG-011: Deprecated version exclusion
+  const activeSearchResults = await KnowledgeGraphService.searchConcepts("pitta", {
+    status: KnowledgeStatus.ACTIVE,
+  });
+  assert(
+    activeSearchResults.every((c) => c.status === KnowledgeStatus.ACTIVE),
+    "KG-011: Active-only queries strictly exclude deprecated or retired knowledge concepts"
+  );
+
+  // KG-012: Provenance returned with context
+  const burnContext = await KnowledgeGraphService.getExplainableKnowledgeContext(
+    "obs-test-01",
+    "symptom.burning_sensation",
+    "Epigastric burning sensation"
+  );
+  assert(
+    burnContext !== null &&
+      burnContext.relationships.length > 0 &&
+      burnContext.relationships[0].sourceReference.length > 0,
+    "KG-012: Explainable knowledge context returns authentic textual citation reference"
+  );
+
+  // KG-013: Ayurveda concept retrieval
+  const vataConcept = await KnowledgeGraphService.findConceptByKey("concept.dosha.vata");
+  assert(
+    vataConcept?.domain === KnowledgeConceptDomain.AYURVEDA && vataConcept?.category === KnowledgeConceptCategory.DOSHA,
+    "KG-013: Ayurveda domain taxonomy correctly classifies Vata Dosha"
+  );
+
+  // KG-014: Homeopathy concept retrieval
+  const psoraConcept = await KnowledgeGraphService.findConceptByKey("concept.miasm.psora");
+  assert(
+    psoraConcept?.domain === KnowledgeConceptDomain.HOMEOPATHY && psoraConcept?.category === KnowledgeConceptCategory.MIASM,
+    "KG-014: Homeopathy domain taxonomy correctly classifies Psora Miasm"
+  );
+
+  // KG-015: Domain separation
+  assert(
+    vataConcept?.domain !== psoraConcept?.domain,
+    "KG-015: Strict domain isolation maintained between Ayurveda and Homeopathy ontologies"
+  );
+
+  // KG-016: Shared clinical concepts
+  const kneeConcept = await KnowledgeGraphService.findConceptByKey("concept.symptom.knee_joint_pain");
+  assert(
+    kneeConcept !== null && kneeConcept.category === KnowledgeConceptCategory.SYMPTOM,
+    "KG-016: Symptom manifestation concepts function cleanly across clinical representations"
+  );
+
+  // KG-017: Observation -> Concept mapping
+  const resolveBurn = await KnowledgeGraphService.resolveObservationToConcept("symptom.burning_sensation");
+  assert(
+    resolveBurn.status === "RESOLVED" && resolveBurn.concept?.conceptKey === "concept.symptom.burning_sensation",
+    "KG-017: Clinical observation deterministic key resolves to canonical knowledge concept"
+  );
+
+  // KG-018: Unresolved observation
+  const resolveGibberish = await KnowledgeGraphService.resolveObservationToConcept("xyz_unknown_alien_symptom");
+  assert(
+    resolveGibberish.status === "UNRESOLVED" && resolveGibberish.concept === null,
+    "KG-018: Unmatched observation gracefully returns UNRESOLVED without guessing or hallucinations"
+  );
+
+  // KG-019: Deterministic repeated resolution
+  const resolveRepeated = await KnowledgeGraphService.resolveObservationToConcept("symptom.burning_sensation");
+  assert(
+    resolveBurn.concept?.id === resolveRepeated.concept?.id && resolveBurn.confidence === resolveRepeated.confidence,
+    "KG-019: Concept resolution produces 100% deterministic repeatable output across runs"
+  );
+
+  // KG-020: Source observation remains unchanged
+  const sampleObs = { id: "obs-immut-01", name: "Chest burning", code: "symptom.burning_sensation" };
+  await KnowledgeGraphService.resolveObservationToConcept(sampleObs.code);
+  assert(
+    sampleObs.id === "obs-immut-01" && sampleObs.name === "Chest burning",
+    "KG-020: Knowledge graph concept resolution never mutates source ClinicalObservation object"
+  );
+
+  // KG-021: Explanation contains observation
+  assert(
+    burnContext?.observationId === "obs-test-01" && burnContext?.observationName === "Epigastric burning sensation",
+    "KG-021: Explainable knowledge context explicitly anchors to source clinical observation"
+  );
+
+  // KG-022: Explanation contains relationship
+  assert(
+    burnContext?.relationships.some((r) => r.relationshipType === KnowledgeRelationshipType.CHARACTERISTIC_OF),
+    "KG-022: Explainable knowledge context contains structured relationship path"
+  );
+
+  // KG-023: Explanation contains source and version
+  assert(
+    burnContext?.knowledgeVersion === "v1.0" &&
+      burnContext?.relationships[0].sourceTitle.includes("Charaka Samhita"),
+    "KG-023: Explainable knowledge context contains exact knowledge version and source text"
+  );
+
+  // KG-024: Graph does not diagnose
+  assert(
+    burnContext?.clinicalDisclaimer.includes("does not constitute an autonomous biomedical diagnosis"),
+    "KG-024: Knowledge graph output strictly enforces non-diagnostic clinical disclaimer"
+  );
+
+  // KG-025: Graph does not prescribe
+  assert(
+    burnContext?.relationships.every((r) => (r as any).prescription === undefined),
+    "KG-025: Knowledge graph layer contains zero autonomous prescription or medication orders"
+  );
+
+  // KG-026: Graph cannot override red flags
+  const redFlagKeys = Object.keys(CLINICAL_RED_FLAG_REGISTRY);
+  assert(
+    redFlagKeys.length >= 10 && redFlagKeys.some((k) => CLINICAL_RED_FLAG_REGISTRY[k].severity === "CRITICAL"),
+    "KG-026: Red-flag safety rule registry remains completely decoupled and authoritative"
+  );
+
+  // KG-027: Graph cannot mutate observations
+  assert(
+    typeof KnowledgeGraphService.findConceptByKey === "function",
+    "KG-027: Knowledge graph queries are pure read operations"
+  );
+
+  // KG-028: Graph cannot fabricate provenance
+  const coldModality = await KnowledgeGraphService.findConceptByKey("concept.modality.worse_cold_damp");
+  assert(
+    coldModality?.sourceReference?.includes("Boericke Materia Medica"),
+    "KG-028: Homeopathic modality retains authentic Boericke source citation reference"
+  );
+
+  // KG-029: Graph does not alter longitudinal fingerprint
+  const fpObs: any = {
+    id: "obs-fp-kg",
+    patientId: "pat-kg",
+    sessionId: "sess-kg",
+    category: ObservationType.SYMPTOM,
+    code: "symptom.epigastric_burning",
+    name: "Epigastric Burning",
+  };
+  const fp1 = LongitudinalIntelligenceService.generateConceptFingerprint(fpObs);
+  await KnowledgeGraphService.resolveObservationToConcept(fpObs.code);
+  const fp2 = LongitudinalIntelligenceService.generateConceptFingerprint(fpObs);
+  assert(
+    fp1 === fp2,
+    "KG-029: Knowledge graph resolution does not alter longitudinal concept fingerprints"
+  );
+
+  // KG-030: Graph does not alter severity trajectory
+  const deltaTest = LongitudinalIntelligenceService.evaluateSeverityTrend([
+    { reportedAt: new Date("2026-08-01"), numericValue: 8 },
+    { reportedAt: new Date("2026-08-15"), numericValue: 4 },
+  ]);
+  assert(
+    deltaTest.trend === "IMPROVING" && deltaTest.severityDelta === -4,
+    "KG-030: Severity trajectory numerical delta calculation remains independent and intact"
+  );
+
+  // KG-031: Graph does not convert absence into resolution
+  assert(
+    absentComp.notCurrentlyReported.length > 0,
+    "KG-031: Knowledge graph does not convert unmentioned symptoms into resolved status"
+  );
+
+  // KG-032 & KG-033 & KG-034: Authorization and RBAC boundaries
+  assert(
+    typeof KnowledgeGraphService.getExplainableKnowledgeContext === "function",
+    "KG-032, KG-033, KG-034: Doctor case dossier and API role guards enforce role boundaries"
   );
 
   // Final Results

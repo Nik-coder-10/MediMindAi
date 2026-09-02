@@ -133,6 +133,29 @@ export async function GET(
       console.warn("Longitudinal comparison computation deferred:", (longErr as any)?.message);
     }
 
+    // 3d. Synthesize Explainable AYUSH Knowledge Contexts
+    const knowledgeContexts: any[] = [];
+    try {
+      const { KnowledgeGraphService } = await import("@/lib/knowledge/knowledge-graph.service");
+      const symptomsToResolve = [
+        ...(session.chiefComplaints || []).map((c: any) => ({ code: `symptom.${c.symptomName.toLowerCase().replace(/\s+/g, "_")}`, name: c.symptomName })),
+        ...(session.clinicalObservations || []).map((o: any) => ({ code: o.code || o.name, name: o.name })),
+      ];
+
+      for (const sym of symptomsToResolve) {
+        const ctx = await KnowledgeGraphService.getExplainableKnowledgeContext(
+          sym.code,
+          sym.code,
+          sym.name
+        );
+        if (ctx && !knowledgeContexts.some((k) => k.matchedConceptKey === ctx.matchedConceptKey)) {
+          knowledgeContexts.push(ctx);
+        }
+      }
+    } catch (kgErr) {
+      console.warn("Knowledge context lookup deferred:", (kgErr as any)?.message);
+    }
+
     // 4. Assemble genuine case data
     const caseData = {
       sessionId,
@@ -180,6 +203,7 @@ export async function GET(
       drugSafetyAlerts,
       longitudinalComparison,
       symptomTrajectories,
+      knowledgeContexts,
       summary,
       timeline,
       abnormalLabs,

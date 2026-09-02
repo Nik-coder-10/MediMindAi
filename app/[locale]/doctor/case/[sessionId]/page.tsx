@@ -853,6 +853,63 @@ export default function IndividualDoctorCaseViewPage({
                   </ul>
                 </div>
               </div>
+
+              {/* Explainable AYUSH Clinical Knowledge Context */}
+              {caseData?.knowledgeContexts && caseData.knowledgeContexts.length > 0 && (
+                <div className="space-y-3 pt-4 border-t">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-extrabold text-muted-foreground uppercase flex items-center gap-2">
+                      <Sparkles className="h-4 w-4 text-emerald-600" />
+                      <span>आयुष ज्ञान ग्राफ संबंध (AYUSH Clinical Knowledge Context & Provenance):</span>
+                    </span>
+                    <span className="text-2xs font-mono font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-900">
+                      Version: {caseData.knowledgeContexts[0]?.knowledgeVersion || "v1.0"}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {caseData.knowledgeContexts.map((ctx: any, idx: number) => (
+                      <div key={idx} className="p-4 rounded-2xl bg-white dark:bg-slate-800 border-2 border-emerald-100 dark:border-emerald-900 space-y-2.5 shadow-2xs">
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <span className="text-xs font-bold text-muted-foreground block">
+                              Observed Finding → AYUSH Concept
+                            </span>
+                            <span className="text-sm font-extrabold text-foreground block">
+                              {ctx.matchedConceptName}
+                            </span>
+                          </div>
+                          <span className="text-2xs font-extrabold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
+                            {ctx.domain} · {ctx.category}
+                          </span>
+                        </div>
+
+                        {ctx.relationships && ctx.relationships.length > 0 && (
+                          <div className="space-y-1.5 pt-1">
+                            {ctx.relationships.map((rel: any, rIdx: number) => (
+                              <div key={rIdx} className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 text-2xs space-y-1">
+                                <div className="flex items-center justify-between text-muted-foreground font-semibold">
+                                  <span className="font-mono text-emerald-800 dark:text-emerald-300 font-bold">{rel.relationshipType}</span>
+                                  <span>{rel.targetConceptName}</span>
+                                </div>
+                                <p className="text-foreground font-medium">{rel.clinicalRationale}</p>
+                                <div className="flex items-center justify-between text-3xs text-muted-foreground pt-0.5">
+                                  <span>स्रोत: {rel.sourceTitle}</span>
+                                  <span className="font-mono">{rel.sourceReference}</span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        <p className="text-3xs text-muted-foreground italic border-t pt-1.5">
+                          {ctx.clinicalDisclaimer}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </Card>
 
             {/* Differential Diagnoses & NAMASTE / ICD-11 Coding */}
