@@ -39,7 +39,7 @@ export default function IndividualDoctorCaseViewPage({
   const router = useRouter();
   const sessionId = params.sessionId;
   const [caseData, setCaseData] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState<"SUMMARY" | "TIMELINE" | "LABS" | "AYUSH" | "DOCS" | "PRESCRIPTION" | "ANSWERS">("SUMMARY");
+  const [activeTab, setActiveTab] = useState<"SUMMARY" | "INSIGHTS" | "TIMELINE" | "LABS" | "AYUSH" | "DOCS" | "PRESCRIPTION" | "ANSWERS">("SUMMARY");
   const [editedMarkdown, setEditedMarkdown] = useState("");
   const [isEditing, setIsEditing] = useState(false);
   const [isPlayingSummaryAudio, setIsPlayingSummaryAudio] = useState(false);
@@ -397,6 +397,7 @@ export default function IndividualDoctorCaseViewPage({
       <div className="flex items-center gap-2 overflow-x-auto border-b pb-2">
         {[
           { id: "SUMMARY", label: "क्लिनिकल सारांश (Summary)", icon: <FileText className="h-4 w-4" /> },
+          { id: "INSIGHTS", label: "💡 क्लिनिकल अंतर्दृष्टि (Clinical Insights)", icon: <Sparkles className="h-4 w-4 text-amber-500" /> },
           { id: "PRESCRIPTION", label: "🩺 चिकित्सक नुस्खा व OPD रिपोर्ट (Rx & Report)", icon: <Stethoscope className="h-4 w-4" /> },
           { id: "ANSWERS", label: "प्रश्नोत्तरी उत्तर (Q&A)", icon: <Activity className="h-4 w-4" /> },
           { id: "TIMELINE", label: "इतिहास (Timeline)", icon: <Calendar className="h-4 w-4" /> },
@@ -527,6 +528,212 @@ export default function IndividualDoctorCaseViewPage({
                   </div>
                 )}
               </Card>
+        )}
+
+        {/* Tab: Explainable Clinical Insights (Phase 5) */}
+        {activeTab === "INSIGHTS" && (
+          <Card className="p-6 sm:p-8 rounded-3xl border-2 border-input space-y-6 bg-card shadow-sm">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b pb-4">
+              <div className="space-y-1">
+                <h3 className="text-base font-extrabold text-foreground flex items-center gap-2">
+                  <Sparkles className="h-5 w-5 text-amber-500" />
+                  <span>प्रमाण-आधारित क्लिनिकल अंतर्दृष्टि (Traceable Clinical Insights & Evidence)</span>
+                </h3>
+                <p className="text-xs text-muted-foreground font-medium">
+                  Deterministic longitudinal patterns, structured observation links, and AYUSH knowledge context for physician review.
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-2xs font-mono font-bold px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-muted-foreground border">
+                  Engine Version: v1.0
+                </span>
+                <span className="text-2xs font-bold px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-900 dark:text-emerald-200 border border-emerald-300">
+                  {caseData?.clinicalInsights?.length || 0} अंतर्दृष्टि उपलब्ध
+                </span>
+              </div>
+            </div>
+
+            {/* Non-diagnostic Safety Callout */}
+            <div className="p-3.5 rounded-2xl bg-amber-50/70 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900 flex items-start gap-2.5 text-xs text-amber-900 dark:text-amber-300 font-medium">
+              <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+              <span>
+                <strong>चिकित्सकीय निर्णय समर्थन सूचना:</strong> अंतर्दृष्टि केवल अवलोकन प्रवृत्तियों व पारंपरिक साहित्य संदर्भों पर आधारित है। यह स्वचालित निदान या औषधि आदेश नहीं है। अंतिम निर्णय चिकित्सक का है।
+              </span>
+            </div>
+
+            {/* List of Insights */}
+            {(!caseData?.clinicalInsights || caseData.clinicalInsights.length === 0) ? (
+              <div className="p-12 text-center text-muted-foreground text-xs font-medium bg-slate-50 dark:bg-slate-900/40 rounded-2xl border border-dashed">
+                इस परामर्श सत्र के लिए कोई क्लिनिकल अंतर्दृष्टि उत्पन्न नहीं हुई है।
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {caseData.clinicalInsights.map((ins: any, idx: number) => {
+                  const isVerified = ins.status === "VERIFIED";
+                  const isRejected = ins.status === "REJECTED";
+                  const isOverridden = ins.status === "OVERRIDDEN";
+
+                  return (
+                    <div
+                      key={idx}
+                      className={`p-5 rounded-2xl border-2 space-y-3.5 transition-all shadow-xs ${
+                        isVerified
+                          ? "border-emerald-300 bg-emerald-50/30 dark:bg-emerald-950/10"
+                          : isRejected
+                          ? "border-rose-200 bg-rose-50/20 opacity-75 dark:bg-rose-950/10"
+                          : isOverridden
+                          ? "border-amber-300 bg-amber-50/20 dark:bg-amber-950/10"
+                          : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900"
+                      }`}
+                    >
+                      {/* Insight Header */}
+                      <div className="flex flex-wrap items-start justify-between gap-2">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-2xs font-mono font-black uppercase px-2 py-0.5 rounded bg-indigo-100 dark:bg-indigo-950 text-indigo-900 dark:text-indigo-200 border border-indigo-200">
+                              {ins.insightType}
+                            </span>
+                            <span
+                              className={`text-3xs font-extrabold px-2 py-0.5 rounded-full ${
+                                ins.priority === "IMPORTANT" || ins.priority === "ATTENTION"
+                                  ? "bg-amber-100 text-amber-900 border border-amber-300"
+                                  : "bg-slate-100 text-slate-800 border"
+                              }`}
+                            >
+                              Priority: {ins.priority}
+                            </span>
+                            <span className="text-3xs font-semibold text-muted-foreground">
+                              विश्वास्यता (Confidence): {Math.round(ins.confidence * 100)}% ({ins.confidenceLevel})
+                            </span>
+                          </div>
+                          <h4 className="text-sm font-extrabold text-foreground">{ins.title}</h4>
+                        </div>
+
+                        {/* Status Badge */}
+                        <span
+                          className={`text-2xs font-black px-2.5 py-1 rounded-full border ${
+                            isVerified
+                              ? "bg-emerald-600 text-white border-emerald-400"
+                              : isRejected
+                              ? "bg-rose-600 text-white border-rose-400"
+                              : isOverridden
+                              ? "bg-amber-600 text-white border-amber-400"
+                              : "bg-slate-100 text-slate-800 border-slate-300"
+                          }`}
+                        >
+                          {ins.status}
+                        </span>
+                      </div>
+
+                      {/* Description */}
+                      <p className="text-xs font-semibold text-foreground/90 leading-relaxed bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border">
+                        {ins.description}
+                      </p>
+
+                      {/* Structured Explainability Breakdown (WHAT, WHY, EVIDENCE, LIMITATION) */}
+                      {ins.explanation && (
+                        <div className="p-3.5 rounded-xl bg-slate-50/80 dark:bg-slate-900/80 border space-y-2 text-2xs">
+                          <div>
+                            <strong className="text-muted-foreground">क्या देखा गया (What): </strong>
+                            <span className="text-foreground font-medium">{ins.explanation.what}</span>
+                          </div>
+                          <div>
+                            <strong className="text-muted-foreground">कारण / क्लिनिकल तर्क (Why): </strong>
+                            <span className="text-foreground font-medium">{ins.explanation.why}</span>
+                          </div>
+                          {ins.explanation.knowledgeContext && (
+                            <div className="p-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900 text-emerald-950 dark:text-emerald-200">
+                              <strong>आयुष ज्ञान संदर्भ: </strong>
+                              <span>{ins.explanation.knowledgeContext.conceptName} ({ins.explanation.knowledgeContext.sourceCitation})</span>
+                            </div>
+                          )}
+                          <div className="text-3xs text-muted-foreground italic border-t pt-1.5">
+                            <strong>सीमाएं (Limitations): </strong>{ins.explanation.limitations}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Evidence Links */}
+                      {ins.evidence && ins.evidence.length > 0 && (
+                        <div className="space-y-1 pt-1">
+                          <span className="text-3xs font-extrabold text-muted-foreground uppercase">
+                            प्रमाण लिंक (Linked Clinical Evidence):
+                          </span>
+                          <div className="flex flex-wrap gap-1.5">
+                            {ins.evidence.map((ev: any, evIdx: number) => (
+                              <span
+                                key={evIdx}
+                                className="text-3xs font-mono font-bold px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-muted-foreground border"
+                              >
+                                {ev.isDirectEvidence ? "DIRECT" : "DERIVED"} • Obs: {ev.observationId} (Weight: {ev.weight})
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Doctor Review Actions */}
+                      <div className="pt-2 border-t flex flex-wrap items-center justify-between gap-2">
+                        <span className="text-3xs text-muted-foreground font-mono">
+                          Fingerprint: {ins.fingerprint ? ins.fingerprint.slice(0, 32) + "..." : "fp-default"}
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              try {
+                                await fetch(`/api/doctor/insights/${sessionId}`, {
+                                  method: "POST",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({
+                                    insightId: ins.fingerprint || `ins-${idx}`,
+                                    decision: "CONFIRMED",
+                                  }),
+                                });
+                                ins.status = "VERIFIED";
+                                setActionSuccess(`अंतर्दृष्टि '${ins.title}' की पुष्टि (Confirmed) दर्ज की गई`);
+                              } catch {
+                                alert("समीक्षा सहेजने में त्रुटि हुई");
+                              }
+                            }}
+                            className="text-2xs font-bold px-2.5 py-1 rounded-lg bg-emerald-100 hover:bg-emerald-200 text-emerald-900 border border-emerald-300 transition-all inline-flex items-center gap-1"
+                          >
+                            <Check className="h-3 w-3" /> पुष्टि करें (Confirm)
+                          </button>
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              const reason = window.prompt("अस्वीकृति का कारण दर्ज करें (Reason for rejection):", "Not clinically relevant for acute episode");
+                              if (reason) {
+                                try {
+                                  await fetch(`/api/doctor/insights/${sessionId}`, {
+                                    method: "POST",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify({
+                                      insightId: ins.fingerprint || `ins-${idx}`,
+                                      decision: "REJECTED",
+                                      reason,
+                                    }),
+                                  });
+                                  ins.status = "REJECTED";
+                                  setActionSuccess(`अंतर्दृष्टि '${ins.title}' को अस्वीकृत (Rejected) किया गया`);
+                                } catch {
+                                  alert("अस्वीकृति सहेजने में त्रुटि हुई");
+                                }
+                              }
+                            }}
+                            className="text-2xs font-bold px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-300 transition-all inline-flex items-center gap-1"
+                          >
+                            <XCircle className="h-3 w-3" /> अस्वीकार करें (Reject)
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </Card>
         )}
 
         {/* Tab: Patient Q&A Answers */}

@@ -156,6 +156,15 @@ export async function GET(
       console.warn("Knowledge context lookup deferred:", (kgErr as any)?.message);
     }
 
+    // 3e. Synthesize Structured Clinical Insights with Provenance
+    let clinicalInsights: any[] = [];
+    try {
+      const { ClinicalInsightService } = await import("@/lib/clinical/insight.service");
+      clinicalInsights = await ClinicalInsightService.generateSessionInsights(sessionId);
+    } catch (insErr) {
+      console.warn("Clinical insights generation deferred:", (insErr as any)?.message);
+    }
+
     // 4. Assemble genuine case data
     const caseData = {
       sessionId,
@@ -204,6 +213,7 @@ export async function GET(
       longitudinalComparison,
       symptomTrajectories,
       knowledgeContexts,
+      clinicalInsights,
       summary,
       timeline,
       abnormalLabs,

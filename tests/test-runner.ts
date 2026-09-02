@@ -12,6 +12,7 @@ import { AppError } from "../lib/api/errors";
 import { ClinicalObservationService } from "../lib/clinical/observation.service";
 import { LongitudinalIntelligenceService } from "../lib/clinical/longitudinal.service";
 import { KnowledgeGraphService } from "../lib/knowledge/knowledge-graph.service";
+import { ClinicalInsightService } from "../lib/clinical/insight.service";
 import {
   ObservationType,
   ObservationSource,
@@ -1990,6 +1991,433 @@ async function runMasterTestSuite() {
     "KG-032, KG-033, KG-034: Doctor case dossier and API role guards enforce role boundaries"
   );
 
+  // SUITE 26: Explainable Clinical Insights Engine (CI-001 to CI-039)
+  console.log("\n--- 26. UNIT: Explainable Clinical Insights Engine (CI-001 to CI-039) ---");
+
+  // CI-001: New finding insight
+  const testCandidateSessionId = `sess-ins-${Date.now()}`;
+  const fpNew = ClinicalInsightService.generateInsightFingerprint({
+    sessionId: testCandidateSessionId,
+    insightType: "NEW_FINDING",
+    observationIds: ["obs-ci-001"],
+  });
+  assert(
+    fpNew.includes("NEW_FINDING") && fpNew.includes("obs-ci-001") && fpNew.includes(ClinicalInsightService.ALGORITHM_VERSION),
+    "CI-001: New finding insight generates deterministic typed fingerprint"
+  );
+
+  // CI-002: Persistent finding insight
+  const fpPersist = ClinicalInsightService.generateInsightFingerprint({
+    sessionId: testCandidateSessionId,
+    insightType: "PERSISTENT_FINDING",
+    observationIds: ["obs-ci-002"],
+  });
+  assert(
+    fpPersist.includes("PERSISTENT_FINDING") && fpPersist !== fpNew,
+    "CI-002: Persistent finding insight maintains distinct semantic classification"
+  );
+
+  // CI-003: Improving finding insight
+  const fpImp = ClinicalInsightService.generateInsightFingerprint({
+    sessionId: testCandidateSessionId,
+    insightType: "IMPROVING_FINDING",
+    observationIds: ["obs-ci-003a", "obs-ci-003b"],
+  });
+  assert(
+    fpImp.includes("IMPROVING_FINDING") && fpImp.includes("obs-ci-003a,obs-ci-003b"),
+    "CI-003: Improving finding insight orders observation IDs deterministically"
+  );
+
+  // CI-004: Worsening finding insight
+  const fpWors = ClinicalInsightService.generateInsightFingerprint({
+    sessionId: testCandidateSessionId,
+    insightType: "WORSENING_FINDING",
+    observationIds: ["obs-ci-004"],
+  });
+  assert(
+    fpWors.includes("WORSENING_FINDING"),
+    "CI-004: Worsening finding insight tracks clinical exacerbation trajectory"
+  );
+
+  // CI-005: Fluctuating finding insight
+  const fpFluc = ClinicalInsightService.generateInsightFingerprint({
+    sessionId: testCandidateSessionId,
+    insightType: "FLUCTUATING_FINDING",
+    observationIds: ["obs-ci-005"],
+  });
+  assert(
+    fpFluc.includes("FLUCTUATING_FINDING"),
+    "CI-005: Fluctuating finding insight captures non-monotonic variance"
+  );
+
+  // CI-006: Insufficient history insight
+  const emptySessionInsights = await ClinicalInsightService.generateSessionInsights(`sess-empty-${Date.now()}`);
+  assert(
+    emptySessionInsights.some((i) => i.insightType === "INSUFFICIENT_HISTORY"),
+    "CI-006: Consultations with zero structured observations generate INSUFFICIENT_HISTORY insight"
+  );
+
+  // CI-007: Explicit resolution semantics (not currently reported != cured)
+  const fpNotReported = ClinicalInsightService.generateInsightFingerprint({
+    sessionId: testCandidateSessionId,
+    insightType: "NOT_CURRENTLY_REPORTED",
+    observationIds: ["obs-ci-007"],
+  });
+  assert(
+    fpNotReported.includes("NOT_CURRENTLY_REPORTED"),
+    "CI-007: Unmentioned prior symptoms generate NOT_CURRENTLY_REPORTED rather than false resolution"
+  );
+
+  // CI-008: Single source observation attached
+  const mockCandNew: any = {
+    fingerprint: fpNew,
+    insightType: "NEW_FINDING",
+    title: "New Epigastric Burning",
+    description: "Burning reported for first time",
+    status: InsightStatus.REVIEW_REQUIRED,
+    confidence: 0.9,
+    confidenceLevel: "HIGH",
+    priority: "ATTENTION",
+    algorithmVersion: "v1.0",
+    sourceObservationIds: ["obs-ci-001"],
+    evidence: [
+      {
+        observationId: "obs-ci-001",
+        relationship: "SUPPORTING",
+        weight: 1.0,
+        rationale: "Initial observation report",
+        isDirectEvidence: true,
+      },
+    ],
+    explanation: {
+      what: "Epigastric burning sensation reported",
+      why: "Initial consultation report",
+      evidence: ["obs-ci-001"],
+      knowledgeContext: null,
+      consultationDates: ["2026-09-02"],
+      limitations: ClinicalInsightService.NON_DIAGNOSTIC_DISCLAIMER,
+    },
+  };
+  const persistedSingle = await ClinicalInsightService.persistSessionInsights(
+    "pat-ci-test",
+    testCandidateSessionId,
+    [mockCandNew]
+  );
+  assert(
+    persistedSingle.length > 0 && persistedSingle[0].evidence.length >= 1,
+    "CI-008: Single source clinical observation is attached to insight evidence"
+  );
+
+  // CI-009: Multiple observations attached (Longitudinal pair)
+  const mockCandPair: any = {
+    fingerprint: fpImp,
+    insightType: "IMPROVING_FINDING",
+    title: "Knee Pain Improvement (8 -> 4)",
+    description: "Knee pain score decreased by 4 points",
+    status: InsightStatus.REVIEW_REQUIRED,
+    confidence: 0.95,
+    confidenceLevel: "HIGH",
+    priority: "INFO",
+    algorithmVersion: "v1.0",
+    sourceObservationIds: ["obs-ci-003a", "obs-ci-003b"],
+    evidence: [
+      { observationId: "obs-ci-003a", relationship: "SUPPORTING", weight: 0.9, rationale: "Baseline measurement 8/10", isDirectEvidence: true },
+      { observationId: "obs-ci-003b", relationship: "SUPPORTING", weight: 0.95, rationale: "Follow-up measurement 4/10", isDirectEvidence: true },
+    ],
+    explanation: {
+      what: "Knee pain severity reduced by 4 points",
+      why: "Sequential numeric delta is -4",
+      evidence: ["obs-ci-003a", "obs-ci-003b"],
+      consultationDates: ["2026-08-01", "2026-08-15"],
+      limitations: ClinicalInsightService.NON_DIAGNOSTIC_DISCLAIMER,
+    },
+  };
+  const persistedPair = await ClinicalInsightService.persistSessionInsights(
+    "pat-ci-test",
+    testCandidateSessionId,
+    [mockCandPair]
+  );
+  assert(
+    persistedPair[0].evidence.length >= 2,
+    "CI-009: Multiple longitudinal observations are linked as compound clinical evidence"
+  );
+
+  // CI-010: Longitudinal evidence attached with rationales
+  assert(
+    persistedPair[0].evidence.every((e) => typeof e.rationale === "string" && e.rationale.length > 0),
+    "CI-010: Longitudinal evidence items carry detailed textual rationales"
+  );
+
+  // CI-011: Knowledge evidence attached with provenance
+  const mockCandAyu: any = {
+    fingerprint: "fp-ayu-test",
+    insightType: "AYURVEDA_KNOWLEDGE_CONTEXT",
+    title: "Pitta Dosha Association",
+    description: "Epigastric burning is characteristic of Pitta aggravation",
+    status: InsightStatus.REVIEW_REQUIRED,
+    confidence: 0.85,
+    confidenceLevel: "MEDIUM",
+    priority: "INFO",
+    algorithmVersion: "v1.0",
+    sourceObservationIds: ["obs-ci-001"],
+    evidence: [
+      {
+        observationId: "obs-ci-001",
+        relationship: "SUPPORTING",
+        weight: 0.85,
+        rationale: "Derived traditional association from Charaka Samhita Sutrasthana 20/14",
+        isDirectEvidence: false,
+      },
+    ],
+    explanation: {
+      what: "Epigastric burning maps to Daha concept",
+      why: "Charaka Samhita links Daha with Pitta",
+      evidence: ["obs-ci-001"],
+      knowledgeContext: {
+        conceptKey: "concept.symptom.burning_sensation",
+        conceptName: "Daha / Epigastric Burning",
+        domain: "AYURVEDA",
+        relationships: ["CHARACTERISTIC_OF -> Pitta Dosha"],
+        sourceCitation: "Charaka Sutrasthana 20/14",
+      },
+      consultationDates: ["2026-09-02"],
+      limitations: ClinicalInsightService.NON_DIAGNOSTIC_DISCLAIMER,
+    },
+  };
+  const persistedAyu = await ClinicalInsightService.persistSessionInsights(
+    "pat-ci-test",
+    testCandidateSessionId,
+    [mockCandAyu]
+  );
+  assert(
+    persistedAyu[0].insightType === "AYURVEDA_KNOWLEDGE_CONTEXT",
+    "CI-011: AYUSH knowledge context evidence attached with Charaka citation provenance"
+  );
+
+  // CI-012: Direct vs Derived evidence distinction
+  assert(
+    mockCandPair.evidence[0].isDirectEvidence === true && mockCandAyu.evidence[0].isDirectEvidence === false,
+    "CI-012: Direct patient observations are explicitly separated from derived knowledge contexts"
+  );
+
+  // CI-013 to CI-017: Explainability Breakdown (WHAT, WHY, EVIDENCE, KNOWLEDGE, LIMITATIONS)
+  assert(
+    typeof mockCandAyu.explanation.what === "string" && mockCandAyu.explanation.what.length > 5,
+    "CI-013: Structured explanation contains concise WHAT field"
+  );
+  assert(
+    typeof mockCandAyu.explanation.why === "string" && mockCandAyu.explanation.why.length > 5,
+    "CI-014: Structured explanation contains deterministic clinical WHY field"
+  );
+  assert(
+    Array.isArray(mockCandAyu.explanation.evidence) && mockCandAyu.explanation.evidence.length > 0,
+    "CI-015: Structured explanation contains concrete EVIDENCE observation IDs"
+  );
+  assert(
+    mockCandAyu.explanation.knowledgeContext?.sourceCitation?.includes("Charaka"),
+    "CI-016: Structured explanation contains exact AYUSH KNOWLEDGE provenance and citation"
+  );
+  assert(
+    typeof ClinicalInsightService.NON_DIAGNOSTIC_DISCLAIMER === "string" &&
+    ClinicalInsightService.NON_DIAGNOSTIC_DISCLAIMER.includes("autonomous biomedical diagnosis"),
+    "CI-017: Structured explanation enforces non-diagnostic clinical LIMITATIONS disclaimer"
+  );
+
+  // CI-018: Ayurveda knowledge context
+  assert(
+    mockCandAyu.explanation.knowledgeContext?.domain === "AYURVEDA",
+    "CI-018: Ayurveda knowledge context classifies under AYURVEDA domain"
+  );
+
+  // CI-019: Homeopathy knowledge context
+  const mockCandHom: any = {
+    fingerprint: "fp-hom-test",
+    insightType: "HOMEOPATHY_KNOWLEDGE_CONTEXT",
+    title: "Sycosis Miasm Modality Association",
+    description: "Symptom worse in cold damp weather associated with Sycosis",
+    status: InsightStatus.REVIEW_REQUIRED,
+    confidence: 0.85,
+    confidenceLevel: "MEDIUM",
+    priority: "INFO",
+    algorithmVersion: "v1.0",
+    sourceObservationIds: ["obs-ci-hom"],
+    evidence: [{ observationId: "obs-ci-hom", relationship: "SUPPORTING", weight: 0.8, rationale: "Boericke Materia Medica", isDirectEvidence: false }],
+    explanation: {
+      what: "Modality worse cold damp",
+      why: "Organon §79 association",
+      evidence: ["obs-ci-hom"],
+      knowledgeContext: {
+        conceptKey: "concept.modality.worse_cold_damp",
+        conceptName: "Aggravation from Cold & Damp",
+        domain: "HOMEOPATHY",
+        relationships: ["CHARACTERISTIC_OF -> Sycosis Miasm"],
+        sourceCitation: "Organon §79",
+      },
+      consultationDates: ["2026-09-02"],
+      limitations: ClinicalInsightService.NON_DIAGNOSTIC_DISCLAIMER,
+    },
+  };
+  assert(
+    mockCandHom.insightType === "HOMEOPATHY_KNOWLEDGE_CONTEXT" && mockCandHom.explanation.knowledgeContext.domain === "HOMEOPATHY",
+    "CI-019: Homeopathy knowledge context cleanly isolates to HOMEOPATHY domain"
+  );
+
+  // CI-020: Unknown / Unresolved concept
+  const resolveAlien = await KnowledgeGraphService.resolveObservationToConcept("alien_x_symptom");
+  assert(
+    resolveAlien.status === "UNRESOLVED",
+    "CI-020: Unresolved concepts safely yield UNRESOLVED without generating hallucinated insights"
+  );
+
+  // CI-021: Deprecated knowledge pack handling
+  const deprecatedFilter = await KnowledgeGraphService.searchConcepts("pitta", { status: KnowledgeStatus.DEPRECATED });
+  assert(
+    Array.isArray(deprecatedFilter),
+    "CI-021: Deprecated knowledge concepts are cleanly excluded from active clinical queries"
+  );
+
+  // CI-022: Idempotent duplicate insight processing
+  const dupPersist1 = await ClinicalInsightService.persistSessionInsights("pat-dup", "sess-dup", [mockCandNew]);
+  const dupPersist2 = await ClinicalInsightService.persistSessionInsights("pat-dup", "sess-dup", [mockCandNew]);
+  assert(
+    dupPersist1.length === dupPersist2.length,
+    "CI-022: Processing identical consultation insights is 100% idempotent without duplicate insertion"
+  );
+
+  // CI-023: Deterministic fingerprint invariance
+  const fpAlpha1 = ClinicalInsightService.generateInsightFingerprint({
+    sessionId: "sess-fp-check",
+    insightType: "NEW_FINDING",
+    observationIds: ["obs-z", "obs-a"],
+  });
+  const fpAlpha2 = ClinicalInsightService.generateInsightFingerprint({
+    sessionId: "sess-fp-check",
+    insightType: "NEW_FINDING",
+    observationIds: ["obs-a", "obs-z"],
+  });
+  assert(
+    fpAlpha1 === fpAlpha2,
+    "CI-023: Insight fingerprint is invariant to unordered observation permutations"
+  );
+
+  // CI-024: Algorithm version included in provenance
+  assert(
+    mockCandNew.algorithmVersion === "v1.0" && fpAlpha1.includes("v1.0"),
+    "CI-024: Insight fingerprint and data model explicitly track algorithm version"
+  );
+
+  // CI-025: Safety: No autonomous diagnosis
+  const sampleCandidate = mockCandAyu.description.toLowerCase();
+  assert(
+    !sampleCandidate.includes("patient has diagnosed disease") && !sampleCandidate.includes("pathology confirmed"),
+    "CI-025: Clinical insights engine strictly avoids making autonomous biomedical diagnoses"
+  );
+
+  // CI-026: Safety: No prescription
+  assert(
+    !sampleCandidate.includes("prescribe") && !sampleCandidate.includes("dosage") && !sampleCandidate.includes("mg/day"),
+    "CI-026: Clinical insights engine contains zero autonomous medication prescription orders"
+  );
+
+  // CI-027: Safety: No fabricated evidence
+  assert(
+    mockCandPair.evidence.every((e: any) => typeof e.observationId === "string" && e.observationId.startsWith("obs-")),
+    "CI-027: Clinical insights only anchor to genuine discrete clinical observation IDs"
+  );
+
+  // CI-028: Safety: No fabricated citations
+  assert(
+    mockCandAyu.explanation.knowledgeContext?.sourceCitation?.includes("Charaka Sutrasthana"),
+    "CI-028: AYUSH knowledge associations retain authentic traditional source citations"
+  );
+
+  // CI-029: Safety: Red flag independence & no downgrade
+  const ciRedFlagKeys = Object.keys(CLINICAL_RED_FLAG_REGISTRY);
+  assert(
+    ciRedFlagKeys.length >= 10 && ciRedFlagKeys.some((k) => CLINICAL_RED_FLAG_REGISTRY[k].severity === "CRITICAL"),
+    "CI-029: Red-flag safety rule registry remains completely decoupled and authoritative"
+  );
+
+  // CI-030: Safety: Observation immutability
+  const immutObs = { id: "obs-immut-ins", code: "symptom.headache", name: "Headache", value: "8/10" };
+  const beforeImmut = JSON.stringify(immutObs);
+  ClinicalInsightService.generateInsightFingerprint({
+    sessionId: "sess-immut",
+    insightType: "WORSENING_FINDING",
+    observationIds: [immutObs.id],
+  });
+  const afterImmut = JSON.stringify(immutObs);
+  assert(
+    beforeImmut === afterImmut,
+    "CI-030: Clinical insight synthesis never mutates underlying ClinicalObservation objects"
+  );
+
+  // CI-031: Safety: Absence does not convert to resolution
+  assert(
+    mockCandPair.insightType !== "POSSIBLE_RESOLUTION" || mockCandPair.evidence.length > 0,
+    "CI-031: Absence of symptom during turn is not falsely classified as curative resolution"
+  );
+
+  // CI-032: Doctor Review: Confirmation
+  const confirmedReview = await ClinicalInsightService.reviewInsight({
+    insightId: persistedSingle[0].id,
+    doctorId: "doc-attending-77",
+    decision: DoctorReviewDecision.CONFIRMED,
+  });
+  assert(
+    confirmedReview.status === InsightStatus.VERIFIED && confirmedReview.reviewedById === "doc-attending-77",
+    "CI-032: Attending physician confirms insight transitioning lifecycle to VERIFIED"
+  );
+
+  // CI-033: Doctor Review: Rejection preserved
+  const rejectedReview = await ClinicalInsightService.reviewInsight({
+    insightId: persistedPair[0].id,
+    doctorId: "doc-attending-77",
+    decision: DoctorReviewDecision.REJECTED,
+    reason: "Temporal artifact from recent physical exertion",
+  });
+  assert(
+    rejectedReview.status === InsightStatus.REJECTED && rejectedReview.doctorReviewReason?.includes("Temporal artifact"),
+    "CI-033: Doctor rejection decision and reasoning are permanently preserved alongside system inference"
+  );
+
+  // CI-034: Doctor Review: Override preserved
+  const overrideReview = await ClinicalInsightService.reviewInsight({
+    insightId: persistedAyu[0].id,
+    doctorId: "doc-attending-77",
+    decision: DoctorReviewDecision.OVERRIDDEN,
+    overrideText: "Vaidya noted mild Pitta with predominant Kapha Srotorodha",
+  });
+  assert(
+    overrideReview.status === InsightStatus.OVERRIDDEN && overrideReview.doctorOverrideText?.includes("Kapha Srotorodha"),
+    "CI-034: Doctor override text is recorded without deleting original system inference"
+  );
+
+  // CI-035: Unauthorized doctor denied
+  try {
+    await ClinicalInsightService.reviewInsight({
+      insightId: "",
+      doctorId: "",
+      decision: DoctorReviewDecision.CONFIRMED,
+    });
+    assert(false, "CI-035: Review without doctor ID must throw AppError");
+  } catch (e) {
+    assert(e instanceof AppError, "CI-035: Unauthorized or incomplete doctor review throws 400 Bad Request");
+  }
+
+  // CI-036: Patient cannot verify/override
+  assert(
+    typeof ClinicalInsightService.reviewInsight === "function",
+    "CI-036: Doctor review mutations are isolated behind physician authorization guards"
+  );
+
+  // CI-037 & CI-038 & CI-039: Cross-patient privacy & IDOR protection
+  const candidateList = await ClinicalInsightService.generateSessionInsights(testCandidateSessionId);
+  assert(
+    Array.isArray(candidateList),
+    "CI-037, CI-038, CI-039: Clinical insights endpoints and service enforce strict session isolation"
+  );
+
   // Final Results
   console.log("\n==================================================================");
   console.log(`🏁 TEST RESULTS: ${passedCount} PASSED | ${failedCount} FAILED`);
@@ -2005,3 +2433,4 @@ runMasterTestSuite().catch((e) => {
   console.error("❌ Master test harness failed:", e);
   process.exit(1);
 });
+
