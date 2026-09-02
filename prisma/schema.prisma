@@ -117,6 +117,68 @@ enum AbhaStatus {
   DEACTIVATED
 }
 
+/// Clinical observation category taxonomy (SOCRATES, AYUSH, Homeopathy, Document, Lifestyle)
+enum ObservationType {
+  SYMPTOM
+  SIGN
+  VITAL
+  HISTORY
+  MEDICATION
+  ALLERGY
+  LIFESTYLE
+  DIET
+  SLEEP
+  MENTAL_WELLBEING
+  AYURVEDA_PRAKRITI
+  AYURVEDA_AGNI
+  AYURVEDA_AMA
+  AYURVEDA_DOSHA
+  HOMEOPATHY_GENERAL
+  HOMEOPATHY_MIASM
+  HOMEOPATHY_MODALITY
+  DOCUMENT_EXTRACTED
+  PATIENT_REPORTED
+  DOCTOR_RECORDED
+}
+
+/// Provenance source of clinical observation data
+enum ObservationSource {
+  PATIENT_INPUT
+  DOCTOR_INPUT
+  OCR_EXTRACTED
+  VOICE_TRANSCRIPT
+  QUESTION_RESPONSE
+  DOCUMENT
+  SYSTEM_INFERENCE
+  IMPORTED_RECORD
+}
+
+/// Lifecycle state of a clinical observation
+enum ObservationStatus {
+  PRELIMINARY
+  RECORDED
+  VERIFIED
+  REFUTED
+  AMENDED
+}
+
+/// System-generated clinical insight status
+enum InsightStatus {
+  DRAFT
+  REVIEW_REQUIRED
+  VERIFIED
+  REJECTED
+  OVERRIDDEN
+}
+
+/// Attending doctor verification action
+enum DoctorReviewDecision {
+  CONFIRMED
+  MODIFIED
+  REJECTED
+  OVERRIDDEN
+}
+
 // ==============================================================================
 // 1. CORE IDENTITY & USER MANAGEMENT
 // ==============================================================================
@@ -170,6 +232,8 @@ model PatientProfile {
   clinicalSessions    ClinicalSession[]
   consentRecords      ConsentRecord[]
   timelineEvents      MedicalTimelineEvent[]
+  clinicalObservations ClinicalObservation[]
+  clinicalInsights    ClinicalInsight[]
   abhaLink            AbhaLink?
   fhirResources       FhirResource[]
 
@@ -194,6 +258,8 @@ model DoctorProfile {
   updatedAt           DateTime        @updatedAt
 
   clinicalSessions    ClinicalSession[]
+  verifiedObservations ClinicalObservation[]
+  reviewedInsights    ClinicalInsight[]
 
   @@index([userId])
   @@index([registrationNumber])
@@ -263,6 +329,8 @@ model ClinicalSession {
   medicalDocuments    MedicalDocument[]
   clinicalSummary     ClinicalSummary?
   ayurvedaAssessment  AyurvedaAssessment?
+  clinicalObservations ClinicalObservation[]
+  clinicalInsights    ClinicalInsight[]
   fhirResources       FhirResource[]
 
   @@index([patientId])
@@ -601,4 +669,133 @@ model FhirResource {
   @@index([sessionId])
   @@index([resourceType])
   @@map("fhir_resources")
+}
+
+// ==============================================================================
+// 10. STRUCTURED CLINICAL OBSERVATIONS, EVIDENCE & EXPLAINABLE INSIGHTS
+// ==============================================================================
+
+/// Discrete, queryable clinical observation with temporal semantics and full provenance
+model ClinicalObservation {
+  id                    String              @id @default(uuid()) @db.Uuid
+  patientId             String              @db.Uuid
+  patient               PatientProfile      @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  sessionId             String              @db.Uuid
+  session               ClinicalSession     @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  category              ObservationType     @default(SYMPTOM)
+  code                  String              // Standardized concept code e.g. "symptom.burning_sensation", "agni.manda", "miasm.psora"
+  name                  String              // Human readable label e.g. "Burning sensation in epigastrium"
+  
+  // Structured observation facets
+  value                 String?             // Primary qualitative or quantitative value
+  numericValue          Float?              // For numeric measurements (severity 1-10, BP, SpO2, glucose)
+  unit                  String?             // e.g. "/10", "mmHg", "mg/dL", "days"
+  bodySite              String?             // Anatomical location (e.g. "Epigastric", "Bilateral knees")
+  laterality            String?             // "LEFT", "RIGHT", "BILATERAL", "UNILATERAL"
+  severity              String?             // "MILD", "MODERATE", "SEVERE"
+  duration              String?             // Duration string (e.g. "3 weeks", "2 days")
+  frequency             String?             // "DAILY", "CONSTANT", "INTERMITTENT", "POSTPRANDIAL"
+  modality              String?             // Aggravating / Relieving factors ("Worse at night", "Better with warm water")
+  rawText               String              @db.Text // Exact original text/transcript provided by patient or doctor
+  
+  status                ObservationStatus   @default(RECORDED)
+  source                ObservationSource   @default(PATIENT_INPUT)
+  confidence            Float               @default(1.0) // Confidence score [0.0 - 1.0]
+
+  // Temporal information
+  observedAt            DateTime?           // When the patient experienced the symptom
+  reportedAt            DateTime            @default(now()) // When reported by patient/user
+  recordedAt            DateTime            @default(now()) // When persisted in system
+  verifiedAt            DateTime?           // When doctor verified/reviewed
+  
+  // Provenance & Source linkage
+  sourceQuestionNodeId  String?             // Question node code if derived from adaptive engine
+  sourceDocumentId      String?             // Medical document ID if derived from OCR
+  sourceEntityId        String?             // Extracted entity ID
+  
+  // Verification details
+  verifiedById          String?             @db.Uuid
+  verifiedBy            DoctorProfile?      @relation(fields: [verifiedById], references: [id], onDelete: SetNull)
+  doctorNotes           String?             @db.Text
+  
+  // Dynamic structured metadata (extensible for specific AYUSH or Homeopathy facets)
+  metadata              Json?               @db.JsonB
+
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+
+  // Relationships to Explainable Evidence
+  evidenceItems         ClinicalEvidence[]
+
+  @@index([patientId])
+  @@index([sessionId])
+  @@index([category])
+  @@index([code])
+  @@index([status])
+  @@index([reportedAt])
+  @@index([observedAt])
+  @@index([verifiedById])
+  @@map("clinical_observations")
+}
+
+/// Links specific observations to a system insight as supporting or contradictory evidence
+model ClinicalEvidence {
+  id                    String              @id @default(uuid()) @db.Uuid
+  insightId             String              @db.Uuid
+  insight               ClinicalInsight     @relation(fields: [insightId], references: [id], onDelete: Cascade)
+  observationId         String              @db.Uuid
+  observation           ClinicalObservation @relation(fields: [observationId], references: [id], onDelete: Cascade)
+
+  relationship          String              @default("SUPPORTING") // "SUPPORTING" | "CONTRADICTORY" | "NEUTRAL"
+  weight                Float               @default(1.0)          // Relative evidential weight [0.0 - 1.0]
+  rationale             String?             @db.Text               // Natural language explanation of why this evidence matters
+
+  createdAt             DateTime            @default(now())
+
+  @@unique([insightId, observationId])
+  @@index([insightId])
+  @@index([observationId])
+  @@index([relationship])
+  @@map("clinical_evidence")
+}
+
+/// Explainable clinical assessment / pattern generated by AI or rules, subject to doctor review
+model ClinicalInsight {
+  id                    String                @id @default(uuid()) @db.Uuid
+  patientId             String                @db.Uuid
+  patient               PatientProfile        @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  sessionId             String                @db.Uuid
+  session               ClinicalSession       @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  insightType           String                // "AYURVEDA_DOSHA_PATTERN", "HOMEOPATHY_TOTALITY", "SAFETY_RISK", "TRIAGE_ESCALATION"
+  title                 String                // e.g. "Predominant Pitta-Vata Aggravation Pattern"
+  description           String                @db.Text
+  
+  status                InsightStatus         @default(DRAFT)
+  confidence            Float                 @default(0.85) // Model confidence score [0.0 - 1.0]
+  ruleOrModelVersion    String                @default("v1.0") // Provenance of the generating engine/rule
+  
+  // Doctor in the loop review & override
+  reviewedById          String?               @db.Uuid
+  reviewedBy            DoctorProfile?        @relation(fields: [reviewedById], references: [id], onDelete: SetNull)
+  doctorDecision        DoctorReviewDecision?
+  doctorOverrideText    String?               @db.Text
+  doctorReviewReason    String?               @db.Text
+  reviewedAt            DateTime?
+  
+  metadata              Json?                 @db.JsonB
+  generatedAt           DateTime              @default(now())
+  updatedAt             DateTime              @updatedAt
+
+  // Supporting & contradictory evidence links
+  evidence              ClinicalEvidence[]
+
+  @@index([patientId])
+  @@index([sessionId])
+  @@index([insightType])
+  @@index([status])
+  @@index([reviewedById])
+  @@index([generatedAt])
+  @@map("clinical_insights")
 }

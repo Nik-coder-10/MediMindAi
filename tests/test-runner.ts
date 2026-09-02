@@ -9,7 +9,8 @@ import { MedicalTimelineService } from "../lib/services/timeline.service";
 import { AbnormalLabEvaluator } from "../lib/clinical/lab-ranges";
 import { DpdpConsentGuard } from "../lib/consent/consent-guard";
 import { AppError } from "../lib/api/errors";
-
+import { ClinicalObservationService } from "../lib/clinical/observation.service";
+import { ObservationType, ObservationSource, ObservationStatus, InsightStatus, DoctorReviewDecision } from "@prisma/client";
 
 let passedCount = 0;
 let failedCount = 0;
@@ -1279,6 +1280,120 @@ async function runMasterTestSuite() {
     "EMRG-005: Emergency alert metadata correctly records PATIENT_INITIATED alert source for audit trail"
   );
 
+  // SUITE 23: Structured Clinical Observations, Evidence & Doctor Verification (OBS-001 to OBS-008)
+  console.log("\n--- 23. UNIT: Structured Clinical Observations & Evidence Foundation (OBS-001 to OBS-008) ---");
+
+  // OBS-001: Observation creation with temporal semantics and provenance
+  const testPatientId = "pat-obs-verify-01";
+  const testSessionIdObs = `sess-obs-${Date.now()}`;
+  const singleObs = await ClinicalObservationService.createObservation({
+    patientId: testPatientId,
+    sessionId: testSessionIdObs,
+    category: ObservationType.SYMPTOM,
+    code: "symptom.epigastric_burning",
+    name: "Burning sensation in epigastrium (Amlapitta)",
+    value: "Severe burning postprandial",
+    numericValue: 8,
+    unit: "/10",
+    bodySite: "Epigastric",
+    severity: "SEVERE",
+    duration: "3 weeks",
+    frequency: "DAILY",
+    modality: "Worse after spicy food and at night",
+    rawText: "My stomach burns intensely after dinner and spicy food",
+    source: ObservationSource.PATIENT_INPUT,
+    confidence: 0.95,
+    observedAt: new Date(Date.now() - 21 * 24 * 3600 * 1000),
+    sourceQuestionNodeId: "abd_location_quadrant",
+  });
+  assert(
+    singleObs.code === "symptom.epigastric_burning" && singleObs.numericValue === 8,
+    "OBS-001: Structured clinical observation created with numerical severity and anatomical site"
+  );
+  assert(
+    singleObs.source === ObservationSource.PATIENT_INPUT && singleObs.status === ObservationStatus.RECORDED,
+    "OBS-002: Observation preserves authentic patient provenance and initial RECORDED lifecycle status"
+  );
+  assert(
+    singleObs.rawText.includes("stomach burns"),
+    "OBS-003: Raw patient narrative source preserved verbatim alongside derived structured observation"
+  );
+
+  // OBS-004: Mapping legacy collectedFacts dictionary to discrete structured observations
+  const legacyFacts = {
+    socrates: {
+      site: "Bilateral Knees",
+      severity: 7,
+      character: "Throbbing pain with morning stiffness",
+      radiation: "None",
+    },
+    ayushGhataka: {
+      agni: "MANDA",
+      ama: true,
+      koshtha: "KRURA",
+    },
+    familyHistory: {
+      summaryText: "Father has Osteoarthritis and Hypertension",
+    },
+    socialHistory: {
+      summaryText: "Sedentary lifestyle, clean habits",
+    },
+  };
+  const mappedObservations = ClinicalObservationService.mapCollectedFactsToObservations(
+    testPatientId,
+    testSessionIdObs,
+    legacyFacts
+  );
+  assert(
+    mappedObservations.length >= 6,
+    "OBS-004: Legacy collectedFacts seamlessly transforms into discrete structured observation records"
+  );
+  assert(
+    mappedObservations.some(o => o.code === "ayurveda.agni" && o.value === "MANDA"),
+    "OBS-005: Ayurvedic Agni (Mandagni) correctly mapped to discrete clinical observation"
+  );
+  assert(
+    mappedObservations.some(o => o.code === "ayurveda.ama" && o.value === "AMA_PRESENT"),
+    "OBS-006: Ayurvedic Ama presence mapped as discrete clinical observation"
+  );
+
+  // OBS-007: Explainable Clinical Insight linked to supporting evidence
+  const insightWithEvidence = await ClinicalObservationService.createInsight({
+    patientId: testPatientId,
+    sessionId: testSessionIdObs,
+    insightType: "AYURVEDA_DOSHA_PATTERN",
+    title: "Possible Pitta-associated Amlapitta pattern",
+    description: "Postprandial burning sensation with nocturnal aggravation suggests Pitta dushti with Mandagni.",
+    status: InsightStatus.DRAFT,
+    confidence: 0.92,
+    ruleOrModelVersion: "charaka-engine-v1.2",
+    evidence: [
+      {
+        observationId: singleObs.id,
+        relationship: "SUPPORTING",
+        weight: 0.95,
+        rationale: "Epigastric burning after meals directly supports Pitta escalation in Annavaha srotas.",
+      },
+    ],
+  });
+  assert(
+    insightWithEvidence.title.includes("Pitta-associated") && insightWithEvidence.evidence.length >= 1,
+    "OBS-007: Explainable Clinical Insight created with explicit bidirectional link to supporting evidence observation"
+  );
+
+  // OBS-008: Doctor in the loop review, verification and override preserving original output
+  const reviewedInsight = await ClinicalObservationService.reviewInsight({
+    insightId: insightWithEvidence.id,
+    doctorId: "doc-rajesh-01",
+    decision: DoctorReviewDecision.CONFIRMED,
+    overrideText: "Confirmed Amlapitta with Mandagni. Prescribed Avipattikar Churna.",
+    reason: "Clinical history and physical examination confirm hyperacidity syndrome.",
+  });
+  assert(
+    reviewedInsight.status === InsightStatus.VERIFIED && reviewedInsight.reviewedById === "doc-rajesh-01",
+    "OBS-008: Attending doctor verification successfully verifies insight and attaches physician decision"
+  );
+
   // Final Results
   console.log("\n==================================================================");
   console.log(`🏁 TEST RESULTS: ${passedCount} PASSED | ${failedCount} FAILED`);
@@ -1288,10 +1403,7 @@ async function runMasterTestSuite() {
     process.exit(1);
   }
 
-
-
 }
-
 
 runMasterTestSuite().catch((e) => {
   console.error("❌ Master test harness failed:", e);

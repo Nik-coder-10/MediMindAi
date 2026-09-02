@@ -105,7 +105,26 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // 4. Generate and persist Clinical Summary
+    // 4. Evolve and persist discrete structured clinical observations from engine state
+    try {
+      const { ClinicalObservationService } = await import("@/lib/clinical/observation.service");
+      const { AdaptiveEngineService } = await import("@/lib/engine/adaptive-engine.service");
+      const currentState = await AdaptiveEngineService.getCurrentState(session.id);
+      if (currentState?.collectedFacts) {
+        const obsDtos = ClinicalObservationService.mapCollectedFactsToObservations(
+          session.patientId,
+          session.id,
+          currentState.collectedFacts as any
+        );
+        if (obsDtos.length > 0) {
+          await ClinicalObservationService.createBatchObservations(obsDtos);
+        }
+      }
+    } catch (obsErr) {
+      console.warn("Structured observation persistence deferred (non-fatal):", obsErr);
+    }
+
+    // 5. Generate and persist Clinical Summary
     let summary = null;
     try {
       summary = await SummaryService.generateSummary({ sessionId: session.id });
