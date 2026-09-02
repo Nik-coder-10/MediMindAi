@@ -28,7 +28,7 @@ async function runAdaptiveGeneratorTestSuite() {
 
   assert(kneeResultEn.category === "Musculoskeletal", "Knee pain classifies as 'Musculoskeletal'");
   assert(kneeResultEn.detectedProblems.some(p => p.toLowerCase().includes("knee")), "Detects Knee Joint Pain problem");
-  assert(kneeResultEn.questions.length >= 5 && kneeResultEn.questions.length <= 8, "Generates 5-8 questions");
+  assert(kneeResultEn.questions.length >= 5 && kneeResultEn.questions.length <= 14, "Generates 5-14 questions including history and clinical modules");
   assert(!kneeResultEn.questions.some(q => q.textEn.toLowerCase().includes("chest pain")), "Does NOT include chest pain questions");
   assert(kneeResultEn.questions.some(q => q.clinicalPurpose === "severity"), "Contains severity scale question");
   assert(kneeResultEn.questions.some(q => q.clinicalPurpose === "red_flag"), "Contains red_flag safety question");
