@@ -32,6 +32,20 @@ export async function POST(req: NextRequest) {
 
     const { user, session } = await AuthService.requireSessionAccess(req, validated.sessionId);
 
+    // IDEMPOTENCY GUARD: If already submitted, return existing token without re-processing.
+    // This prevents duplicate doctor notifications and duplicate clinical sessions.
+    if (session.status === "WAITING_FOR_DOCTOR" || session.status === "COMPLETED") {
+      const shortToken = session.id.replace(/-/g, "").slice(0, 4).toUpperCase();
+      return apiSuccess({
+        sessionId: session.id,
+        tokenNumber: `#AYUR-${shortToken}`,
+        status: session.status,
+        summary: null,
+        message: "Case already submitted. Token returned without reprocessing.",
+        idempotent: true,
+      });
+    }
+
     // Resilient Database Update for submission
     let updatedStatus = SessionStatus.WAITING_FOR_DOCTOR;
     try {

@@ -57,9 +57,11 @@ export async function POST(req: NextRequest) {
         },
       });
     } else if (session.patientId !== patientProfile!.id) {
-      session = await prisma.clinicalSession.update({
-        where: { id: session.id },
-        data: { patientId: patientProfile!.id },
+      // SECURITY: Reject — this sessionId belongs to a different patient.
+      // Never silently reassign ownership. Treat as 403 Forbidden (IDOR prevention).
+      return new Response(JSON.stringify({ error: "Forbidden: session belongs to another patient" }), {
+        status: 403,
+        headers: { "Content-Type": "application/json" },
       });
     }
 

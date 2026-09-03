@@ -111,7 +111,15 @@ export const authConfig: NextAuthConfig = {
     strategy: "jwt",
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
-  secret: process.env.AUTH_SECRET || "sih2026-ayush-platform-secret-key-32charsmin",
+  // SECURITY: AUTH_SECRET must be set in production via environment variables.
+  // The fallback below is only for local development; Vercel/production deployments
+  // must set AUTH_SECRET / NEXTAUTH_SECRET to a strong 32+ char random value.
+  secret:
+    process.env.AUTH_SECRET ||
+    process.env.NEXTAUTH_SECRET ||
+    (process.env.NODE_ENV !== "production"
+      ? "sih2026-ayush-platform-secret-key-32charsmin"
+      : (() => { throw new Error("AUTH_SECRET must be set in production environment"); })()),
 };
 
 export const { handlers, auth, signIn, signOut } = NextAuth(authConfig);
