@@ -837,6 +837,7 @@ model ClinicalInsight {
   doctorReviewReason    String?               @db.Text
   reviewedAt            DateTime?
   
+  fingerprint           String                @default("") // Deterministic idempotency fingerprint
   metadata              Json?                 @db.JsonB
   generatedAt           DateTime              @default(now())
   updatedAt             DateTime              @updatedAt
@@ -844,8 +845,10 @@ model ClinicalInsight {
   // Supporting & contradictory evidence links
   evidence              ClinicalEvidence[]
 
+  @@unique([sessionId, fingerprint])
   @@index([patientId])
   @@index([sessionId])
+  @@index([fingerprint])
   @@index([insightType])
   @@index([status])
   @@index([reviewedById])

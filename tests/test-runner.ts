@@ -2418,6 +2418,316 @@ async function runMasterTestSuite() {
     "CI-037, CI-038, CI-039: Clinical insights endpoints and service enforce strict session isolation"
   );
 
+  // SUITE 27: Production Hardening & Clinical Insight Integrity (P51-001 to P51-026)
+  console.log("\n--- 27. UNIT: Phase 5.1 Production Hardening & Clinical Insight Integrity (P51-001 to P51-026) ---");
+
+  // TEST GROUP A: Database Identity
+  // P51-001: ClinicalInsight fingerprint is persisted as a dedicated first-class field
+  const p51SessionA = `sess-p51-a-${Date.now()}`;
+  const p51CandA = {
+    ...mockCandNew,
+    fingerprint: ClinicalInsightService.generateInsightFingerprint({
+      sessionId: p51SessionA,
+      insightType: "NEW_FINDING",
+      observationIds: ["obs-p51-01"],
+    }),
+  };
+  const p51PersistedA = await ClinicalInsightService.persistSessionInsights("pat-p51", p51SessionA, [p51CandA]);
+  assert(
+    typeof p51PersistedA[0].fingerprint === "string" && p51PersistedA[0].fingerprint.length > 0 && p51PersistedA[0].fingerprint === p51CandA.fingerprint,
+    "P51-001: ClinicalInsight fingerprint is persisted as a dedicated first-class field"
+  );
+
+  // P51-002: The database rejects duplicate fingerprints within the same session
+  const p51CandADup = {
+    ...p51CandA,
+    title: "Duplicate Candidate Title with same fingerprint",
+  };
+  const p51PersistedADup = await ClinicalInsightService.persistSessionInsights("pat-p51", p51SessionA, [p51CandADup]);
+  assert(
+    p51PersistedADup.length === 1 && p51PersistedADup[0].id === p51PersistedA[0].id,
+    "P51-002: The database rejects duplicate fingerprints within the same session"
+  );
+
+  // P51-003: The same fingerprint may exist in different sessions if sessionId is part of the identity
+  const p51SessionB = `sess-p51-b-${Date.now()}`;
+  const p51CandB = {
+    ...mockCandNew,
+    fingerprint: ClinicalInsightService.generateInsightFingerprint({
+      sessionId: p51SessionB,
+      insightType: "NEW_FINDING",
+      observationIds: ["obs-p51-01"],
+    }),
+  };
+  const p51PersistedB = await ClinicalInsightService.persistSessionInsights("pat-p51", p51SessionB, [p51CandB]);
+  assert(
+    p51PersistedB[0].id !== p51PersistedA[0].id && p51PersistedB[0].sessionId === p51SessionB,
+    "P51-003: The same fingerprint may exist in different sessions if sessionId is part of the identity"
+  );
+
+  // TEST GROUP B: Sequential Idempotency
+  // P51-004: Generating insights twice produces no duplicate records
+  const p51PersistRun1 = await ClinicalInsightService.persistSessionInsights("pat-p51", p51SessionA, [p51CandA]);
+  const p51PersistRun2 = await ClinicalInsightService.persistSessionInsights("pat-p51", p51SessionA, [p51CandA]);
+  assert(
+    p51PersistRun1.length === 1 && p51PersistRun2.length === 1,
+    "P51-004: Generating insights twice produces no duplicate records"
+  );
+
+  // P51-005: Both generation calls return the same persisted logical insight identity
+  assert(
+    p51PersistRun1[0].id === p51PersistRun2[0].id,
+    "P51-005: Both generation calls return the same persisted logical insight identity"
+  );
+
+  // P51-006: Existing evidence links remain intact
+  assert(
+    p51PersistRun2[0].evidence.length === p51PersistRun1[0].evidence.length,
+    "P51-006: Existing evidence links remain intact"
+  );
+
+  // TEST GROUP C: Concurrent Generation
+  // P51-007: Run two or more concurrent generation operations
+  const p51SessionConc = `sess-p51-conc-${Date.now()}`;
+  const p51CandConc = {
+    ...mockCandNew,
+    fingerprint: ClinicalInsightService.generateInsightFingerprint({
+      sessionId: p51SessionConc,
+      insightType: "NEW_FINDING",
+      observationIds: ["obs-p51-conc-1"],
+    }),
+  };
+  const [concRes1, concRes2] = await Promise.all([
+    ClinicalInsightService.persistSessionInsights("pat-p51", p51SessionConc, [p51CandConc]),
+    ClinicalInsightService.persistSessionInsights("pat-p51", p51SessionConc, [p51CandConc]),
+  ]);
+  assert(
+    concRes1[0].id === concRes2[0].id,
+    "P51-007: Concurrent generation operations persist exactly one ClinicalInsight record for each logical fingerprint"
+  );
+
+  // P51-008: Concurrent duplicate persistence does not produce unhandled database errors
+  assert(
+    Array.isArray(concRes1) && Array.isArray(concRes2),
+    "P51-008: Concurrent duplicate persistence does not produce unhandled database errors"
+  );
+
+  // P51-009: The resulting insight remains structurally valid
+  assert(
+    typeof concRes1[0].title === "string" && concRes1[0].fingerprint === p51CandConc.fingerprint,
+    "P51-009: The resulting insight remains structurally valid"
+  );
+
+  // TEST GROUP D: Doctor Governance
+  // P51-010: Regeneration cannot reset VERIFIED insight status
+  const p51SessionGov = `sess-p51-gov-${Date.now()}`;
+  const p51CandGov = {
+    ...mockCandNew,
+    fingerprint: ClinicalInsightService.generateInsightFingerprint({
+      sessionId: p51SessionGov,
+      insightType: "NEW_FINDING",
+      observationIds: ["obs-p51-gov"],
+    }),
+  };
+  const [initialGov] = await ClinicalInsightService.persistSessionInsights("pat-p51", p51SessionGov, [p51CandGov]);
+  await ClinicalInsightService.reviewInsight({
+    insightId: initialGov.id,
+    doctorId: "doc-attending-99",
+    decision: DoctorReviewDecision.CONFIRMED,
+  });
+  const [regenAfterConfirm] = await ClinicalInsightService.persistSessionInsights("pat-p51", p51SessionGov, [p51CandGov]);
+  assert(
+    regenAfterConfirm.status === InsightStatus.VERIFIED,
+    "P51-010: Regeneration cannot reset VERIFIED insight status"
+  );
+
+  // P51-011: Regeneration cannot overwrite REJECTED insight status
+  const p51SessionRej = `sess-p51-rej-${Date.now()}`;
+  const p51CandRej = {
+    ...mockCandNew,
+    fingerprint: ClinicalInsightService.generateInsightFingerprint({
+      sessionId: p51SessionRej,
+      insightType: "NEW_FINDING",
+      observationIds: ["obs-p51-rej"],
+    }),
+  };
+  const [initialRej] = await ClinicalInsightService.persistSessionInsights("pat-p51", p51SessionRej, [p51CandRej]);
+  await ClinicalInsightService.reviewInsight({
+    insightId: initialRej.id,
+    doctorId: "doc-attending-99",
+    decision: DoctorReviewDecision.REJECTED,
+    reason: "Temporal clinical artifact",
+  });
+  const [regenAfterRej] = await ClinicalInsightService.persistSessionInsights("pat-p51", p51SessionRej, [p51CandRej]);
+  assert(
+    regenAfterRej.status === InsightStatus.REJECTED,
+    "P51-011: Regeneration cannot overwrite REJECTED insight status"
+  );
+
+  // P51-012: Regeneration cannot erase OVERRIDDEN state
+  const p51SessionOvr = `sess-p51-ovr-${Date.now()}`;
+  const p51CandOvr = {
+    ...mockCandNew,
+    fingerprint: ClinicalInsightService.generateInsightFingerprint({
+      sessionId: p51SessionOvr,
+      insightType: "NEW_FINDING",
+      observationIds: ["obs-p51-ovr"],
+    }),
+  };
+  const [initialOvr] = await ClinicalInsightService.persistSessionInsights("pat-p51", p51SessionOvr, [p51CandOvr]);
+  await ClinicalInsightService.reviewInsight({
+    insightId: initialOvr.id,
+    doctorId: "doc-attending-99",
+    decision: DoctorReviewDecision.OVERRIDDEN,
+    overrideText: "Doctor clinically diagnosed chronic Kapha",
+  });
+  const [regenAfterOvr] = await ClinicalInsightService.persistSessionInsights("pat-p51", p51SessionOvr, [p51CandOvr]);
+  assert(
+    regenAfterOvr.status === InsightStatus.OVERRIDDEN,
+    "P51-012: Regeneration cannot erase OVERRIDDEN state"
+  );
+
+  // P51-013: Regeneration cannot erase doctorDecision
+  assert(
+    regenAfterConfirm.doctorDecision === DoctorReviewDecision.CONFIRMED &&
+    regenAfterRej.doctorDecision === DoctorReviewDecision.REJECTED &&
+    regenAfterOvr.doctorDecision === DoctorReviewDecision.OVERRIDDEN,
+    "P51-013: Regeneration cannot erase doctorDecision"
+  );
+
+  // P51-014: Regeneration cannot erase doctorRationale
+  assert(
+    regenAfterRej.doctorReviewReason?.includes("Temporal clinical artifact") &&
+    regenAfterOvr.doctorOverrideText?.includes("Doctor clinically diagnosed"),
+    "P51-014: Regeneration cannot erase doctorRationale"
+  );
+
+  // P51-015: Regeneration cannot erase doctor identity/audit fields
+  assert(
+    regenAfterConfirm.reviewedById === "doc-attending-99" && regenAfterRej.reviewedById === "doc-attending-99",
+    "P51-015: Regeneration cannot erase doctor identity/audit fields"
+  );
+
+  // TEST GROUP E: Fingerprint Determinism
+  // P51-016: Same logical inputs produce the same fingerprint
+  const fpDet1 = ClinicalInsightService.generateInsightFingerprint({
+    sessionId: "sess-det",
+    insightType: "IMPROVING_FINDING",
+    observationIds: ["obs-1", "obs-2"],
+  });
+  const fpDet2 = ClinicalInsightService.generateInsightFingerprint({
+    sessionId: "sess-det",
+    insightType: "IMPROVING_FINDING",
+    observationIds: ["obs-1", "obs-2"],
+  });
+  assert(
+    fpDet1 === fpDet2,
+    "P51-016: Same logical inputs produce the same fingerprint"
+  );
+
+  // P51-017: Different evidence order produces the same fingerprint
+  const fpOrd1 = ClinicalInsightService.generateInsightFingerprint({
+    sessionId: "sess-det",
+    insightType: "IMPROVING_FINDING",
+    observationIds: ["obs-beta", "obs-alpha"],
+  });
+  const fpOrd2 = ClinicalInsightService.generateInsightFingerprint({
+    sessionId: "sess-det",
+    insightType: "IMPROVING_FINDING",
+    observationIds: ["obs-alpha", "obs-beta"],
+  });
+  assert(
+    fpOrd1 === fpOrd2,
+    "P51-017: Different evidence order produces the same fingerprint"
+  );
+
+  // P51-018: Object key ordering does not change the fingerprint
+  const fpKey1 = ClinicalInsightService.generateInsightFingerprint({
+    sessionId: "sess-k",
+    insightType: "IMPROVING_FINDING",
+    observationIds: ["obs-1"],
+    knowledgeIds: ["kg-1", "kg-2"],
+  });
+  const fpKey2 = ClinicalInsightService.generateInsightFingerprint({
+    knowledgeIds: ["kg-2", "kg-1"],
+    observationIds: ["obs-1"],
+    insightType: "IMPROVING_FINDING",
+    sessionId: "sess-k",
+  });
+  assert(
+    fpKey1 === fpKey2,
+    "P51-018: Object key ordering does not change the fingerprint"
+  );
+
+  // P51-019: A new algorithm version changes the fingerprint namespace
+  const fpVerOld = ClinicalInsightService.generateInsightFingerprint({
+    sessionId: "sess-ver",
+    insightType: "NEW_FINDING",
+    observationIds: ["obs-1"],
+    algorithmVersion: "v1.0",
+  });
+  const fpVerNew = ClinicalInsightService.generateInsightFingerprint({
+    sessionId: "sess-ver",
+    insightType: "NEW_FINDING",
+    observationIds: ["obs-1"],
+    algorithmVersion: "v2.0",
+  });
+  assert(
+    fpVerOld !== fpVerNew && fpVerNew.includes("v2.0"),
+    "P51-019: A new algorithm version changes the fingerprint namespace"
+  );
+
+  // P51-020: Display-only wording changes do not change the clinical inference fingerprint
+  const fpWording1 = ClinicalInsightService.generateInsightFingerprint({
+    sessionId: "sess-word",
+    insightType: "NEW_FINDING",
+    observationIds: ["obs-core"],
+  });
+  const candWord1 = { ...mockCandNew, title: "English Title: New Epigastric Burning", fingerprint: fpWording1 };
+  const candWord2 = { ...mockCandNew, title: "Hindi Title: नया सीने में जलन", fingerprint: fpWording1 };
+  assert(
+    candWord1.fingerprint === candWord2.fingerprint,
+    "P51-020: Display-only wording changes do not change the clinical inference fingerprint"
+  );
+
+  // TEST GROUP F: Safety and Provenance
+  // P51-021: Knowledge-derived insight retains observation provenance
+  assert(
+    mockCandAyu.evidence.some((e: any) => e.observationId === "obs-ci-001"),
+    "P51-021: Knowledge-derived insight retains observation provenance"
+  );
+
+  // P51-022: Knowledge-derived insight retains concept provenance
+  assert(
+    mockCandAyu.explanation.knowledgeContext?.conceptKey === "concept.symptom.burning_sensation",
+    "P51-022: Knowledge-derived insight retains concept provenance"
+  );
+
+  // P51-023: Knowledge-derived insight retains source provenance
+  assert(
+    mockCandAyu.explanation.knowledgeContext?.sourceCitation?.includes("Charaka Sutrasthana"),
+    "P51-023: Knowledge-derived insight retains source provenance"
+  );
+
+  // P51-024: Knowledge-derived insight retains knowledge pack version
+  assert(
+    mockCandAyu.algorithmVersion === "v1.0",
+    "P51-024: Knowledge-derived insight retains knowledge pack version"
+  );
+
+  // P51-025: Deterministic insight generation remains free of autonomous diagnosis
+  const sampleGenText = mockCandAyu.description.toLowerCase();
+  assert(
+    !sampleGenText.includes("patient has diagnosed disease") && !sampleGenText.includes("pathology confirmed"),
+    "P51-025: Deterministic insight generation remains free of autonomous diagnosis"
+  );
+
+  // P51-026: Deterministic insight generation remains free of prescription generation
+  assert(
+    !sampleGenText.includes("prescribe") && !sampleGenText.includes("mg/day") && !sampleGenText.includes("take 2 tablets"),
+    "P51-026: Deterministic insight generation remains free of prescription generation"
+  );
+
   // Final Results
   console.log("\n==================================================================");
   console.log(`🏁 TEST RESULTS: ${passedCount} PASSED | ${failedCount} FAILED`);

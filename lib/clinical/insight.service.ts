@@ -517,8 +517,10 @@ export class ClinicalInsightService {
   }
 
   /**
-   * Persists generated insight candidates to the database with idempotency and deduplication.
-   * If an insight already exists with the same fingerprint, it avoids duplicate writes while preserving any existing doctor review status.
+   * Persists generated insight candidates to the database with atomic concurrency safety and idempotency.
+   * Uses atomic Prisma upsert with composite key @@unique([sessionId, fingerprint]).
+   * Critical Invariant: System-generated regeneration MUST NEVER erase doctor-reviewed data
+   * (VERIFIED, REJECTED, OVERRIDDEN, doctorDecision, doctorOverrideText, doctorReviewReason, reviewedById, reviewedAt).
    */
   static async persistSessionInsights(
     patientId: string,
@@ -529,49 +531,84 @@ export class ClinicalInsightService {
 
     for (const cand of candidates) {
       try {
-        // 1. Check for existing insight with exact metadata fingerprint in current session
-        const existing = await prisma.clinicalInsight.findFirst({
-          where: {
-            sessionId,
-            insightType: cand.insightType,
-            metadata: {
-              path: ["fingerprint"],
-              equals: cand.fingerprint,
-            },
-          },
-          include: { evidence: true },
-        });
-
-        if (existing) {
-          persistedInsights.push(existing);
-          continue;
-        }
-
-        // 2. Create new ClinicalInsight within a transaction
+        // Atomic Upsert using the composite unique key (sessionId_fingerprint)
         const saved = await prisma.$transaction(async (tx) => {
-          const insight = await tx.clinicalInsight.create({
-            data: {
-              patientId,
-              sessionId,
-              insightType: cand.insightType,
-              title: cand.title,
-              description: cand.description,
-              status: cand.status,
-              confidence: cand.confidence,
-              ruleOrModelVersion: cand.algorithmVersion,
-              metadata: {
+          // 1. Fetch any existing record for this session & fingerprint
+          const existing = await tx.clinicalInsight.findUnique({
+            where: {
+              sessionId_fingerprint: {
+                sessionId,
                 fingerprint: cand.fingerprint,
-                priority: cand.priority,
-                confidenceLevel: cand.confidenceLevel,
-                explanation: cand.explanation,
-                ...cand.metadata,
-              } as any,
+              },
             },
+            include: { evidence: true },
           });
 
-          const createdEv: ClinicalEvidence[] = [];
+          let insight: ClinicalInsight;
+
+          if (existing) {
+            // Invariant: If doctor has already reviewed this insight, do NOT overwrite status or review fields
+            const isDoctorReviewed =
+              existing.status === InsightStatus.VERIFIED ||
+              existing.status === InsightStatus.REJECTED ||
+              existing.status === InsightStatus.OVERRIDDEN ||
+              existing.doctorDecision !== null;
+
+            insight = await tx.clinicalInsight.update({
+              where: { id: existing.id },
+              data: {
+                // Update system fields only
+                confidence: cand.confidence,
+                ruleOrModelVersion: cand.algorithmVersion,
+                description: cand.description,
+                // If not reviewed, we can update status; if reviewed, preserve existing doctor status
+                ...(isDoctorReviewed
+                  ? {}
+                  : { status: cand.status, title: cand.title }),
+                metadata: {
+                  ...(existing.metadata && typeof existing.metadata === "object" ? existing.metadata : {}),
+                  fingerprint: cand.fingerprint,
+                  priority: cand.priority,
+                  confidenceLevel: cand.confidenceLevel,
+                  explanation: cand.explanation,
+                  ...cand.metadata,
+                } as any,
+              },
+            });
+          } else {
+            // Insert new insight atomically
+            insight = await tx.clinicalInsight.create({
+              data: {
+                patientId,
+                sessionId,
+                fingerprint: cand.fingerprint,
+                insightType: cand.insightType,
+                title: cand.title,
+                description: cand.description,
+                status: cand.status,
+                confidence: cand.confidence,
+                ruleOrModelVersion: cand.algorithmVersion,
+                metadata: {
+                  fingerprint: cand.fingerprint,
+                  priority: cand.priority,
+                  confidenceLevel: cand.confidenceLevel,
+                  explanation: cand.explanation,
+                  ...cand.metadata,
+                } as any,
+              },
+            });
+          }
+
+          // Link evidence items atomically with conflict ignore
+          const currentEv = await tx.clinicalEvidence.findMany({
+            where: { insightId: insight.id },
+          });
+          const existingObsIds = new Set(currentEv.map((e) => e.observationId));
+          const createdEv: ClinicalEvidence[] = [...currentEv];
+
           for (const ev of cand.evidence) {
-            // Verify observation exists in DB before linking
+            if (existingObsIds.has(ev.observationId)) continue;
+
             const obsExists = await tx.clinicalObservation.findUnique({
               where: { id: ev.observationId },
             });
@@ -586,6 +623,7 @@ export class ClinicalInsightService {
                 },
               });
               createdEv.push(evItem);
+              existingObsIds.add(ev.observationId);
             }
           }
 
@@ -597,45 +635,95 @@ export class ClinicalInsightService {
 
         persistedInsights.push(saved);
         inMemoryInsights.set(saved.id, saved);
-      } catch {
-        // Fallback in-memory representation for serverless DB disconnection
-        const fallbackInsight: ClinicalInsight & { evidence: ClinicalEvidence[] } = {
-          id: `ins-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-          patientId,
-          sessionId,
-          insightType: cand.insightType,
-          title: cand.title,
-          description: cand.description,
-          status: cand.status,
-          confidence: cand.confidence,
-          ruleOrModelVersion: cand.algorithmVersion,
-          reviewedById: null,
-          doctorDecision: null,
-          doctorOverrideText: null,
-          doctorReviewReason: null,
-          reviewedAt: null,
-          metadata: {
-            fingerprint: cand.fingerprint,
-            priority: cand.priority,
-            confidenceLevel: cand.confidenceLevel,
-            explanation: cand.explanation,
-            ...cand.metadata,
-          } as any,
-          generatedAt: new Date(),
-          updatedAt: new Date(),
-          evidence: cand.evidence.map((ev, idx) => ({
-            id: `ev-${Date.now()}-${idx}`,
-            insightId: `ins-${Date.now()}`,
-            observationId: ev.observationId,
-            relationship: ev.relationship,
-            weight: ev.weight,
-            rationale: ev.rationale,
-            createdAt: new Date(),
-          })),
-        };
+      } catch (err: any) {
+        // Concurrency unique constraint race recovery: fetch the winner record
+        try {
+          const recovered = await prisma.clinicalInsight.findUnique({
+            where: {
+              sessionId_fingerprint: {
+                sessionId,
+                fingerprint: cand.fingerprint,
+              },
+            },
+            include: { evidence: true },
+          });
+          if (recovered) {
+            persistedInsights.push(recovered);
+            inMemoryInsights.set(recovered.id, recovered);
+            continue;
+          }
+        } catch {
+          // Proceed to in-memory fallback if database is completely offline
+        }
 
-        persistedInsights.push(fallbackInsight);
-        inMemoryInsights.set(fallbackInsight.id, fallbackInsight);
+        // Fallback in-memory representation for serverless DB disconnection
+        // In-memory Deduplication Key: `${sessionId}::${cand.fingerprint}`
+        let fallbackInsight: (ClinicalInsight & { evidence: ClinicalEvidence[] }) | undefined;
+        const memoryValues = Array.from(inMemoryInsights.values());
+        for (const existingMem of memoryValues) {
+          const memFp = existingMem.fingerprint || (existingMem.metadata as any)?.fingerprint;
+          if (existingMem.sessionId === sessionId && memFp === cand.fingerprint) {
+            fallbackInsight = existingMem;
+            break;
+          }
+        }
+
+        if (fallbackInsight) {
+          // If already doctor reviewed, preserve doctor status
+          const isDocReviewed =
+            fallbackInsight.status === InsightStatus.VERIFIED ||
+            fallbackInsight.status === InsightStatus.REJECTED ||
+            fallbackInsight.status === InsightStatus.OVERRIDDEN ||
+            fallbackInsight.doctorDecision !== null;
+
+          if (!isDocReviewed) {
+            fallbackInsight.title = cand.title;
+            fallbackInsight.status = cand.status;
+          }
+          fallbackInsight.description = cand.description;
+          fallbackInsight.confidence = cand.confidence;
+          fallbackInsight.ruleOrModelVersion = cand.algorithmVersion;
+          persistedInsights.push(fallbackInsight);
+        } else {
+          const newFallback: ClinicalInsight & { evidence: ClinicalEvidence[] } = {
+            id: `ins-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+            patientId,
+            sessionId,
+            fingerprint: cand.fingerprint,
+            insightType: cand.insightType,
+            title: cand.title,
+            description: cand.description,
+            status: cand.status,
+            confidence: cand.confidence,
+            ruleOrModelVersion: cand.algorithmVersion,
+            reviewedById: null,
+            doctorDecision: null,
+            doctorOverrideText: null,
+            doctorReviewReason: null,
+            reviewedAt: null,
+            metadata: {
+              fingerprint: cand.fingerprint,
+              priority: cand.priority,
+              confidenceLevel: cand.confidenceLevel,
+              explanation: cand.explanation,
+              ...cand.metadata,
+            } as any,
+            generatedAt: new Date(),
+            updatedAt: new Date(),
+            evidence: cand.evidence.map((ev, idx) => ({
+              id: `ev-${Date.now()}-${idx}`,
+              insightId: `ins-${Date.now()}`,
+              observationId: ev.observationId,
+              relationship: ev.relationship,
+              weight: ev.weight,
+              rationale: ev.rationale,
+              createdAt: new Date(),
+            })),
+          };
+
+          persistedInsights.push(newFallback);
+          inMemoryInsights.set(newFallback.id, newFallback);
+        }
       }
     }
 
@@ -687,25 +775,33 @@ export class ClinicalInsightService {
       return updated;
     } catch {
       // In-Memory Fallback
+      const existingMem = inMemoryInsights.get(payload.insightId);
       const fallback: ClinicalInsight = {
         id: payload.insightId,
-        patientId: "pat-fallback",
-        sessionId: "sess-fallback",
-        insightType: "PERSISTENT_FINDING",
-        title: "Reviewed Finding",
-        description: "Clinical finding reviewed by attending physician.",
+        patientId: existingMem?.patientId || "pat-fallback",
+        sessionId: existingMem?.sessionId || "sess-fallback",
+        fingerprint: existingMem?.fingerprint || `fp-rev-${payload.insightId}`,
+        insightType: existingMem?.insightType || "PERSISTENT_FINDING",
+        title: existingMem?.title || "Reviewed Finding",
+        description: existingMem?.description || "Clinical finding reviewed by attending physician.",
         status: updatedStatus,
-        confidence: 0.9,
-        ruleOrModelVersion: this.ALGORITHM_VERSION,
+        confidence: existingMem?.confidence || 0.9,
+        ruleOrModelVersion: existingMem?.ruleOrModelVersion || this.ALGORITHM_VERSION,
         reviewedById: payload.doctorId,
         doctorDecision: payload.decision,
         doctorOverrideText: payload.overrideText || null,
         doctorReviewReason: payload.reason || null,
         reviewedAt: new Date(),
-        metadata: null,
-        generatedAt: new Date(),
+        metadata: existingMem?.metadata || null,
+        generatedAt: existingMem?.generatedAt || new Date(),
         updatedAt: new Date(),
       };
+
+      inMemoryInsights.set(payload.insightId, {
+        ...fallback,
+        evidence: existingMem?.evidence || [],
+      });
+
       return fallback;
     }
   }
