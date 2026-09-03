@@ -63,3 +63,17 @@ export class FieldEncryptionService {
     return `${abha.substring(0, 7)}-XXXX-${abha.substring(abha.length - 4)}`;
   }
 }
+
+/**
+ * Returns true if AES-256-GCM encryption is operational and key is properly sized
+ */
+export function isCryptoConfigured(): boolean {
+  try {
+    const testPlain = "medimind-probe-token";
+    const enc = FieldEncryptionService.encrypt(testPlain);
+    const dec = FieldEncryptionService.decrypt(enc);
+    return dec === testPlain && ENCRYPTION_KEY.length === 32;
+  } catch {
+    return false;
+  }
+}

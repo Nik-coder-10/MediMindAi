@@ -354,6 +354,56 @@ class InMemoryClinicalStore {
       s.clinicalSummary.updatedAt = new Date();
     }
   }
+
+  public createSession(data: { id: string; patientId: string; language?: string; triagePriority?: "ROUTINE" | "URGENT" | "EMERGENCY"; status?: "IN_PROGRESS" | "WAITING_FOR_DOCTOR" | "COMPLETED" | "CANCELLED" }) {
+    const newSession: StoredSession = {
+      id: data.id,
+      patientId: data.patientId,
+      doctorId: null,
+      status: data.status || "IN_PROGRESS",
+      triagePriority: data.triagePriority || "ROUTINE",
+      language: data.language || "en",
+      startedAt: new Date(),
+      updatedAt: new Date(),
+      completedAt: null,
+      redFlagTriggered: false,
+      patient: {
+        id: data.patientId,
+        userId: data.patientId,
+        firstName: "Test",
+        lastName: "Patient",
+        dateOfBirth: new Date("1990-01-01"),
+        gender: "OTHER",
+        bloodGroup: "O+",
+        timelineEvents: [],
+        consentRecords: [],
+      },
+      doctor: null,
+      chiefComplaints: [],
+      patientAnswers: [],
+      conversationTurns: [],
+      medicalDocuments: [],
+      redFlagEvents: [],
+      clinicalSummary: null,
+      ayurvedaAssessment: null,
+    };
+    return this.upsertSession(newSession);
+  }
+
+  public listSessions(filter?: { status?: string; patientId?: string }): StoredSession[] {
+    let list = this.getAllSessions();
+    if (filter?.status) {
+      list = list.filter((s) => s.status === filter.status);
+    }
+    if (filter?.patientId) {
+      list = list.filter((s) => s.patientId === filter.patientId || s.patient.userId === filter.patientId);
+    }
+    return list;
+  }
+
+  public clearSession(sessionId: string): boolean {
+    return this.sessions.delete(sessionId);
+  }
 }
 
 const globalForStore = globalThis as unknown as {

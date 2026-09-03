@@ -91,6 +91,22 @@ export class TesseractImageProvider implements OCRProvider {
     const os = require("os");
     const path = require("path");
 
+    // Check magic bytes before invoking Tesseract worker to prevent worker uncaught exceptions on corrupt bytes
+    const isPng = fileBuffer.length >= 8 && fileBuffer[0] === 0x89 && fileBuffer[1] === 0x50 && fileBuffer[2] === 0x4e && fileBuffer[3] === 0x47;
+    const isJpg = fileBuffer.length >= 3 && fileBuffer[0] === 0xff && fileBuffer[1] === 0xd8 && fileBuffer[2] === 0xff;
+    const isWebp = fileBuffer.length >= 12 && fileBuffer.slice(0, 4).toString("ascii") === "RIFF" && fileBuffer.slice(8, 12).toString("ascii") === "WEBP";
+
+    if (!isPng && !isJpg && !isWebp) {
+      return {
+        rawText: "",
+        confidence: 0,
+        detectedLanguage: "en",
+        pageCount: 1,
+        provider: "none",
+        error: "Unrecognized or corrupt image format",
+      };
+    }
+
     const processedBuffer = await this.preprocessImageBuffer(fileBuffer);
     const ext = mimeType.includes("png") ? ".png" : mimeType.includes("jpeg") || mimeType.includes("jpg") ? ".jpg" : ".png";
     const tmp = path.join(os.tmpdir(), `ocr_${Date.now()}_${Math.random().toString(36).slice(2)}${ext}`);

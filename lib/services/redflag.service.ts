@@ -62,6 +62,70 @@ export class RedFlagService {
   }
 
   /**
+   * Evaluates an array of clinical observations and flags triggered rules
+   */
+  static evaluateObservations(observations: Array<{
+    code?: string;
+    value?: string | null;
+    rawText?: string | null;
+    severity?: string | null;
+  }>): {
+    highestSeverity: "CRITICAL" | "HIGH" | "NONE";
+    triggeredRules: Array<{ ruleId: string; severity: string; description: string }>;
+  } {
+    const triggeredRules: Array<{ ruleId: string; severity: string; description: string }> = [];
+
+    for (const obs of observations) {
+      const text = `${obs.code || ""} ${obs.value || ""} ${obs.rawText || ""}`.toLowerCase();
+      
+      // Cardiac / Chest Pain Emergency rules
+      if (
+        (text.includes("chest") && (text.includes("radiat") || text.includes("arm") || text.includes("jaw"))) ||
+        (text.includes("chest") && text.includes("diaphoresis")) ||
+        (text.includes("chest") && (text.includes("sweat") || text.includes("crushing")))
+      ) {
+        triggeredRules.push({
+          ruleId: "RF_ACS_RADIATION",
+          severity: "CRITICAL",
+          description: "Chest pain radiating to left arm or accompanied by diaphoresis. Suspected ACS.",
+        });
+      }
+
+      // Neurological / Stroke rules
+      if (
+        text.includes("thunderclap") ||
+        (text.includes("facial") && text.includes("droop")) ||
+        (text.includes("slur") && text.includes("speech")) ||
+        (text.includes("stiff") && text.includes("neck") && text.includes("fever"))
+      ) {
+        triggeredRules.push({
+          ruleId: "RF_STROKE_FAST_SIGNS",
+          severity: "CRITICAL",
+          description: "Acute neurological deficit or severe sudden headache.",
+        });
+      }
+
+      // GI Hemorrhage rules
+      if (text.includes("vomit") && text.includes("blood") || text.includes("melena")) {
+        triggeredRules.push({
+          ruleId: "RF_GI_BLEED_HEMATEMESIS",
+          severity: "CRITICAL",
+          description: "Active gastrointestinal hemorrhage.",
+        });
+      }
+    }
+
+    const hasCritical = triggeredRules.some((r) => r.severity === "CRITICAL");
+    const hasHigh = triggeredRules.some((r) => r.severity === "HIGH");
+    const highestSeverity = hasCritical ? "CRITICAL" : hasHigh ? "HIGH" : "NONE";
+
+    return {
+      highestSeverity,
+      triggeredRules,
+    };
+  }
+
+  /**
    * Lists all active red flag events for a given session
    */
   static async getSessionRedFlags(sessionId: string) {

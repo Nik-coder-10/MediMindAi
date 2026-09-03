@@ -952,8 +952,22 @@ export class OCRService {
     fileBuffer: Buffer,
     mimeType: string = "application/pdf"
   ): Promise<{ ocr: OCRResult; entities: ExtractedEntitiesResult }> {
-    const ocr = await this.provider.extractText(fileBuffer, mimeType);
-    const entities = MedicalEntityExtractor.extractEntities(ocr.rawText);
-    return { ocr, entities };
+    try {
+      const ocr = await this.provider.extractText(fileBuffer, mimeType);
+      const entities = MedicalEntityExtractor.extractEntities(ocr.rawText);
+      return { ocr, entities };
+    } catch (err: any) {
+      // Safe fallback when image is corrupted, unreadable, or not a valid image/PDF
+      const fallbackOcr: OCRResult = {
+        rawText: "",
+        confidence: 0.0,
+        detectedLanguage: "en",
+        pageCount: 1,
+        provider: "fallback",
+        error: err?.message || "Failed to parse document",
+      };
+      const entities = MedicalEntityExtractor.extractEntities("");
+      return { ocr: fallbackOcr, entities };
+    }
   }
 }

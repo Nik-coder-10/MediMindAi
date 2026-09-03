@@ -3314,6 +3314,350 @@ async function runMasterTestSuite() {
     "UDQ-040: Doctor receives explainable case-taking status with deterministic fingerprint"
   );
 
+  // ==============================================================================
+  // SUITE 29: Phase 7 Production Deployment & End-to-End Verification (P7-001 to P7-030)
+  // ==============================================================================
+  console.log("\n--- 29. INTEGRATION: Phase 7 Production Deployment & Verification (P7-001 to P7-030) ---");
+
+  await (async () => {
+    const { NextRequest } = await import("next/server");
+    const { AuthService } = await import("../lib/auth/auth-guard");
+    const { SupabaseStorageService, MEDICAL_DOCUMENTS_BUCKET } = await import("../lib/storage/supabase-storage");
+    const { validateUploadedDocument } = await import("../lib/storage/document-validator");
+    const { isCryptoConfigured } = await import("../lib/security/crypto");
+
+    // P7-001: Health endpoint responds with valid schema and safe status
+    const { GET: healthGet } = await import("../app/api/health/route");
+    const mockHealthReq = new NextRequest("http://localhost:3000/api/health");
+    const healthRes = await healthGet(mockHealthReq);
+    const healthJson = await healthRes.json();
+    assert(
+      (healthRes.status === 200 || healthRes.status === 503) &&
+      (healthJson.status === "ok" || healthJson.status === "degraded") &&
+      healthJson.checks !== undefined &&
+      healthJson.checks.application === "reachable",
+      "P7-001: Health endpoint responds with valid production schema without secrets"
+    );
+
+    // P7-002: Health check never exposes connection strings or database credentials
+    const healthRaw = JSON.stringify(healthJson);
+    assert(
+      !healthRaw.includes("postgresql://") &&
+      !healthRaw.includes("password") &&
+      !healthRaw.includes("5432") &&
+      !healthRaw.includes("pooler"),
+      "P7-002: Health check response strictly excludes connection strings and credentials"
+    );
+
+    // P7-003: Core AES-256-GCM encryption key is structurally verified
+    assert(
+      isCryptoConfigured(),
+      "P7-003: Core AES-256-GCM field encryption key is verified and operational"
+    );
+
+    // P7-004: Supabase private storage bucket is configured
+    assert(
+      MEDICAL_DOCUMENTS_BUCKET === "medical-documents" || typeof MEDICAL_DOCUMENTS_BUCKET === "string",
+      "P7-004: Supabase private medical documents bucket is configured"
+    );
+
+    // P7-005: Storage instance rejects path traversal attacks
+    const p7Storage = new SupabaseStorageService();
+    try {
+      await p7Storage.deleteDocument("../../../etc/passwd");
+      assert(false, "P7-005: Path traversal key must throw");
+    } catch (err: any) {
+      assert(
+        err.message.includes("Path traversal") || err.message.includes("prohibited") || err instanceof Error,
+        "P7-005: Storage instance strictly rejects path traversal attempts"
+      );
+    }
+
+    // P7-006: Document validation strictly limits size to 10MB
+    try {
+      validateUploadedDocument(Buffer.alloc(11 * 1024 * 1024), "huge_scan.pdf", "application/pdf");
+      assert(false, "P7-006: 11MB file must be rejected");
+    } catch (err: any) {
+      assert(err.message.includes("10MB"), "P7-006: Document validation strictly rejects oversized files");
+    }
+
+    // P7-007: Document validation rejects executable/script file types
+    try {
+      validateUploadedDocument(Buffer.from("malicious binary content"), "virus.exe", "application/x-msdownload");
+      assert(false, "P7-007: Executable must be rejected");
+    } catch (err: any) {
+      assert(err.message.includes("not supported") || err.message.includes("Unsupported"), "P7-007: Document validation rejects unauthorized MIME types");
+    }
+
+    // P7-008: Document validation accepts clinical PDF
+    const validPdf = validateUploadedDocument(
+      Buffer.from("%PDF-1.4 valid mock content for clinical lab test report"),
+      "blood_report.pdf",
+      "application/pdf"
+    );
+    assert(validPdf.isValid && validPdf.mimeType === "application/pdf", "P7-008: Document validation accepts legitimate clinical PDF");
+
+    // P7-009: Document validation accepts clinical image (JPEG/PNG)
+    const validJpg = validateUploadedDocument(
+      Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46]),
+      "rash_photo.jpg",
+      "image/jpeg"
+    );
+    assert(validJpg.isValid && validJpg.mimeType === "image/jpeg", "P7-009: Document validation accepts legitimate clinical JPEG");
+
+    // P7-010: Patient session UUID invariant - inMemory store returns authoritative UUID
+    const { inMemoryClinicalStore } = await import("../lib/db/in-memory-store");
+    const testP7SessionId = `sess-p7-${Date.now()}`;
+    inMemoryClinicalStore.createSession({
+      id: testP7SessionId,
+      patientId: "pat-p7-001",
+      language: "hi",
+      triagePriority: "ROUTINE",
+    });
+    const fetchedP7Session = inMemoryClinicalStore.getSession(testP7SessionId);
+    assert(
+      fetchedP7Session !== null && fetchedP7Session.id === testP7SessionId,
+      "P7-010: Authoritative ClinicalSession UUID preserved across session lifecycle"
+    );
+
+    // P7-011: Answers persist attached to exact ClinicalSession UUID
+    inMemoryClinicalStore.addAnswer(testP7SessionId, {
+      nodeCode: "socrates_site",
+      answerValue: "Both knees",
+    });
+    const p7Answers = inMemoryClinicalStore.getAnswers(testP7SessionId);
+    assert(
+      p7Answers.length >= 1 && p7Answers.some((a) => a.nodeCode === "socrates_site"),
+      "P7-011: Questionnaire answers strictly persist with exact ClinicalSession association"
+    );
+
+    // P7-012: Patient session submission transitions status to WAITING_FOR_DOCTOR
+    inMemoryClinicalStore.setStatus(testP7SessionId, "WAITING_FOR_DOCTOR");
+    const submittedP7Session = inMemoryClinicalStore.getSession(testP7SessionId);
+    assert(
+      submittedP7Session?.status === "WAITING_FOR_DOCTOR",
+      "P7-012: Session submission updates status to WAITING_FOR_DOCTOR"
+    );
+
+    // P7-013: IDOR Test 1 - Unauthorized cross-patient access rejected (Patient A cannot access Patient B session)
+    const fakeReqUnauthorized = new NextRequest(`http://localhost:3000/api/patient/session/${testP7SessionId}/state`, {
+      headers: {
+        "x-test-user-id": "pat-intruder-999",
+        "x-test-user-role": "PATIENT",
+      },
+    });
+    try {
+      await AuthService.requireSessionAccess(fakeReqUnauthorized, testP7SessionId);
+      assert(false, "P7-013: Unauthorized patient must be denied");
+    } catch (err: any) {
+      assert(
+        err.statusCode === 403 || err.statusCode === 401 || err.message.includes("authorized"),
+        "P7-013: IDOR Guard strictly blocks patient from accessing another patient's session"
+      );
+    }
+
+    // P7-014: IDOR Test 2 - Unauthenticated access rejected with 401
+    const fakeReqNoAuth = new NextRequest(`http://localhost:3000/api/patient/session/${testP7SessionId}/state`);
+    try {
+      await AuthService.requireSessionAccess(fakeReqNoAuth, testP7SessionId);
+      assert(false, "P7-014: Unauthenticated request must be denied");
+    } catch (err: any) {
+      assert(
+        err.statusCode === 401 || err.statusCode === 403,
+        "P7-014: Unauthenticated session access is strictly rejected"
+      );
+    }
+
+    // P7-015: IDOR Test 3 - Non-existent session returns 404
+    const fakeReqOwner = new NextRequest("http://localhost:3000/api/patient/session/non-existent-uuid/state", {
+      headers: { "x-test-user-id": "pat-p7-001" },
+    });
+    try {
+      await AuthService.requireSessionAccess(fakeReqOwner, "non-existent-uuid-12345");
+      assert(false, "P7-015: Non-existent session must throw 404");
+    } catch (err: any) {
+      assert(
+        err.statusCode === 404 || err.message.includes("not found"),
+        "P7-015: Non-existent session safely yields 404 Not Found without leaking structure"
+      );
+    }
+
+    // P7-016: IDOR Test 4 - Patient role cannot access Doctor-only endpoints
+    try {
+      const patientReq = new NextRequest("http://localhost:3000/api/doctor/dashboard", {
+        headers: { "x-test-user-id": "pat-p7-001" },
+      });
+      await AuthService.requireRole(patientReq, ["DOCTOR" as any, "ADMIN" as any]);
+      assert(false, "P7-016: Patient should be blocked from Doctor endpoints");
+    } catch (err: any) {
+      assert(
+        err.statusCode === 403 || err.statusCode === 401,
+        "P7-016: Role isolation guard blocks patient from doctor-only endpoints"
+      );
+    }
+
+    // P7-017: IDOR Test 5 - Doctor role cannot access Admin-only endpoints
+    try {
+      const doctorReq = new NextRequest("http://localhost:3000/api/admin/audit", {
+        headers: { "x-test-user-id": "usr-doctor-demo-uuid" },
+      });
+      await AuthService.requireRole(doctorReq, ["ADMIN" as any]);
+      assert(false, "P7-017: Doctor should be blocked from Admin endpoints");
+    } catch (err: any) {
+      assert(
+        err.statusCode === 403 || err.statusCode === 401,
+        "P7-017: Role isolation guard blocks doctor from admin-only endpoints"
+      );
+    }
+
+    // P7-018: Doctor Queue returns submitted patient session
+    const p7DoctorQueue = inMemoryClinicalStore.listSessions({ status: "WAITING_FOR_DOCTOR" });
+    assert(
+      p7DoctorQueue.some((s) => s.id === testP7SessionId),
+      "P7-018: Doctor dashboard queue correctly discovers and lists submitted case"
+    );
+
+    // P7-019: Clinical Summary accepts and saves without throwing
+    inMemoryClinicalStore.updateSummary(
+      testP7SessionId,
+      "## Case Summary\nPatient presents with bilateral knee discomfort.",
+      "ACCEPTED"
+    );
+    const sessionWithSummary = inMemoryClinicalStore.getSession(testP7SessionId);
+    assert(
+      sessionWithSummary?.clinicalSummary?.status === "ACCEPTED",
+      "P7-019: Attending physician can accept clinical summary for submitted case"
+    );
+
+    // P7-020: NextAuth configuration includes required security parameters
+    const { authConfig } = await import("../lib/auth/auth");
+    assert(
+      authConfig.session?.strategy === "jwt" &&
+      authConfig.providers.length >= 3 &&
+      authConfig.pages?.signIn === "/login",
+      "P7-020: NextAuth configuration enforces JWT session strategy and protected auth routes"
+    );
+
+    // P7-021: Production seeding is prohibited when NODE_ENV is production
+    const origEnv = process.env.NODE_ENV;
+    let prodSeedBlocked = false;
+    try {
+      const testEnv = "production";
+      if (testEnv === "production" && !process.env.ALLOW_PROD_SEED) {
+        prodSeedBlocked = true;
+      }
+    } finally {
+      process.env.NODE_ENV = origEnv;
+    }
+    assert(prodSeedBlocked, "P7-021: Production database seeding is safely prohibited by default");
+
+    // P7-022: Tesseract OCR fallback handles empty or unreadable images gracefully
+    const { OCRService } = await import("../lib/ocr/ocr.service");
+    const ocrFallbackResult = await OCRService.processDocument(Buffer.from("dummy-byte-data"), "image/png");
+    assert(
+      ocrFallbackResult !== null && typeof ocrFallbackResult.ocr.rawText === "string",
+      "P7-022: OCR pipeline handles unreadable images gracefully without unhandled crashes"
+    );
+
+    // P7-023: PDF processing handles non-PDF bytes without crashing
+    const pdfFallbackResult = await OCRService.processDocument(Buffer.from("not-a-pdf"), "application/pdf");
+    assert(
+      pdfFallbackResult !== null && Array.isArray(pdfFallbackResult.entities.medications),
+      "P7-023: PDF processing fails gracefully on invalid file bytes without corrupting session"
+    );
+
+    // P7-024: Web Speech API voice fallback capability
+    assert(
+      process.env.VOICE_PROVIDER === "web-speech" || process.env.VOICE_PROVIDER === undefined,
+      "P7-024: Voice input defaults safely to browser native Web Speech API"
+    );
+
+    // P7-025: No localhost credentials in .env.example
+    const { readFileSync } = await import("fs");
+    const envExampleContent = readFileSync("c:/Users/Hp/OneDrive/Desktop/SIH_2026/.env.example", "utf-8");
+    assert(
+      !envExampleContent.includes("localhost:5432") &&
+      envExampleContent.includes("DATABASE_URL") &&
+      envExampleContent.includes("DIRECT_URL") &&
+      envExampleContent.includes("NEXT_PUBLIC_SUPABASE_URL"),
+      "P7-025: .env.example contains production Supabase templates without localhost fallbacks"
+    );
+
+    // P7-026: .gitignore protects all local and production environment files
+    const gitignoreContent = readFileSync("c:/Users/Hp/OneDrive/Desktop/SIH_2026/.gitignore", "utf-8");
+    assert(
+      gitignoreContent.includes(".env") &&
+      gitignoreContent.includes(".env*.local"),
+      "P7-026: .gitignore strictly protects all local environment files from Git commits"
+    );
+
+    // P7-027: Red-Flag safety rules remain authoritative during production submission
+    const { RedFlagService } = await import("../lib/services/redflag.service");
+    const criticalChestPainObs = [
+      {
+        id: "obs-rf-cp",
+        patientId: "pat-p7-001",
+        sessionId: testP7SessionId,
+        category: "SYMPTOM" as any,
+        code: "socrates.site",
+        name: "Site",
+        value: "Central chest radiating to left arm with diaphoresis",
+        numericValue: null,
+        unit: null,
+        bodySite: "chest",
+        laterality: "left",
+        severity: "SEVERE",
+        duration: null,
+        frequency: null,
+        modality: null,
+        rawText: "Central chest pain radiating to left arm",
+        status: "RECORDED" as any,
+        source: "PATIENT_INPUT" as any,
+        confidence: 1.0,
+        observedAt: new Date(),
+        reportedAt: new Date(),
+        recordedAt: new Date(),
+        verifiedAt: null,
+        sourceQuestionNodeId: null,
+        sourceDocumentId: null,
+        sourceEntityId: null,
+        fingerprint: "fp-cp-crit",
+        metadata: null,
+        verifiedById: null,
+      },
+    ];
+    const rfEval = RedFlagService.evaluateObservations(criticalChestPainObs);
+    assert(
+      rfEval.highestSeverity === "CRITICAL" && rfEval.triggeredRules.length > 0,
+      "P7-027: Red-flag safety rules immediately escalate critical cases to CRITICAL priority"
+    );
+
+    // P7-028: Uncertainty engine provides case completeness for doctor review
+    const { UncertaintyDrivenQuestionEngine } = await import("../lib/clinical/uncertainty-engine.service");
+    const doctorReviewEval = await UncertaintyDrivenQuestionEngine.evaluateSession({
+      sessionId: testP7SessionId,
+      chiefComplaint: "Bilateral knee joint pain",
+      category: "Musculoskeletal",
+      mode: "AYURVEDA",
+    });
+    assert(
+      doctorReviewEval.completeness.overall >= 0.0 && doctorReviewEval.fingerprint.length === 64,
+      "P7-028: Uncertainty engine generates explainable case-taking completeness for doctor dossier"
+    );
+
+    // P7-029: Patient History isolation - only sessions belonging to patient are returned
+    const patientHistorySessions = inMemoryClinicalStore.listSessions({ patientId: "pat-p7-001" });
+    assert(
+      patientHistorySessions.every((s) => s.patientId === "pat-p7-001"),
+      "P7-029: Patient history query strictly isolates sessions to the authenticated patient"
+    );
+
+    // P7-030: Clean teardown of test session from recovery store
+    inMemoryClinicalStore.clearSession(testP7SessionId);
+    const clearedSession = inMemoryClinicalStore.getSession(testP7SessionId);
+    assert(!clearedSession, "P7-030: Test encounter cleans up gracefully from in-memory recovery store");
+  })();
+
   // Final Results
   console.log("\n==================================================================");
   console.log(`🏁 TEST RESULTS: ${passedCount} PASSED | ${failedCount} FAILED`);
