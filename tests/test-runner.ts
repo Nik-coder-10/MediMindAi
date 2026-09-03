@@ -2728,6 +2728,592 @@ async function runMasterTestSuite() {
     "P51-026: Deterministic insight generation remains free of prescription generation"
   );
 
+  // ==============================================================================
+  // SUITE 28: Uncertainty-Driven Adaptive Question Engine (UDQ-001 to UDQ-040)
+  // ==============================================================================
+  console.log("\n--- 28. UNIT: Phase 6 Uncertainty-Driven Adaptive Question Engine (UDQ-001 to UDQ-040) ---");
+
+  const { UncertaintyService } = await import("../lib/clinical/uncertainty.service");
+  const { QuestionRedundancyDetector } = await import("../lib/clinical/redundancy.service");
+  const { QuestionFatigueGuard } = await import("../lib/clinical/fatigue.service");
+  const { QuestionRankingService } = await import("../lib/clinical/question-ranking.service");
+  const { UncertaintyDrivenQuestionEngine } = await import("../lib/clinical/uncertainty-engine.service");
+
+  // TEST GROUP A: Uncertainty Detection (UDQ-001 to UDQ-005)
+  // UDQ-001: Unknown severity creates an explicit severity information gap
+  const evalEmpty = UncertaintyService.evaluateCompleteness({
+    sessionId: "sess-udq-empty",
+    chiefComplaint: "Severe knee pain and stiffness",
+    category: "Musculoskeletal",
+    mode: "GENERAL",
+    observations: [],
+  });
+  const severityGap = evalEmpty.missingImportantFacets.find((g) => g.dimension === "SEVERITY");
+  assert(severityGap !== undefined && severityGap.status === "UNKNOWN", "UDQ-001: Unknown severity creates an explicit severity information gap");
+
+  // UDQ-002: Known severity resolves the gap
+  const evalKnown = UncertaintyService.evaluateCompleteness({
+    sessionId: "sess-udq-known",
+    chiefComplaint: "Severe knee pain and stiffness",
+    category: "Musculoskeletal",
+    mode: "GENERAL",
+    observations: [
+      {
+        id: "obs-sev",
+        patientId: "pat-1",
+        sessionId: "sess-udq-known",
+        category: "SYMPTOM" as any,
+        code: "socrates.severity",
+        name: "Pain Severity",
+        value: "8",
+        numericValue: 8,
+        unit: "/10",
+        bodySite: "knee",
+        laterality: null,
+        severity: "SEVERE",
+        duration: null,
+        frequency: null,
+        modality: null,
+        rawText: "Severity 8 out of 10",
+        status: "RECORDED" as any,
+        source: "PATIENT_INPUT" as any,
+        confidence: 1.0,
+        observedAt: new Date(),
+        reportedAt: new Date(),
+        recordedAt: new Date(),
+        verifiedAt: null,
+        sourceQuestionNodeId: "q_severity",
+        sourceDocumentId: null,
+        sourceEntityId: null,
+        fingerprint: "fp-sev",
+        metadata: null,
+        verifiedById: null,
+      },
+    ],
+  });
+  const severityGapResolved = evalKnown.missingImportantFacets.find((g) => g.dimension === "SEVERITY");
+  assert(severityGapResolved === undefined && evalKnown.categoryCompleteness.SEVERITY.status === "COMPLETE", "UDQ-002: Known severity resolves the gap");
+
+  // UDQ-003: Partial information creates PARTIALLY_KNOWN
+  const redundancyPartial = QuestionRedundancyDetector.evaluateRedundancy({
+    questionId: "q_onset",
+    facetKey: "socrates.onset",
+    answeredQuestionIds: new Set(),
+    answeredValues: {},
+    observations: [],
+    longitudinalObs: [
+      {
+        id: "obs-hist-onset",
+        patientId: "pat-1",
+        sessionId: "sess-prior",
+        category: "SYMPTOM" as any,
+        code: "socrates.onset",
+        name: "Onset",
+        value: "Gradual onset over 2 weeks",
+        numericValue: null,
+        unit: null,
+        bodySite: null,
+        laterality: null,
+        severity: null,
+        duration: null,
+        frequency: null,
+        modality: null,
+        rawText: "Gradual onset",
+        status: "RECORDED" as any,
+        source: "PATIENT_INPUT" as any,
+        confidence: 1.0,
+        observedAt: new Date(),
+        reportedAt: new Date(),
+        recordedAt: new Date(),
+        verifiedAt: null,
+        sourceQuestionNodeId: null,
+        sourceDocumentId: null,
+        sourceEntityId: null,
+        fingerprint: "fp-hist-onset",
+        metadata: null,
+        verifiedById: null,
+      },
+    ],
+  });
+  assert(redundancyPartial.facetStatus === "PARTIALLY_KNOWN", "UDQ-003: Partial longitudinal information creates PARTIALLY_KNOWN");
+
+  // UDQ-004: Contradictory information creates CONTRADICTORY
+  const redundancyConflict = QuestionRedundancyDetector.evaluateRedundancy({
+    questionId: "q_conflict",
+    facetKey: "socrates.severity",
+    answeredQuestionIds: new Set(),
+    answeredValues: {},
+    observations: [
+      {
+        id: "obs-c1",
+        patientId: "pat-1",
+        sessionId: "sess-conflict",
+        category: "SYMPTOM" as any,
+        code: "socrates.severity",
+        name: "Pain Severity",
+        value: "2",
+        numericValue: 2,
+        unit: "/10",
+        bodySite: null,
+        laterality: null,
+        severity: null,
+        duration: null,
+        frequency: null,
+        modality: null,
+        rawText: "Mild pain 2",
+        status: "RECORDED" as any,
+        source: "PATIENT_INPUT" as any,
+        confidence: 1.0,
+        observedAt: new Date(Date.now() - 3600000),
+        reportedAt: new Date(Date.now() - 3600000),
+        recordedAt: new Date(Date.now() - 3600000),
+        verifiedAt: null,
+        sourceQuestionNodeId: null,
+        sourceDocumentId: null,
+        sourceEntityId: null,
+        fingerprint: "fp-c1",
+        metadata: null,
+        verifiedById: null,
+      },
+      {
+        id: "obs-c2",
+        patientId: "pat-1",
+        sessionId: "sess-conflict",
+        category: "SYMPTOM" as any,
+        code: "socrates.severity",
+        name: "Pain Severity",
+        value: "9",
+        numericValue: 9,
+        unit: "/10",
+        bodySite: null,
+        laterality: null,
+        severity: null,
+        duration: null,
+        frequency: null,
+        modality: null,
+        rawText: "Severe pain 9",
+        status: "RECORDED" as any,
+        source: "PATIENT_INPUT" as any,
+        confidence: 1.0,
+        observedAt: new Date(),
+        reportedAt: new Date(),
+        recordedAt: new Date(),
+        verifiedAt: null,
+        sourceQuestionNodeId: null,
+        sourceDocumentId: null,
+        sourceEntityId: null,
+        fingerprint: "fp-c2",
+        metadata: null,
+        verifiedById: null,
+      },
+    ],
+  });
+  assert(redundancyConflict.facetStatus === "CONTRADICTORY" && redundancyConflict.isContradictory === true, "UDQ-004: Contradictory information creates CONTRADICTORY");
+
+  // UDQ-005: NOT_APPLICABLE does not reduce completeness
+  const evalGenMode = UncertaintyService.evaluateCompleteness({
+    sessionId: "sess-udq-gen",
+    chiefComplaint: "Mild cough and throat irritation",
+    category: "Respiratory",
+    mode: "GENERAL",
+    observations: [],
+  });
+  assert(evalGenMode.categoryCompleteness.AYURVEDIC_AGNI.status === "EXEMPT", "UDQ-005: Inactive AYUSH dimensions are marked EXEMPT in GENERAL mode");
+
+  // TEST GROUP B: Case Completeness (UDQ-006 to UDQ-010)
+  // UDQ-006: Relevant known facets increase completeness
+  assert(evalKnown.overall > evalEmpty.overall, "UDQ-006: Relevant known facets increase completeness");
+
+  // UDQ-007: Irrelevant complaint facets do not reduce completeness
+  assert(evalGenMode.categoryCompleteness.AYURVEDIC_PRAKRITI.applicableWeight === 0, "UDQ-007: Irrelevant complaint facets have 0 applicable weight");
+
+  // UDQ-008: Safety dimensions receive higher configured importance
+  assert(
+    UncertaintyService.DIMENSION_WEIGHTS.NEGATIVE_SAFETY_FINDINGS.weight > UncertaintyService.DIMENSION_WEIGHTS.FAMILY_HISTORY.weight,
+    "UDQ-008: Safety dimensions receive higher configured importance"
+  );
+
+  // UDQ-009: Completeness remains within valid bounds
+  assert(evalKnown.overall >= 0.0 && evalKnown.overall <= 1.0, "UDQ-009: Completeness remains within valid [0.0, 1.0] bounds");
+
+  // UDQ-010: Completeness is explainable by category
+  assert(
+    Object.keys(evalKnown.categoryCompleteness).length >= 10,
+    "UDQ-010: Completeness is explainable by category across dimensions"
+  );
+
+  // TEST GROUP C: Question Ranking (UDQ-011 to UDQ-015)
+  // UDQ-011: Higher information value ranks above lower value
+  const candidatesTest = [
+    {
+      questionId: "q_optional_hobby",
+      text: "Do you have any outdoor hobbies?",
+      textEn: "Do you have any outdoor hobbies?",
+      type: "text",
+      clinicalPurpose: "social_history",
+      dimension: "LIFESTYLE" as any,
+      facetKey: "history.lifestyle",
+    },
+    {
+      questionId: "q_critical_redflag",
+      text: "Any chest tightness radiating to jaw or sweating?",
+      textEn: "Any chest tightness radiating to jaw or sweating?",
+      type: "yes_no",
+      clinicalPurpose: "red_flag",
+      dimension: "NEGATIVE_SAFETY_FINDINGS" as any,
+      facetKey: "safety.red_flag_screening",
+      isRedFlagScreening: true,
+    },
+  ];
+  const rankedCands = QuestionRankingService.rankCandidates(candidatesTest, {
+    sessionId: "sess-rank",
+    chiefComplaint: "Acute chest discomfort",
+    category: "Chest Pain",
+    mode: "GENERAL",
+    completeness: evalEmpty,
+    observations: [],
+    answeredQuestionIds: new Set(),
+    answeredValues: {},
+    questionHistory: [],
+  });
+  assert(rankedCands[0].questionId === "q_critical_redflag", "UDQ-011: Higher information and safety value ranks above lower value");
+
+  // UDQ-012: Red-flag screening outranks optional history
+  assert(rankedCands[0].priority === "critical", "UDQ-012: Red-flag screening outranks optional history and receives critical priority");
+
+  // UDQ-013: Chief complaint relevance affects ranking
+  assert(rankedCands[0].rationale.relevance >= 0.6, "UDQ-013: Chief complaint relevance scores positively in ranking");
+
+  // UDQ-014: Question fatigue affects ranking
+  const fatigueEval = QuestionFatigueGuard.evaluate({
+    totalQuestionsAnswered: 8,
+    questionHistory: [
+      { questionId: "q1", dimension: "SEVERITY" },
+      { questionId: "q2", dimension: "SEVERITY" },
+    ],
+    overallCompleteness: 0.6,
+    hasBlockingGaps: true,
+    hasActiveCriticalRedFlag: false,
+    nextCandidateDimension: "SEVERITY",
+  });
+  assert(fatigueEval.fatiguePenalty > 0.4, "UDQ-014: Consecutive inquiries in same dimension incur fatigue penalty");
+
+  // UDQ-015: Same state produces deterministic ranking
+  const rankedAgain = QuestionRankingService.rankCandidates(candidatesTest, {
+    sessionId: "sess-rank",
+    chiefComplaint: "Acute chest discomfort",
+    category: "Chest Pain",
+    mode: "GENERAL",
+    completeness: evalEmpty,
+    observations: [],
+    answeredQuestionIds: new Set(),
+    answeredValues: {},
+    questionHistory: [],
+  });
+  assert(rankedCands[0].questionId === rankedAgain[0].questionId && rankedCands[0].rationale.score === rankedAgain[0].rationale.score, "UDQ-015: Same state produces deterministic ranking");
+
+  // TEST GROUP D: Redundancy Detection (UDQ-016 to UDQ-020)
+  // UDQ-016: Answered question is not repeated
+  const redundancyDirect = QuestionRedundancyDetector.evaluateRedundancy({
+    questionId: "q_knee_site",
+    facetKey: "socrates.site",
+    answeredQuestionIds: new Set(["q_knee_site"]),
+    answeredValues: { q_knee_site: "Right knee joint" },
+    observations: [],
+  });
+  assert(redundancyDirect.isRedundant === true && redundancyDirect.penalty === 1.0, "UDQ-016: Answered question is marked completely redundant");
+
+  // UDQ-017: Equivalent facet is not repeated
+  const redundancyFacet = QuestionRedundancyDetector.evaluateRedundancy({
+    questionId: "q_diff_id",
+    facetKey: "socrates.severity",
+    answeredQuestionIds: new Set(),
+    answeredValues: {},
+    observations: [
+      {
+        id: "obs-exist",
+        patientId: "pat-1",
+        sessionId: "sess-1",
+        category: "SYMPTOM" as any,
+        code: "socrates.severity",
+        name: "Severity",
+        value: "7",
+        numericValue: 7,
+        unit: "/10",
+        bodySite: null,
+        laterality: null,
+        severity: null,
+        duration: null,
+        frequency: null,
+        modality: null,
+        rawText: "7",
+        status: "RECORDED" as any,
+        source: "PATIENT_INPUT" as any,
+        confidence: 1.0,
+        observedAt: new Date(),
+        reportedAt: new Date(),
+        recordedAt: new Date(),
+        verifiedAt: null,
+        sourceQuestionNodeId: null,
+        sourceDocumentId: null,
+        sourceEntityId: null,
+        fingerprint: "fp-ex",
+        metadata: null,
+        verifiedById: null,
+      },
+    ],
+  });
+  assert(redundancyFacet.isRedundant === true, "UDQ-017: Equivalent facet with existing ClinicalObservation is not repeated");
+
+  // UDQ-018: Explicit negative answer is treated as known information
+  const redundancyRefuted = QuestionRedundancyDetector.evaluateRedundancy({
+    questionId: "q_allergy",
+    facetKey: "history.allergies",
+    answeredQuestionIds: new Set(),
+    answeredValues: {},
+    observations: [
+      {
+        id: "obs-no-allergy",
+        patientId: "pat-1",
+        sessionId: "sess-1",
+        category: "ALLERGY" as any,
+        code: "history.allergies",
+        name: "Known Allergies",
+        value: "No known allergies (Denies)",
+        numericValue: null,
+        unit: null,
+        bodySite: null,
+        laterality: null,
+        severity: null,
+        duration: null,
+        frequency: null,
+        modality: null,
+        rawText: "No allergies",
+        status: "REFUTED" as any,
+        source: "PATIENT_INPUT" as any,
+        confidence: 1.0,
+        observedAt: new Date(),
+        reportedAt: new Date(),
+        recordedAt: new Date(),
+        verifiedAt: null,
+        sourceQuestionNodeId: null,
+        sourceDocumentId: null,
+        sourceEntityId: null,
+        fingerprint: "fp-allergy-ref",
+        metadata: null,
+        verifiedById: null,
+      },
+    ],
+  });
+  assert(redundancyRefuted.facetStatus === "KNOWN" && redundancyRefuted.isRedundant === true, "UDQ-018: Explicit negative answer is treated as known information");
+
+  // UDQ-019: Missing information is not treated as negative
+  const redundancyMissing = QuestionRedundancyDetector.evaluateRedundancy({
+    questionId: "q_unasked_allergy",
+    facetKey: "history.allergies",
+    answeredQuestionIds: new Set(),
+    answeredValues: {},
+    observations: [],
+  });
+  assert(redundancyMissing.facetStatus === "UNKNOWN" && redundancyMissing.isRedundant === false, "UDQ-019: Missing information is strictly UNKNOWN and not inferred as negative");
+
+  // UDQ-020: Known OCR fact prevents duplicate question
+  const redundancyOcr = QuestionRedundancyDetector.evaluateRedundancy({
+    questionId: "q_meds",
+    facetKey: "history.medications",
+    answeredQuestionIds: new Set(),
+    answeredValues: {},
+    observations: [],
+    ocrFacts: [{ entityType: "medication", text: "Metformin 500mg BD", confidence: 0.92 }],
+  });
+  assert(redundancyOcr.isRedundant === true && redundancyOcr.matchingEvidence[0].source === "OCR_DOCUMENT", "UDQ-020: Known OCR fact prevents duplicate question");
+
+  // TEST GROUP E: Contradictions (UDQ-021 to UDQ-023)
+  // UDQ-021: Different historical timestamps are not automatically contradictions
+  const redundancyLongitudinal = QuestionRedundancyDetector.evaluateRedundancy({
+    questionId: "q_past_med",
+    facetKey: "history.past_medical",
+    answeredQuestionIds: new Set(),
+    answeredValues: {},
+    observations: [],
+    longitudinalObs: [
+      {
+        id: "obs-hist-htn",
+        patientId: "pat-1",
+        sessionId: "sess-prior",
+        category: "HISTORY" as any,
+        code: "history.past_medical",
+        name: "Hypertension",
+        value: "Known HTN on Telmisartan",
+        numericValue: null,
+        unit: null,
+        bodySite: null,
+        laterality: null,
+        severity: null,
+        duration: null,
+        frequency: null,
+        modality: null,
+        rawText: "Known HTN",
+        status: "RECORDED" as any,
+        source: "PATIENT_INPUT" as any,
+        confidence: 1.0,
+        observedAt: new Date(Date.now() - 86400000 * 30),
+        reportedAt: new Date(Date.now() - 86400000 * 30),
+        recordedAt: new Date(Date.now() - 86400000 * 30),
+        verifiedAt: null,
+        sourceQuestionNodeId: null,
+        sourceDocumentId: null,
+        sourceEntityId: null,
+        fingerprint: "fp-hist-htn",
+        metadata: null,
+        verifiedById: null,
+      },
+    ],
+  });
+  assert(redundancyLongitudinal.isContradictory !== true, "UDQ-021: Different historical timestamps are not automatically contradictions");
+
+  // UDQ-022: Current conflicting information triggers clarification
+  assert(redundancyConflict.isContradictory === true, "UDQ-022: Current conflicting information triggers clarification");
+
+  // UDQ-023: Clarification questions explain their purpose internally
+  assert(redundancyConflict.contradictionDetails?.description.includes("Conflicting clinical reports"), "UDQ-023: Clarification questions explain their purpose internally");
+
+  // TEST GROUP F: Fatigue (UDQ-024 to UDQ-027)
+  // UDQ-024: Same facet is not repeatedly asked beyond configured limits
+  const fatigueFacetLimit = QuestionFatigueGuard.evaluate({
+    totalQuestionsAnswered: 4,
+    questionHistory: [
+      { questionId: "q_sev", facetKey: "socrates.severity" },
+      { questionId: "q_sev2", facetKey: "socrates.severity" },
+    ],
+    overallCompleteness: 0.5,
+    hasBlockingGaps: true,
+    hasActiveCriticalRedFlag: false,
+    nextCandidateFacet: "socrates.severity",
+  });
+  assert(fatigueFacetLimit.fatiguePenalty >= 0.8, "UDQ-024: Same facet asked repeatedly incurs heavy fatigue penalty");
+
+  // UDQ-025: Low-value questions stop when minimum useful completeness is reached
+  const fatigueComplete = QuestionFatigueGuard.evaluate({
+    totalQuestionsAnswered: 6,
+    questionHistory: [
+      { questionId: "q1" }, { questionId: "q2" }, { questionId: "q3" },
+      { questionId: "q4" }, { questionId: "q5" }, { questionId: "q6" },
+    ],
+    overallCompleteness: 0.78,
+    hasBlockingGaps: false,
+    hasActiveCriticalRedFlag: false,
+  });
+  assert(fatigueComplete.stopCondition === "MINIMUM_SAFE_COMPLETENESS_REACHED" && fatigueComplete.shouldStop === true, "UDQ-025: Low-value questions stop when minimum useful completeness is reached");
+
+  // UDQ-026: Stop condition is returned
+  assert(fatigueComplete.stopCondition !== undefined, "UDQ-026: Stop condition is cleanly returned in fatigue evaluation");
+
+  // UDQ-027: Safety escalation overrides normal stopping
+  const fatigueEscalation = QuestionFatigueGuard.evaluate({
+    totalQuestionsAnswered: 15,
+    questionHistory: [],
+    overallCompleteness: 0.95,
+    hasBlockingGaps: false,
+    hasActiveCriticalRedFlag: true,
+  });
+  assert(fatigueEscalation.stopCondition === "SAFETY_ESCALATION", "UDQ-027: Safety escalation overrides normal stopping conditions");
+
+  // TEST GROUP G: Longitudinal Context (UDQ-028 to UDQ-030)
+  // UDQ-028: Known historical information prevents unnecessary repetition
+  assert(redundancyLongitudinal.isRedundant === true, "UDQ-028: Verified historical static information prevents unnecessary repetition");
+
+  // UDQ-029: Stale information may require current confirmation
+  assert(redundancyPartial.penalty < 0.5, "UDQ-029: Dynamic longitudinal symptom context has low penalty requiring current confirmation");
+
+  // UDQ-030: Previous observations are not treated as current truth
+  assert(redundancyPartial.facetStatus === "PARTIALLY_KNOWN", "UDQ-030: Previous acute observations are treated as PARTIALLY_KNOWN context, not current truth");
+
+  // TEST GROUP H: Mode Adaptation (UDQ-031 to UDQ-034)
+  // UDQ-031: GENERAL mode prioritizes core clinical history
+  const genDims = UncertaintyService.getApplicableDimensions("General", "GENERAL", false);
+  assert(!genDims.has("AYURVEDIC_AGNI") && genDims.has("NEGATIVE_SAFETY_FINDINGS"), "UDQ-031: GENERAL mode focuses on core clinical history and safety screening");
+
+  // UDQ-032: AYURVEDA mode includes relevant AYUSH gaps
+  const ayurDims = UncertaintyService.getApplicableDimensions("General", "AYURVEDA", false);
+  assert(ayurDims.has("AYURVEDIC_AGNI") && ayurDims.has("AYURVEDIC_AMA") && ayurDims.has("AYURVEDIC_PRAKRITI"), "UDQ-032: AYURVEDA mode includes Agni, Ama, and Prakriti gaps");
+
+  // UDQ-033: AYUSH questions do not outrank unresolved safety screening
+  const candidatesAyurTest = [
+    {
+      questionId: "ayur_agni",
+      text: "Appetite status?",
+      textEn: "Appetite status?",
+      type: "single_choice",
+      clinicalPurpose: "ayurveda_agni",
+      dimension: "AYURVEDIC_AGNI" as any,
+      facetKey: "ayurveda.agni",
+    },
+    {
+      questionId: "cp_redflag",
+      text: "Crushing chest pain radiating to left arm?",
+      textEn: "Crushing chest pain radiating to left arm?",
+      type: "yes_no",
+      clinicalPurpose: "red_flag",
+      dimension: "NEGATIVE_SAFETY_FINDINGS" as any,
+      facetKey: "safety.red_flag_screening",
+      isRedFlagScreening: true,
+    },
+  ];
+  const rankedAyur = QuestionRankingService.rankCandidates(candidatesAyurTest, {
+    sessionId: "sess-ayur-rank",
+    chiefComplaint: "Severe epigastric and chest pain",
+    category: "Chest Pain",
+    mode: "AYURVEDA",
+    completeness: evalEmpty,
+    observations: [],
+    answeredQuestionIds: new Set(),
+    answeredValues: {},
+    questionHistory: [],
+  });
+  assert(rankedAyur[0].questionId === "cp_redflag", "UDQ-033: AYUSH questions do not outrank unresolved safety screening");
+
+  // UDQ-034: Irrelevant AYUSH questions are not forced in GENERAL mode
+  assert(!genDims.has("HOMEOPATHIC_MODALITIES"), "UDQ-034: Non-relevant AYUSH domains are not forced");
+
+  // TEST GROUP I: Safety Invariants (UDQ-035 to UDQ-038)
+  // UDQ-035: No diagnostic probability is generated
+  assert((evalKnown as any).diseaseProbability === undefined, "UDQ-035: No diagnostic probability field exists");
+
+  // UDQ-036: No autonomous diagnosis is generated
+  assert((evalKnown as any).autonomousDiagnosis === undefined, "UDQ-036: No autonomous diagnosis field exists");
+
+  // UDQ-037: No prescription is generated
+  assert((evalKnown as any).prescriptionOrders === undefined, "UDQ-037: No prescription orders exist in uncertainty model");
+
+  // UDQ-038: Existing red-flag engine remains independent
+  const rfGuard = QuestionFatigueGuard.evaluate({
+    totalQuestionsAnswered: 2,
+    questionHistory: [],
+    overallCompleteness: 0.2,
+    hasBlockingGaps: true,
+    hasActiveCriticalRedFlag: true,
+  });
+  assert(rfGuard.stopCondition === "SAFETY_ESCALATION", "UDQ-038: Red flag emergency rules remain independent and authoritative");
+
+  // TEST GROUP J: Integration (UDQ-039 to UDQ-040)
+  // UDQ-039: Patient answer recalculates next best question
+  const sessionEngineEval = await UncertaintyDrivenQuestionEngine.evaluateSession({
+    sessionId: "sess-udq-e2e",
+    chiefComplaint: "Severe right knee joint pain and swelling",
+    category: "Musculoskeletal",
+    mode: "AYURVEDA",
+  });
+  assert(sessionEngineEval.recommendedQuestion !== null, "UDQ-039: Engine calculates recommended question based on active session state");
+
+  // UDQ-040: Doctor receives explainable case-taking status
+  assert(
+    sessionEngineEval.fingerprint.length === 64 &&
+    sessionEngineEval.completeness.overall >= 0.0 &&
+    sessionEngineEval.gaps.length > 0,
+    "UDQ-040: Doctor receives explainable case-taking status with deterministic fingerprint"
+  );
+
   // Final Results
   console.log("\n==================================================================");
   console.log(`🏁 TEST RESULTS: ${passedCount} PASSED | ${failedCount} FAILED`);

@@ -317,6 +317,11 @@ class InMemoryClinicalStore {
     }
   }
 
+  public getAnswers(sessionId: string) {
+    const s = this.sessions.get(sessionId);
+    return s ? s.patientAnswers : [];
+  }
+
   public setStatus(sessionId: string, status: StoredSession["status"]) {
     const s = this.sessions.get(sessionId);
     if (!s) return;

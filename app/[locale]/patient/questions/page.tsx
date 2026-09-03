@@ -346,9 +346,12 @@ export default function AdaptiveQuestionsFlowPage({
             <div className="clay-white rounded-3xl overflow-hidden">
               {/* Card header band */}
               <div className="px-6 pt-5 pb-4 border-b border-border/40 flex items-center justify-between">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200/60 dark:border-indigo-800/40 text-indigo-700 dark:text-indigo-400 text-[10px] font-black uppercase tracking-wider">
                     Q{stepNumber} · {currentQuestion.chiefComplaintCategory.replace("_", " ")}
+                  </span>
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 text-[10px] font-bold border border-emerald-200">
+                    लक्षण विवरण (Clinical Detail)
                   </span>
                 </div>
                 <button

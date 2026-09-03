@@ -293,6 +293,22 @@ export class AdaptiveEngineService {
 
     // 4. Persist updated state & answer
     try {
+      // Phase 6: Record discrete ClinicalObservation if session exists for immediate uncertainty recalculation
+      const { ClinicalObservationService } = await import("@/lib/clinical/observation.service");
+      const numVal = typeof answerValue === "number" ? answerValue : !isNaN(Number(answerValue)) ? Number(answerValue) : undefined;
+      await ClinicalObservationService.createObservation({
+        patientId: existingState.sessionId ? `pat-${existingState.sessionId}` : "pat-anonymous",
+        sessionId,
+        code: nodeCode,
+        name: currentNode.questionText || nodeCode,
+        value: typeof answerValue === "string" ? answerValue : JSON.stringify(answerValue),
+        numericValue: numVal,
+        rawText: String(answerValue),
+        sourceQuestionNodeId: nodeCode,
+      }).catch(() => {});
+    } catch {}
+
+    try {
       await prisma.patientAnswer.create({
         data: {
           sessionId,

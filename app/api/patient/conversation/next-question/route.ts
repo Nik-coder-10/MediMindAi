@@ -23,7 +23,23 @@ export async function GET(req: NextRequest) {
     }
 
     const nextQuestion = await defaultQuestionProvider.getNodeByCode(state.currentNodeCode);
-    return apiSuccess({ state, nextQuestion });
+
+    // Phase 6: Uncertainty & Case Completeness Context
+    let uncertaintyContext: any = null;
+    try {
+      const { UncertaintyDrivenQuestionEngine } = await import("@/lib/clinical/uncertainty-engine.service");
+      const evalResult = await UncertaintyDrivenQuestionEngine.evaluateSession({ sessionId });
+      uncertaintyContext = {
+        overallCompleteness: evalResult.completeness.overall,
+        stopCondition: evalResult.stopCondition,
+        missingImportantCount: evalResult.gaps.length,
+        blockingGapsCount: evalResult.completeness.blockingGaps.length,
+        recommendedNextQuestionId: evalResult.recommendedQuestion?.questionId || null,
+        rationale: evalResult.recommendedQuestion?.rationale || null,
+      };
+    } catch {}
+
+    return apiSuccess({ state, nextQuestion, uncertaintyContext });
   } catch (error) {
     return apiError(error);
   }

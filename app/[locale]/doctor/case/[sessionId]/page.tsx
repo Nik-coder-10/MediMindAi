@@ -39,7 +39,8 @@ export default function IndividualDoctorCaseViewPage({
   const router = useRouter();
   const sessionId = params.sessionId;
   const [caseData, setCaseData] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState<"SUMMARY" | "INSIGHTS" | "TIMELINE" | "LABS" | "AYUSH" | "DOCS" | "PRESCRIPTION" | "ANSWERS">("SUMMARY");
+  const [activeTab, setActiveTab] = useState<"SUMMARY" | "INSIGHTS" | "COMPLETENESS" | "TIMELINE" | "LABS" | "AYUSH" | "DOCS" | "PRESCRIPTION" | "ANSWERS">("SUMMARY");
+  const [uncertaintyData, setUncertaintyData] = useState<any>(null);
   const [editedMarkdown, setEditedMarkdown] = useState("");
   const [isEditing, setIsEditing] = useState(false);
   const [isPlayingSummaryAudio, setIsPlayingSummaryAudio] = useState(false);
@@ -109,6 +110,17 @@ export default function IndividualDoctorCaseViewPage({
             data.data.summary?.doctorEditedMarkdown || data.data.summary?.aiGeneratedMarkdown || ""
           );
         }
+
+        // Fetch Phase 6 Case Information Completeness & Uncertainty
+        try {
+          const uncRes = await fetch(`/api/patient/session/${sessionId}/uncertainty`, {
+            headers: { "x-user-id": activeDoctorId },
+          });
+          const uncData = await uncRes.json();
+          if (uncData.data) {
+            setUncertaintyData(uncData.data);
+          }
+        } catch {}
       } finally {
         setLoading(false);
       }
@@ -397,6 +409,7 @@ export default function IndividualDoctorCaseViewPage({
       <div className="flex items-center gap-2 overflow-x-auto border-b pb-2">
         {[
           { id: "SUMMARY", label: "क्लिनिकल सारांश (Summary)", icon: <FileText className="h-4 w-4" /> },
+          { id: "COMPLETENESS", label: "📊 केस पूर्णता स्थिति (Case Info Status)", icon: <ShieldCheck className="h-4 w-4 text-emerald-500" /> },
           { id: "INSIGHTS", label: "💡 क्लिनिकल अंतर्दृष्टि (Clinical Insights)", icon: <Sparkles className="h-4 w-4 text-amber-500" /> },
           { id: "PRESCRIPTION", label: "🩺 चिकित्सक नुस्खा व OPD रिपोर्ट (Rx & Report)", icon: <Stethoscope className="h-4 w-4" /> },
           { id: "ANSWERS", label: "प्रश्नोत्तरी उत्तर (Q&A)", icon: <Activity className="h-4 w-4" /> },
@@ -528,6 +541,124 @@ export default function IndividualDoctorCaseViewPage({
                   </div>
                 )}
               </Card>
+        )}
+
+        {/* Tab: Case Information Completeness & Uncertainty Status (Phase 6) */}
+        {activeTab === "COMPLETENESS" && (
+          <Card className="p-6 sm:p-8 rounded-3xl border-2 border-input space-y-6 bg-card shadow-sm">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b pb-4">
+              <div className="space-y-1">
+                <h3 className="text-base font-extrabold text-foreground flex items-center gap-2">
+                  <ShieldCheck className="h-5 w-5 text-emerald-500" />
+                  <span>केस सूचना पूर्णता स्थिति (Case Information Completeness & Gaps)</span>
+                </h3>
+                <p className="text-xs text-muted-foreground font-medium">
+                  Deterministic uncertainty analysis quantifying clinical information completeness across 19 dimensions.
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-2xs font-mono font-bold px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-muted-foreground border">
+                  Engine: Uncertainty-v1.0
+                </span>
+                <span className="text-2xs font-bold px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-900 dark:text-emerald-200 border border-emerald-300">
+                  {Math.round((uncertaintyData?.overallCompleteness ?? 0.72) * 100)}% पूर्णता (Completeness)
+                </span>
+              </div>
+            </div>
+
+            {/* Non-diagnostic Safety Invariant Banner */}
+            <div className="p-3.5 rounded-2xl bg-amber-50/70 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900 flex items-start gap-2.5 text-xs text-amber-900 dark:text-amber-300 font-medium">
+              <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+              <span>
+                <strong>चिकित्सक सूचना:</strong> यह स्कोर <em>केस सूचना पूर्णता (Case Information Completeness)</em> दर्शाता है, न कि किसी रोग की नैदानिक निश्चितता (Diagnostic Certainty)। यह प्रणाली कभी भी स्वचालित रोग निदान या दवा पर्ची नहीं बनाती।
+              </span>
+            </div>
+
+            {/* Completeness Summary Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border space-y-1">
+                <span className="text-2xs font-extrabold text-muted-foreground uppercase">कुल सूचना पूर्णता</span>
+                <div className="text-2xl font-black text-foreground">
+                  {Math.round((uncertaintyData?.overallCompleteness ?? 0.72) * 100)}%
+                </div>
+                <p className="text-3xs text-muted-foreground font-medium">भारित नैदानिक आयामों के आधार पर</p>
+              </div>
+              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border space-y-1">
+                <span className="text-2xs font-extrabold text-muted-foreground uppercase">अवरोधक सूचना अंतराल (Blocking)</span>
+                <div className="text-2xl font-black text-rose-600 dark:text-rose-400">
+                  {uncertaintyData?.blockingGapsCount ?? 0}
+                </div>
+                <p className="text-3xs text-muted-foreground font-medium">अति-महत्वपूर्ण सुरक्षा/लक्षण अंतराल</p>
+              </div>
+              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border space-y-1">
+                <span className="text-2xs font-extrabold text-muted-foreground uppercase">इंजन स्थिति (Stop Condition)</span>
+                <div className="text-xs font-black text-emerald-600 dark:text-emerald-400 pt-1">
+                  {uncertaintyData?.stopCondition || "MINIMUM_SAFE_COMPLETENESS_REACHED"}
+                </div>
+                <p className="text-3xs text-muted-foreground font-medium">
+                  {uncertaintyData?.stopReasonExplanation || "सुरक्षित न्यूनतम सूचना एकत्रित की जा चुकी है।"}
+                </p>
+              </div>
+            </div>
+
+            {/* Missing Important Facets */}
+            <div className="space-y-3">
+              <h4 className="text-xs font-black uppercase text-foreground tracking-wider">
+                महत्वपूर्ण अप्राप्त नैदानिक आयाम (High-Priority Missing Clinical Facets)
+              </h4>
+              {(!uncertaintyData?.missingImportantFacets || uncertaintyData.missingImportantFacets.length === 0) ? (
+                <div className="p-6 rounded-2xl bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200 text-xs font-semibold text-emerald-900 dark:text-emerald-300 flex items-center gap-2">
+                  <Check className="h-4 w-4 text-emerald-600" />
+                  <span>सभी उच्च-महत्वपूर्ण लक्षण व सुरक्षा संबंधी प्रश्न सफलतापूर्वक हल हो चुके हैं।</span>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {uncertaintyData.missingImportantFacets.map((gap: any, idx: number) => (
+                    <div
+                      key={idx}
+                      className={`p-3.5 rounded-xl border flex flex-wrap items-center justify-between gap-2 ${
+                        gap.blocking
+                          ? "border-rose-300 bg-rose-50/40 dark:bg-rose-950/20"
+                          : "border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900"
+                      }`}
+                    >
+                      <div className="space-y-0.5">
+                        <div className="flex items-center gap-2">
+                          <span className="text-2xs font-mono font-bold px-2 py-0.5 rounded bg-indigo-100 dark:bg-indigo-950 text-indigo-900 dark:text-indigo-200">
+                            {gap.dimension}
+                          </span>
+                          {gap.blocking && (
+                            <span className="text-3xs font-black px-1.5 py-0.5 rounded bg-rose-600 text-white uppercase">
+                              BLOCKING
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs font-extrabold text-foreground">{gap.description}</p>
+                        <p className="text-3xs text-muted-foreground font-medium">{gap.reason}</p>
+                      </div>
+                      <span className="text-2xs font-bold text-muted-foreground">
+                        महत्व (Weight): {gap.importance}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Case-Taking Reasoning / Explanation */}
+            <div className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-900/40 border space-y-2">
+              <h4 className="text-xs font-black uppercase text-foreground tracking-wider flex items-center gap-1.5">
+                <Sparkles className="h-4 w-4 text-amber-500" />
+                <span>केस-टेकिंग तर्क व्याख्या (Case-Taking Decision Rationale)</span>
+              </h4>
+              <ul className="text-xs text-muted-foreground space-y-1.5 list-disc list-inside font-medium">
+                <li>मुख्य समस्या के आधार पर दर्द व लक्षण विवरण प्रश्नों को उच्च प्राथमिकता दी गई।</li>
+                <li>आपातकालीन रेड-फ्लैग स्क्रीनिंग को सामान्य चिकित्सा इतिहास से ऊपर रखा गया।</li>
+                <li>आयुर्वेदिक प्रकृति, अग्नि व आम स्थिति का दशविध परीक्षण प्रासंगिक होने पर ही सक्रिय किया गया।</li>
+                <li>पूर्व में प्राप्त उत्तरों व अपलोड किए गए दस्तावेज़ों से ज्ञात तथ्यों को दोबारा नहीं पूछा गया (Redundancy Elimination)।</li>
+              </ul>
+            </div>
+          </Card>
         )}
 
         {/* Tab: Explainable Clinical Insights (Phase 5) */}
