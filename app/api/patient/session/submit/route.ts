@@ -6,6 +6,7 @@ import { SummaryService } from "@/lib/services/summary.service";
 import { AuthService } from "@/lib/auth/auth-guard";
 import { AppError } from "@/lib/api/errors";
 import { SessionStatus } from "@prisma/client";
+import { AyurvedaAssessmentService } from "@/lib/services/ayurveda.service";
 
 export const dynamic = "force-dynamic";
 
@@ -119,11 +120,86 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // 4. Evolve and persist discrete structured clinical observations from engine state
+    // 4. Evolve and persist discrete structured clinical observations and refined Ayurvedic assessment
     try {
       const { ClinicalObservationService } = await import("@/lib/clinical/observation.service");
       const { AdaptiveEngineService } = await import("@/lib/engine/adaptive-engine.service");
       const currentState = await AdaptiveEngineService.getCurrentState(session.id);
+      
+      // Dynamic problem-specific Ayurvedic classification
+      const patientComplaint = validated.chiefComplaint || session.chiefComplaints?.[0]?.symptomName || "";
+      const patientAnsList = (session.patientAnswers || []).map((a: any) => ({
+        nodeCode: a.nodeCode,
+        answerValue: a.answerValue,
+      }));
+      const factsMap = (currentState?.collectedFacts as any) || {};
+
+      const ayurProfile = AyurvedaAssessmentService.classifyFromProblem(
+        patientComplaint,
+        patientAnsList,
+        factsMap
+      );
+
+      await AyurvedaAssessmentService.recordAssessment({
+        sessionId: session.id,
+        prakriti: ayurProfile.prakriti,
+        vikriti: ayurProfile.vikriti,
+        agni: ayurProfile.agni,
+        koshtha: ayurProfile.koshtha,
+        sattva: ayurProfile.sattva,
+        bala: ayurProfile.bala,
+        notes: ayurProfile.nidanaPanchakaNotes,
+        aharaVihara: {
+          pathya: ayurProfile.pathya,
+          apathya: ayurProfile.apathya,
+          doshicDistribution: ayurProfile.doshicDistribution,
+          prakritiLabelHi: ayurProfile.prakritiLabelHi,
+          prakritiLabelEn: ayurProfile.prakritiLabelEn,
+          vikritiLabelHi: ayurProfile.vikritiLabelHi,
+          vikritiLabelEn: ayurProfile.vikritiLabelEn,
+          agniLabelHi: ayurProfile.agniLabelHi,
+          agniLabelEn: ayurProfile.agniLabelEn,
+          koshthaLabelHi: ayurProfile.koshthaLabelHi,
+          koshthaLabelEn: ayurProfile.koshthaLabelEn,
+          sattvaLabelHi: ayurProfile.sattvaLabelHi,
+          sattvaLabelEn: ayurProfile.sattvaLabelEn,
+          balaLabelHi: ayurProfile.balaLabelHi,
+          balaLabelEn: ayurProfile.balaLabelEn,
+        },
+      });
+
+      inMemoryClinicalStore.updateAyurvedaAssessment(session.id, {
+        id: `ayu-${session.id}`,
+        sessionId: session.id,
+        prakriti: ayurProfile.prakriti,
+        vikriti: ayurProfile.vikriti,
+        anala: ayurProfile.agni,
+        sattva: ayurProfile.sattva,
+        bala: ayurProfile.bala,
+        ashtavidhaData: {
+          koshtha: ayurProfile.koshtha,
+          agni: ayurProfile.agni,
+          sattva: ayurProfile.sattva,
+          bala: ayurProfile.bala,
+          doshicDistribution: ayurProfile.doshicDistribution,
+          pathya: ayurProfile.pathya,
+          apathya: ayurProfile.apathya,
+          prakritiLabelHi: ayurProfile.prakritiLabelHi,
+          prakritiLabelEn: ayurProfile.prakritiLabelEn,
+          vikritiLabelHi: ayurProfile.vikritiLabelHi,
+          vikritiLabelEn: ayurProfile.vikritiLabelEn,
+          agniLabelHi: ayurProfile.agniLabelHi,
+          agniLabelEn: ayurProfile.agniLabelEn,
+          koshthaLabelHi: ayurProfile.koshthaLabelHi,
+          koshthaLabelEn: ayurProfile.koshthaLabelEn,
+          sattvaLabelHi: ayurProfile.sattvaLabelHi,
+          sattvaLabelEn: ayurProfile.sattvaLabelEn,
+          balaLabelHi: ayurProfile.balaLabelHi,
+          balaLabelEn: ayurProfile.balaLabelEn,
+          nidanaPanchakaNotes: ayurProfile.nidanaPanchakaNotes,
+        },
+      });
+
       if (currentState?.collectedFacts) {
         const obsDtos = ClinicalObservationService.mapCollectedFactsToObservations(
           session.patientId,
@@ -135,7 +211,7 @@ export async function POST(req: NextRequest) {
         }
       }
     } catch (obsErr) {
-      console.warn("Structured observation persistence deferred (non-fatal):", obsErr);
+      console.warn("Structured observation & Ayurveda persistence deferred (non-fatal):", obsErr);
     }
 
     // 5. Generate and persist Clinical Summary

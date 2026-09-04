@@ -1097,74 +1097,106 @@ export default function IndividualDoctorCaseViewPage({
               </div>
 
               {/* Tridosha Visual Scorecard */}
-              <div className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-900 border space-y-4">
-                <span className="text-xs font-extrabold text-muted-foreground uppercase">
-                  प्रकृति त्रिदोष अनुपात (Constitutional Dosha Distribution):
-                </span>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  {/* Vata */}
-                  <div className="p-4 rounded-xl bg-white dark:bg-slate-800 border space-y-2">
-                    <div className="flex justify-between items-center">
-                      <span className="font-extrabold text-sm text-sky-700">वात (Vata)</span>
-                      <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-sky-100 text-sky-800">45% (प्रमुख)</span>
-                    </div>
-                    <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
-                      <div className="bg-sky-600 h-2.5 rounded-full" style={{ width: "45%" }} />
-                    </div>
-                    <span className="text-2xs text-muted-foreground font-medium block">चंचल, शीत, रुक्ष गुण (Pain & Movement)</span>
-                  </div>
+              {(() => {
+                const dist = caseData?.ayurveda?.doshicDistribution || { vata: 40, pitta: 35, kapha: 25 };
+                const vataMajor = dist.vata >= dist.pitta && dist.vata >= dist.kapha;
+                const pittaMajor = dist.pitta >= dist.vata && dist.pitta >= dist.kapha;
+                const kaphaMajor = dist.kapha >= dist.vata && dist.kapha >= dist.pitta;
 
-                  {/* Pitta */}
-                  <div className="p-4 rounded-xl bg-white dark:bg-slate-800 border space-y-2">
-                    <div className="flex justify-between items-center">
-                      <span className="font-extrabold text-sm text-amber-700">पित्त (Pitta)</span>
-                      <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">35%</span>
+                return (
+                  <div className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-900 border space-y-4">
+                    <div className="flex items-center justify-between flex-wrap gap-2">
+                      <span className="text-xs font-extrabold text-muted-foreground uppercase">
+                        प्रकृति त्रिदोष अनुपात (Constitutional Dosha Distribution):
+                      </span>
+                      <span className="text-2xs font-mono font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-900">
+                        {caseData?.ayurveda?.prakritiLabelHi || caseData?.ayurveda?.prakriti || "Vata-Pitta"}
+                      </span>
                     </div>
-                    <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
-                      <div className="bg-amber-500 h-2.5 rounded-full" style={{ width: "35%" }} />
-                    </div>
-                    <span className="text-2xs text-muted-foreground font-medium block">उष्ण, तीक्ष्ण गुण (Metabolism & Heat)</span>
-                  </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      {/* Vata */}
+                      <div className="p-4 rounded-xl bg-white dark:bg-slate-800 border space-y-2">
+                        <div className="flex justify-between items-center">
+                          <span className="font-extrabold text-sm text-sky-700">वात (Vata)</span>
+                          <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-sky-100 text-sky-800">
+                            {dist.vata}% {vataMajor ? "(प्रमुख)" : ""}
+                          </span>
+                        </div>
+                        <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+                          <div className="bg-sky-600 h-2.5 rounded-full" style={{ width: `${dist.vata}%` }} />
+                        </div>
+                        <span className="text-2xs text-muted-foreground font-medium block">चंचल, शीत, रुक्ष गुण (Pain & Movement)</span>
+                      </div>
 
-                  {/* Kapha */}
-                  <div className="p-4 rounded-xl bg-white dark:bg-slate-800 border space-y-2">
-                    <div className="flex justify-between items-center">
-                      <span className="font-extrabold text-sm text-emerald-700">कफ (Kapha)</span>
-                      <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">20%</span>
+                      {/* Pitta */}
+                      <div className="p-4 rounded-xl bg-white dark:bg-slate-800 border space-y-2">
+                        <div className="flex justify-between items-center">
+                          <span className="font-extrabold text-sm text-amber-700">पित्त (Pitta)</span>
+                          <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">
+                            {dist.pitta}% {pittaMajor ? "(प्रमुख)" : ""}
+                          </span>
+                        </div>
+                        <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+                          <div className="bg-amber-500 h-2.5 rounded-full" style={{ width: `${dist.pitta}%` }} />
+                        </div>
+                        <span className="text-2xs text-muted-foreground font-medium block">उष्ण, तीक्ष्ण गुण (Metabolism & Heat)</span>
+                      </div>
+
+                      {/* Kapha */}
+                      <div className="p-4 rounded-xl bg-white dark:bg-slate-800 border space-y-2">
+                        <div className="flex justify-between items-center">
+                          <span className="font-extrabold text-sm text-emerald-700">कफ (Kapha)</span>
+                          <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                            {dist.kapha}% {kaphaMajor ? "(प्रमुख)" : ""}
+                          </span>
+                        </div>
+                        <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+                          <div className="bg-emerald-600 h-2.5 rounded-full" style={{ width: `${dist.kapha}%` }} />
+                        </div>
+                        <span className="text-2xs text-muted-foreground font-medium block">स्निग्ध, गुरु गुण (Structure & Stability)</span>
+                      </div>
                     </div>
-                    <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
-                      <div className="bg-emerald-600 h-2.5 rounded-full" style={{ width: "20%" }} />
-                    </div>
-                    <span className="text-2xs text-muted-foreground font-medium block">स्निग्ध, गुरु गुण (Structure & Stability)</span>
                   </div>
-                </div>
-              </div>
+                );
+              })()}
 
               {/* 6 Key AYUSH Attributes */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="p-4 rounded-2xl bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-200 space-y-1">
                   <span className="text-xs font-bold text-muted-foreground uppercase">देहा प्रकृति (Prakriti)</span>
-                  <p className="text-base font-extrabold text-emerald-950 dark:text-emerald-200">{caseData?.ayurveda?.prakriti || "Vata-Kapha"}</p>
+                  <p className="text-base font-extrabold text-emerald-950 dark:text-emerald-200">
+                    {caseData?.ayurveda?.prakritiLabelHi || caseData?.ayurveda?.prakriti || "Vata-Kapha"}
+                  </p>
                 </div>
                 <div className="p-4 rounded-2xl bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-200 space-y-1">
                   <span className="text-xs font-bold text-muted-foreground uppercase">अग्नि स्थिति (Digestion)</span>
-                  <p className="text-base font-extrabold text-emerald-950 dark:text-emerald-200">{caseData?.ayurveda?.agni || "Vishamagni (Irregular)"}</p>
+                  <p className="text-base font-extrabold text-emerald-950 dark:text-emerald-200">
+                    {caseData?.ayurveda?.agniLabelHi || caseData?.ayurveda?.agni || "Vishamagni (Irregular)"}
+                  </p>
                 </div>
                 <div className="p-4 rounded-2xl bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-200 space-y-1">
                   <span className="text-xs font-bold text-muted-foreground uppercase">कोष्ठ व मल (Bowel)</span>
-                  <p className="text-base font-extrabold text-emerald-950 dark:text-emerald-200">{caseData?.ayurveda?.koshtha || "Krura (Hard / Constipated)"}</p>
+                  <p className="text-base font-extrabold text-emerald-950 dark:text-emerald-200">
+                    {caseData?.ayurveda?.koshthaLabelHi || caseData?.ayurveda?.koshtha || "Krura (Hard / Constipated)"}
+                  </p>
                 </div>
                 <div className="p-4 rounded-2xl bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-200 space-y-1">
                   <span className="text-xs font-bold text-muted-foreground uppercase">सत्त्व बल (Mental Stamina)</span>
-                  <p className="text-base font-extrabold text-emerald-950 dark:text-emerald-200">{caseData?.ayurveda?.sattva || "Madhyama (Moderate)"}</p>
+                  <p className="text-base font-extrabold text-emerald-950 dark:text-emerald-200">
+                    {caseData?.ayurveda?.sattvaLabelHi || caseData?.ayurveda?.sattva || "Madhyama (Moderate)"}
+                  </p>
                 </div>
                 <div className="p-4 rounded-2xl bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-200 space-y-1">
                   <span className="text-xs font-bold text-muted-foreground uppercase">व्यायाम शक्ति (Physical Bala)</span>
-                  <p className="text-base font-extrabold text-emerald-950 dark:text-emerald-200">{caseData?.ayurveda?.bala || "Madhyama (Moderate)"}</p>
+                  <p className="text-base font-extrabold text-emerald-950 dark:text-emerald-200">
+                    {caseData?.ayurveda?.balaLabelHi || caseData?.ayurveda?.bala || "Madhyama (Moderate)"}
+                  </p>
                 </div>
                 <div className="p-4 rounded-2xl bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-200 space-y-1">
                   <span className="text-xs font-bold text-muted-foreground uppercase">दोष विकृति (Doshic Imbalance)</span>
-                  <p className="text-base font-extrabold text-emerald-950 dark:text-emerald-200">{caseData?.ayurveda?.vikriti || "Vata-Pitta Dushti"}</p>
+                  <p className="text-base font-extrabold text-emerald-950 dark:text-emerald-200">
+                    {caseData?.ayurveda?.vikritiLabelHi || caseData?.ayurveda?.vikriti || "Vata-Pitta Dushti"}
+                  </p>
                 </div>
               </div>
 
@@ -1175,9 +1207,16 @@ export default function IndividualDoctorCaseViewPage({
                     <CheckCircle2 className="h-4 w-4 text-emerald-600" /> पथ्य (Recommended Pathya / Diet):
                   </span>
                   <ul className="text-xs font-bold text-emerald-950 space-y-1">
-                    <li>• गुनगुना पानी व ताजा सुपाच्य भोजन (Warm water & freshly cooked meals)</li>
-                    <li>• लहसुन, सोंठ व अजवाइन युक्त तक्र (Ginger & Garlic seasoned buttermilk)</li>
-                    <li>• जौ, मूंग दाल व पुराना साठी चावल (Mudga, Yava, Shali rice)</li>
+                    {(caseData?.ayurveda?.pathya && caseData.ayurveda.pathya.length > 0
+                      ? caseData.ayurveda.pathya
+                      : [
+                          "गुनगुना पानी व ताजा सुपाच्य भोजन (Warm water & freshly cooked meals)",
+                          "लहसुन, सोंठ व अजवाइन युक्त तक्र (Ginger & Garlic seasoned buttermilk)",
+                          "जौ, मूंग दाल व पुराना साठी चावल (Mudga, Yava, Shali rice)",
+                        ]
+                    ).map((item: string, idx: number) => (
+                      <li key={idx}>• {item}</li>
+                    ))}
                   </ul>
                 </div>
 
@@ -1186,9 +1225,16 @@ export default function IndividualDoctorCaseViewPage({
                     <AlertTriangle className="h-4 w-4 text-rose-600" /> अपथ्य (Contraindicated Apathya):
                   </span>
                   <ul className="text-xs font-bold text-rose-950 space-y-1">
-                    <li>• ठंडा पानी, दही व बासी भोजन (Cold water, curd & stale food)</li>
-                    <li>• अधिक तीखा, तला-भुना व भारी भोजन (Deep fried & heavy meals)</li>
-                    <li>• दिन में सोना व रात्रि जागरण (Day sleeping & late nights)</li>
+                    {(caseData?.ayurveda?.apathya && caseData.ayurveda.apathya.length > 0
+                      ? caseData.ayurveda.apathya
+                      : [
+                          "ठंडा पानी, दही व बासी भोजन (Cold water, curd & stale food)",
+                          "अधिक तीखा, तला-भुना व भारी भोजन (Deep fried & heavy meals)",
+                          "दिन में सोना व रात्रि जागरण (Day sleeping & late nights)",
+                        ]
+                    ).map((item: string, idx: number) => (
+                      <li key={idx}>• {item}</li>
+                    ))}
                   </ul>
                 </div>
               </div>

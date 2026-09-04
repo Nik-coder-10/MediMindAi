@@ -3,6 +3,7 @@ import { apiSuccess, apiError } from "@/lib/api/response";
 import { AppError } from "@/lib/api/errors";
 import { prisma } from "@/lib/db/prisma";
 import { AuthService } from "@/lib/auth/auth-guard";
+import { AyurvedaAssessmentService } from "@/lib/services/ayurveda.service";
 
 export const dynamic = "force-dynamic";
 
@@ -180,15 +181,41 @@ export async function GET(
           }
         : null,
 
-      ayurvedaAssessment: session.ayurvedaAssessment
-        ? {
-            prakriti: session.ayurvedaAssessment.prakriti,
-            vikriti: session.ayurvedaAssessment.vikriti,
-            agni: session.ayurvedaAssessment.anala,
-            sattva: session.ayurvedaAssessment.sattva,
-            bala: session.ayurvedaAssessment.bala,
-          }
-        : null,
+      ayurvedaAssessment: (() => {
+        const chiefText = session.chiefComplaints?.[0]?.symptomName || "";
+        const ansList = (session.patientAnswers || []).map((a: any) => ({
+          nodeCode: a.nodeCode,
+          answerValue: a.answerValue,
+        }));
+        const dynamicAyur = AyurvedaAssessmentService.classifyFromProblem(chiefText, ansList, {});
+        const ashtaData = (session.ayurvedaAssessment?.ashtavidhaData as any) || {};
+        const aharaData = (session.ayurvedaAssessment?.aharaVihara as any) || {};
+
+        return {
+          prakriti: session.ayurvedaAssessment?.prakriti || dynamicAyur.prakriti,
+          prakritiLabelHi: aharaData?.prakritiLabelHi || ashtaData?.prakritiLabelHi || dynamicAyur.prakritiLabelHi,
+          prakritiLabelEn: aharaData?.prakritiLabelEn || ashtaData?.prakritiLabelEn || dynamicAyur.prakritiLabelEn,
+          vikriti: session.ayurvedaAssessment?.vikriti || dynamicAyur.vikriti,
+          vikritiLabelHi: aharaData?.vikritiLabelHi || ashtaData?.vikritiLabelHi || dynamicAyur.vikritiLabelHi,
+          vikritiLabelEn: aharaData?.vikritiLabelEn || ashtaData?.vikritiLabelEn || dynamicAyur.vikritiLabelEn,
+          agni: session.ayurvedaAssessment?.anala || dynamicAyur.agni,
+          agniLabelHi: aharaData?.agniLabelHi || ashtaData?.agniLabelHi || dynamicAyur.agniLabelHi,
+          agniLabelEn: aharaData?.agniLabelEn || ashtaData?.agniLabelEn || dynamicAyur.agniLabelEn,
+          koshtha: ashtaData?.koshtha || dynamicAyur.koshtha,
+          koshthaLabelHi: aharaData?.koshthaLabelHi || ashtaData?.koshthaLabelHi || dynamicAyur.koshthaLabelHi,
+          koshthaLabelEn: aharaData?.koshthaLabelEn || ashtaData?.koshthaLabelEn || dynamicAyur.koshthaLabelEn,
+          sattva: session.ayurvedaAssessment?.sattva || dynamicAyur.sattva,
+          sattvaLabelHi: aharaData?.sattvaLabelHi || ashtaData?.sattvaLabelHi || dynamicAyur.sattvaLabelHi,
+          sattvaLabelEn: aharaData?.sattvaLabelEn || ashtaData?.sattvaLabelEn || dynamicAyur.sattvaLabelEn,
+          bala: session.ayurvedaAssessment?.bala || dynamicAyur.bala,
+          balaLabelHi: aharaData?.balaLabelHi || ashtaData?.balaLabelHi || dynamicAyur.balaLabelHi,
+          balaLabelEn: aharaData?.balaLabelEn || ashtaData?.balaLabelEn || dynamicAyur.balaLabelEn,
+          pathya: aharaData?.pathya || ashtaData?.pathya || dynamicAyur.pathya,
+          apathya: aharaData?.apathya || ashtaData?.apathya || dynamicAyur.apathya,
+          doshicDistribution: aharaData?.doshicDistribution || ashtaData?.doshicDistribution || dynamicAyur.doshicDistribution,
+          notes: session.ayurvedaAssessment?.notes || dynamicAyur.nidanaPanchakaNotes,
+        };
+      })(),
     };
 
     return apiSuccess(caseDetails);

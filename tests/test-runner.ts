@@ -99,6 +99,23 @@ async function runMasterTestSuite() {
   const ayushMarkdown = AyurvedaAssessmentService.generateAyushMarkdownBlock(ayushAssessment);
   assert(ayushMarkdown.includes("Dashavidha Pariksha"), "Generates formatted Dashavidha markdown block");
 
+  // Dynamic Problem-Tailored Ayurvedic Classification Tests
+  const buttockPelvic = AyurvedaAssessmentService.classifyFromProblem("mere pichhwade mein dard ho raha hai");
+  assert(buttockPelvic.vikriti === "VATA", "Anorectal/gluteal pain classified as Vata Dushti (Apana Vata)");
+  assert(buttockPelvic.koshtha === "KRURA", "Pelvic/gluteal complaint maps to Krura Koshtha (constipation/sluggish transit)");
+  assert(buttockPelvic.doshicDistribution.vata > 50, "Vata is primary dosha for gluteal/pelvic pain");
+
+  const jointPain = AyurvedaAssessmentService.classifyFromProblem("घुटनों में बहुत दर्द और सूजन है");
+  assert(jointPain.vikriti === "VATA_KAPHA", "Joint pain with swelling classified as Vata-Kapha (Amavata)");
+  assert(jointPain.bala === "AVARA", "Severe joint swelling maps to Avara Bala");
+
+  const acidity = AyurvedaAssessmentService.classifyFromProblem("सीने में तेज जलन और खट्टी डकार आ रही है");
+  assert(acidity.prakriti === "PITTA" && acidity.agni === "TIKSHNA", "Acidity heartburn correctly classified as Pitta / Tikshnagni");
+
+  const respiratory = AyurvedaAssessmentService.classifyFromProblem("खांसी, सांस लेने में तकलीफ और सीने में भारी बलगम");
+  assert(respiratory.prakriti === "KAPHA" && respiratory.vikriti === "VATA_KAPHA", "Cough/asthma classified as Kapha-Vata Pranavaha Dushti");
+  console.log("  [✓ PASS] Dynamic symptom-based Ayurvedic classification distinguishes distinct disease entities accurately");
+
   // SUITE 5: HL7 FHIR R4 Bundle Generator
   console.log("\n--- 5. UNIT: HL7 FHIR R4 Compliance (FhirService) ---");
   const fhirBundle = FhirService.generateEncounterBundle({

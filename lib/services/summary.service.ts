@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db/prisma";
 import { AppError } from "@/lib/api/errors";
 import { AuditService } from "@/lib/services/audit.service";
 import { SummaryStatus } from "@prisma/client";
+import { AyurvedaAssessmentService } from "@/lib/services/ayurveda.service";
 
 export interface GenerateSummaryOptions {
   sessionId: string;
@@ -156,10 +157,31 @@ ${extractedMeds.length > 0 ? extractedMeds.join("\n") : "- No previous medicatio
 ${extractedLabs.length > 0 ? extractedLabs.join("\n") : "- No lab documents attached."}
 
 ## 8. AYUSH & Dashavidha Pariksha Findings
-- **Prakriti**: ${session.ayurvedaAssessment?.prakriti || "Vata-Kapha"}
-- **Vikriti**: ${session.ayurvedaAssessment?.vikriti || "Vata-Pitta"}
-- **Agni**: ${session.ayurvedaAssessment?.anala || "Vishamagni"}
-- **Notes**: ${session.ayurvedaAssessment?.notes || "Intake completed"}
+${(() => {
+  const dynamicAyur = AyurvedaAssessmentService.classifyFromProblem(
+    chiefComplaint?.symptomName || "",
+    (session.patientAnswers || []).map((a: any) => ({ nodeCode: a.nodeCode, answerValue: a.answerValue })),
+    facts
+  );
+  const prak = session.ayurvedaAssessment?.prakriti || dynamicAyur.prakriti;
+  const vik = session.ayurvedaAssessment?.vikriti || dynamicAyur.vikriti;
+  const agn = session.ayurvedaAssessment?.anala || dynamicAyur.agni;
+  const kosh = (session.ayurvedaAssessment?.ashtavidhaData as any)?.koshtha || dynamicAyur.koshtha;
+  const sat = session.ayurvedaAssessment?.sattva || dynamicAyur.sattva;
+  const bal = session.ayurvedaAssessment?.bala || dynamicAyur.bala;
+  const notes = session.ayurvedaAssessment?.notes || dynamicAyur.nidanaPanchakaNotes;
+  const pathyaList = (session.ayurvedaAssessment?.aharaVihara as any)?.pathya || dynamicAyur.pathya;
+  const apathyaList = (session.ayurvedaAssessment?.aharaVihara as any)?.apathya || dynamicAyur.apathya;
+
+  return `- **Prakriti (देहा प्रकृति)**: ${prak} (${dynamicAyur.prakritiLabelHi})
+- **Vikriti (दोष दृष्टि)**: ${vik} (${dynamicAyur.vikritiLabelHi})
+- **Agni (जठराग्नि स्थिति)**: ${agn} (${dynamicAyur.agniLabelHi})
+- **Koshtha (कोष्ठ व मल)**: ${kosh} (${dynamicAyur.koshthaLabelHi})
+- **Sattva & Bala (सत्त्व व बल)**: ${sat} / ${bal}
+- **Clinical Nidana Context**: ${notes}
+- **Pathya (हितकर आहार)**: ${pathyaList.slice(0, 2).join(", ")}
+- **Apathya (अहितकर आहार)**: ${apathyaList.slice(0, 2).join(", ")}`;
+})()}
 
 ## 9. 👨‍👩‍👧 Family History
 ${

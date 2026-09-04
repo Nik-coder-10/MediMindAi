@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db/prisma";
 import { AppError } from "@/lib/api/errors";
 import { SessionStatus, TriagePriority } from "@prisma/client";
+import { AyurvedaAssessmentService } from "@/lib/services/ayurveda.service";
 
 export interface PatientDashboardPreviewDTO {
   sessionId: string;
@@ -27,21 +28,13 @@ export interface PatientDashboardPreviewDTO {
 
   hpiSummary: string;
 
-  facts: {
-    site?: string;
-    onset?: string;
-    severity?: string;
-    character?: string;
-    radiation?: string;
-    associated?: string;
-    triggers?: string;
-  };
+  facts: Record<string, unknown>;
 
   answers: Array<{
     nodeCode: string;
     questionText: string;
     questionTextHindi?: string | null;
-    answerValue: any;
+    answerValue: unknown;
   }>;
 
   medications: Array<{
@@ -85,10 +78,30 @@ export interface PatientDashboardPreviewDTO {
 
   ayurveda?: {
     prakriti?: string | null;
+    prakritiLabelHi?: string | null;
+    prakritiLabelEn?: string | null;
     vikriti?: string | null;
+    vikritiLabelHi?: string | null;
+    vikritiLabelEn?: string | null;
     anala?: string | null;
+    agniLabelHi?: string | null;
+    agniLabelEn?: string | null;
+    koshtha?: string | null;
+    koshthaLabelHi?: string | null;
+    koshthaLabelEn?: string | null;
     sattva?: string | null;
+    sattvaLabelHi?: string | null;
+    sattvaLabelEn?: string | null;
     bala?: string | null;
+    balaLabelHi?: string | null;
+    balaLabelEn?: string | null;
+    pathya?: string[];
+    apathya?: string[];
+    doshicDistribution?: {
+      vata: number;
+      pitta: number;
+      kapha: number;
+    };
     notes?: string | null;
   } | null;
 
@@ -111,29 +124,63 @@ export class PreviewService {
       throw AppError.badRequest("sessionId is required");
     }
 
-    const session = await prisma.clinicalSession.findUnique({
-      where: { id: sessionId },
-      include: {
-        patient: {
-          include: {
-            user: true,
-            timelineEvents: { orderBy: { eventDate: "desc" }, take: 5 },
+    let session: any = null;
+    try {
+      session = await prisma.clinicalSession.findUnique({
+        where: { id: sessionId },
+        include: {
+          patient: {
+            include: {
+              user: true,
+              timelineEvents: { orderBy: { eventDate: "desc" }, take: 5 },
+            },
           },
+          chiefComplaints: true,
+          patientAnswers: {
+            orderBy: { answeredAt: "asc" },
+            include: { questionNode: true },
+          },
+          redFlagEvents: { orderBy: { triggeredAt: "desc" } },
+          medicalDocuments: {
+            where: { deletedAt: null },
+            include: { extractedEntities: true },
+          },
+          engineState: true,
+          ayurvedaAssessment: true,
         },
-        chiefComplaints: true,
-        patientAnswers: {
-          orderBy: { answeredAt: "asc" },
-          include: { questionNode: true },
-        },
-        redFlagEvents: { orderBy: { triggeredAt: "desc" } },
-        medicalDocuments: {
-          where: { deletedAt: null },
-          include: { extractedEntities: true },
-        },
-        engineState: true,
-        ayurvedaAssessment: true,
-      },
-    });
+      });
+    } catch (dbErr) {
+      console.warn("PreviewService findUnique DB lookup warning:", (dbErr as any)?.message);
+    }
+
+    if (!session) {
+      const { inMemoryClinicalStore } = await import("@/lib/db/in-memory-store");
+      const memSession = inMemoryClinicalStore.getSession(sessionId);
+      if (memSession) {
+        session = {
+          id: memSession.id,
+          status: memSession.status,
+          language: memSession.language,
+          startedAt: memSession.startedAt,
+          completedAt: memSession.completedAt,
+          patientId: memSession.patientId,
+          patient: {
+            firstName: memSession.patient.firstName,
+            lastName: memSession.patient.lastName,
+            dateOfBirth: memSession.patient.dateOfBirth,
+            gender: memSession.patient.gender,
+            user: { abhaId: "14-5542-8921-3410" },
+            timelineEvents: [],
+          },
+          chiefComplaints: memSession.chiefComplaints,
+          patientAnswers: memSession.patientAnswers,
+          redFlagEvents: memSession.redFlagEvents,
+          medicalDocuments: memSession.medicalDocuments,
+          ayurvedaAssessment: memSession.ayurvedaAssessment,
+          engineState: null,
+        };
+      }
+    }
 
     if (!session) {
       throw AppError.notFound(`Clinical session '${sessionId}' was not found.`);
@@ -253,23 +300,40 @@ export class PreviewService {
       severity: rf.severity,
     }));
 
-    const ayurveda = session.ayurvedaAssessment
-      ? {
-          prakriti: session.ayurvedaAssessment.prakriti,
-          vikriti: session.ayurvedaAssessment.vikriti,
-          anala: session.ayurvedaAssessment.anala,
-          sattva: session.ayurvedaAssessment.sattva,
-          bala: session.ayurvedaAssessment.bala,
-          notes: session.ayurvedaAssessment.notes,
-        }
-      : {
-          prakriti: isHeadache ? "VATA_PITTA" : isJt ? "VATA_KAPHA" : "SAMADOSHA",
-          vikriti: isChest ? "VATA" : "KAPHA",
-          anala: "MANDAGNI",
-          sattva: "MADHYAMA",
-          bala: "MADHYAMA",
-          notes: "Dashavidha Pariksha completed",
-        };
+    // Dynamically classify problem-tailored Ayurvedic & Dashavidha profile
+    const problemClassification = AyurvedaAssessmentService.classifyFromProblem(
+      chiefComplaint.symptomName,
+      session.patientAnswers.map((pa) => ({ nodeCode: pa.nodeCode, answerValue: pa.answerValue })),
+      facts
+    );
+
+    const ashtaData = (session.ayurvedaAssessment?.ashtavidhaData as any) || {};
+    const aharaData = (session.ayurvedaAssessment?.aharaVihara as any) || {};
+
+    const ayurveda = {
+      prakriti: session.ayurvedaAssessment?.prakriti || problemClassification.prakriti,
+      prakritiLabelHi: aharaData?.prakritiLabelHi || ashtaData?.prakritiLabelHi || problemClassification.prakritiLabelHi,
+      prakritiLabelEn: aharaData?.prakritiLabelEn || ashtaData?.prakritiLabelEn || problemClassification.prakritiLabelEn,
+      vikriti: session.ayurvedaAssessment?.vikriti || problemClassification.vikriti,
+      vikritiLabelHi: aharaData?.vikritiLabelHi || ashtaData?.vikritiLabelHi || problemClassification.vikritiLabelHi,
+      vikritiLabelEn: aharaData?.vikritiLabelEn || ashtaData?.vikritiLabelEn || problemClassification.vikritiLabelEn,
+      anala: session.ayurvedaAssessment?.anala || problemClassification.agni,
+      agniLabelHi: aharaData?.agniLabelHi || ashtaData?.agniLabelHi || problemClassification.agniLabelHi,
+      agniLabelEn: aharaData?.agniLabelEn || ashtaData?.agniLabelEn || problemClassification.agniLabelEn,
+      koshtha: ashtaData?.koshtha || problemClassification.koshtha,
+      koshthaLabelHi: aharaData?.koshthaLabelHi || ashtaData?.koshthaLabelHi || problemClassification.koshthaLabelHi,
+      koshthaLabelEn: aharaData?.koshthaLabelEn || ashtaData?.koshthaLabelEn || problemClassification.koshthaLabelEn,
+      sattva: session.ayurvedaAssessment?.sattva || problemClassification.sattva,
+      sattvaLabelHi: aharaData?.sattvaLabelHi || ashtaData?.sattvaLabelHi || problemClassification.sattvaLabelHi,
+      sattvaLabelEn: aharaData?.sattvaLabelEn || ashtaData?.sattvaLabelEn || problemClassification.sattvaLabelEn,
+      bala: session.ayurvedaAssessment?.bala || problemClassification.bala,
+      balaLabelHi: aharaData?.balaLabelHi || ashtaData?.balaLabelHi || problemClassification.balaLabelHi,
+      balaLabelEn: aharaData?.balaLabelEn || ashtaData?.balaLabelEn || problemClassification.balaLabelEn,
+      pathya: aharaData?.pathya || ashtaData?.pathya || problemClassification.pathya,
+      apathya: aharaData?.apathya || ashtaData?.apathya || problemClassification.apathya,
+      doshicDistribution: aharaData?.doshicDistribution || ashtaData?.doshicDistribution || problemClassification.doshicDistribution,
+      notes: session.ayurvedaAssessment?.notes || problemClassification.nidanaPanchakaNotes,
+    };
 
     const hasEnoughData = !!(
       chiefComplaintRecord ||

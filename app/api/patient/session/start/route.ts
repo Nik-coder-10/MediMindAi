@@ -6,6 +6,8 @@ import { AuthService } from "@/lib/auth/auth-guard";
 import { prisma } from "@/lib/db/prisma";
 import { SessionStatus, TriagePriority } from "@prisma/client";
 
+import { AyurvedaAssessmentService } from "@/lib/services/ayurveda.service";
+
 export const dynamic = "force-dynamic";
 
 const startEngineSchema = z.object({
@@ -194,7 +196,74 @@ export async function POST(req: NextRequest) {
       console.warn("InMemoryClinicalStore mirror warning:", (memErr as any)?.message);
     }
 
-    // 3. Start engine with the authoritative session.id
+    // 3. Classify and record patient-tailored Ayurvedic & Dashavidha assessment
+    try {
+      const ayurProfile = AyurvedaAssessmentService.classifyFromProblem(validated.chiefComplaint);
+      await AyurvedaAssessmentService.recordAssessment({
+        sessionId: session.id,
+        prakriti: ayurProfile.prakriti,
+        vikriti: ayurProfile.vikriti,
+        agni: ayurProfile.agni,
+        koshtha: ayurProfile.koshtha,
+        sattva: ayurProfile.sattva,
+        bala: ayurProfile.bala,
+        notes: ayurProfile.nidanaPanchakaNotes,
+        aharaVihara: {
+          pathya: ayurProfile.pathya,
+          apathya: ayurProfile.apathya,
+          doshicDistribution: ayurProfile.doshicDistribution,
+          prakritiLabelHi: ayurProfile.prakritiLabelHi,
+          prakritiLabelEn: ayurProfile.prakritiLabelEn,
+          vikritiLabelHi: ayurProfile.vikritiLabelHi,
+          vikritiLabelEn: ayurProfile.vikritiLabelEn,
+          agniLabelHi: ayurProfile.agniLabelHi,
+          agniLabelEn: ayurProfile.agniLabelEn,
+          koshthaLabelHi: ayurProfile.koshthaLabelHi,
+          koshthaLabelEn: ayurProfile.koshthaLabelEn,
+          sattvaLabelHi: ayurProfile.sattvaLabelHi,
+          sattvaLabelEn: ayurProfile.sattvaLabelEn,
+          balaLabelHi: ayurProfile.balaLabelHi,
+          balaLabelEn: ayurProfile.balaLabelEn,
+        },
+      });
+
+      const { inMemoryClinicalStore } = await import("@/lib/db/in-memory-store");
+      inMemoryClinicalStore.updateAyurvedaAssessment(session.id, {
+        id: `ayu-${session.id}`,
+        sessionId: session.id,
+        prakriti: ayurProfile.prakriti,
+        vikriti: ayurProfile.vikriti,
+        anala: ayurProfile.agni,
+        sattva: ayurProfile.sattva,
+        bala: ayurProfile.bala,
+        ashtavidhaData: {
+          koshtha: ayurProfile.koshtha,
+          agni: ayurProfile.agni,
+          sattva: ayurProfile.sattva,
+          bala: ayurProfile.bala,
+          doshicDistribution: ayurProfile.doshicDistribution,
+          pathya: ayurProfile.pathya,
+          apathya: ayurProfile.apathya,
+          prakritiLabelHi: ayurProfile.prakritiLabelHi,
+          prakritiLabelEn: ayurProfile.prakritiLabelEn,
+          vikritiLabelHi: ayurProfile.vikritiLabelHi,
+          vikritiLabelEn: ayurProfile.vikritiLabelEn,
+          agniLabelHi: ayurProfile.agniLabelHi,
+          agniLabelEn: ayurProfile.agniLabelEn,
+          koshthaLabelHi: ayurProfile.koshthaLabelHi,
+          koshthaLabelEn: ayurProfile.koshthaLabelEn,
+          sattvaLabelHi: ayurProfile.sattvaLabelHi,
+          sattvaLabelEn: ayurProfile.sattvaLabelEn,
+          balaLabelHi: ayurProfile.balaLabelHi,
+          balaLabelEn: ayurProfile.balaLabelEn,
+          nidanaPanchakaNotes: ayurProfile.nidanaPanchakaNotes,
+        },
+      });
+    } catch (ayurErr) {
+      console.warn("Ayurveda assessment initial classification non-fatal warning:", (ayurErr as any)?.message);
+    }
+
+    // 4. Start engine with the authoritative session.id
     const result = await AdaptiveEngineService.startSession(
       session.id,
       validated.chiefComplaint,

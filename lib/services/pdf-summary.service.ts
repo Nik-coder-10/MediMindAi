@@ -2,6 +2,7 @@ import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 import { prisma } from "@/lib/db/prisma";
 import { AppError } from "@/lib/api/errors";
 import { inMemoryClinicalStore } from "@/lib/db/in-memory-store";
+import { AyurvedaAssessmentService } from "@/lib/services/ayurveda.service";
 
 export interface GeneratePdfOptions {
   sessionId: string;
@@ -344,14 +345,19 @@ export class PdfSummaryService {
     page.drawLine({ start: { x: margin, y }, end: { x: width - margin, y }, thickness: 1, color: rgb(0.04, 0.45, 0.36) });
     y -= 14;
 
-    const prakriti = session.ayurvedaAssessment?.prakriti || "Vata-Kapha";
-    const vikriti = session.ayurvedaAssessment?.vikriti || "Vata-Pitta";
-    const agni = session.ayurvedaAssessment?.anala || "Vishamagni";
+    const dynamicAyur = AyurvedaAssessmentService.classifyFromProblem(
+      session.chiefComplaints?.[0]?.symptomName || "",
+      (session.patientAnswers || []).map((a: any) => ({ nodeCode: a.nodeCode, answerValue: a.answerValue })),
+      {}
+    );
+    const prakriti = session.ayurvedaAssessment?.prakriti || dynamicAyur.prakriti;
+    const vikriti = session.ayurvedaAssessment?.vikriti || dynamicAyur.vikriti;
+    const agni = session.ayurvedaAssessment?.anala || dynamicAyur.agni;
 
-    page.drawText(sanitizePdfText(`Prakriti: ${prakriti}    |    Vikriti: ${vikriti}    |    Agni Status: ${agni}`), {
+    page.drawText(sanitizePdfText(`Prakriti: ${prakriti}    |    Vikriti: ${vikriti}    |    Agni: ${agni}    |    Context: ${dynamicAyur.nidanaPanchakaNotes.slice(0, 60)}...`), {
       x: margin + 6,
       y,
-      size: 8,
+      size: 7.5,
       font: fontBold,
       color: rgb(0.1, 0.1, 0.1),
     });

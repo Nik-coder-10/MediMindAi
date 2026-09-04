@@ -332,6 +332,13 @@ class InMemoryClinicalStore {
     }
   }
 
+  public updateAyurvedaAssessment(sessionId: string, assessment: StoredSession["ayurvedaAssessment"]) {
+    const s = this.sessions.get(sessionId);
+    if (!s) return;
+    s.ayurvedaAssessment = assessment;
+    s.updatedAt = new Date();
+  }
+
   public updateSummary(sessionId: string, summaryText: string, status: "GENERATED" | "ACCEPTED" | "REVISED" = "GENERATED") {
     const s = this.sessions.get(sessionId);
     if (!s) return;

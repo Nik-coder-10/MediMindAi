@@ -38,6 +38,7 @@ import { PatientDashboardPreviewDTO } from "@/lib/services/preview.service";
 import { SessionRecoveryStore } from "@/lib/offline/session-recovery.store";
 import { OfflineBannerSync } from "@/components/ui/patient/OfflineBannerSync";
 import { AlertStaffButton } from "@/components/ui/patient/AlertStaffButton";
+import { AyurvedaAssessmentService } from "@/lib/services/ayurveda.service";
 
 export default function PatientSummaryPreviewDashboardPage({
   params: { locale },
@@ -168,14 +169,33 @@ export default function PatientSummaryPreviewDashboardPage({
           },
         ],
         redFlags: [],
-        ayurveda: {
-          prakriti: "VATA_PITTA",
-          vikriti: "KAPHA",
-          anala: "MANDAGNI",
-          sattva: "MADHYAMA",
-          bala: "MADHYAMA",
-          notes: "Dashavidha Pariksha completed",
-        },
+        ayurveda: (() => {
+          const profile = AyurvedaAssessmentService.classifyFromProblem(storedComplaint, [], {});
+          return {
+            prakriti: profile.prakriti,
+            prakritiLabelHi: profile.prakritiLabelHi,
+            prakritiLabelEn: profile.prakritiLabelEn,
+            vikriti: profile.vikriti,
+            vikritiLabelHi: profile.vikritiLabelHi,
+            vikritiLabelEn: profile.vikritiLabelEn,
+            anala: profile.agni,
+            agniLabelHi: profile.agniLabelHi,
+            agniLabelEn: profile.agniLabelEn,
+            koshtha: profile.koshtha,
+            koshthaLabelHi: profile.koshthaLabelHi,
+            koshthaLabelEn: profile.koshthaLabelEn,
+            sattva: profile.sattva,
+            sattvaLabelHi: profile.sattvaLabelHi,
+            sattvaLabelEn: profile.sattvaLabelEn,
+            bala: profile.bala,
+            balaLabelHi: profile.balaLabelHi,
+            balaLabelEn: profile.balaLabelEn,
+            pathya: profile.pathya,
+            apathya: profile.apathya,
+            doshicDistribution: profile.doshicDistribution,
+            notes: profile.nidanaPanchakaNotes,
+          };
+        })(),
         canSubmit: true,
         canEdit: true,
       };
@@ -525,24 +545,62 @@ export default function PatientSummaryPreviewDashboardPage({
 
         {/* 7. AYUSH / Dashavidha Findings (If AYUSH Mode) */}
         {d?.ayurveda && (
-          <div className="p-4 rounded-2xl bg-teal-50/70 dark:bg-teal-950/20 border-2 border-teal-300 space-y-2">
-            <span className="text-xs font-black text-teal-950 dark:text-teal-300 uppercase tracking-wider flex items-center gap-1.5">
-              <Flower2 className="h-4 w-4 text-teal-700" /> {isHindi ? "६. आयुर्वेद दशविध परीक्षा व प्रकृति (AYUSH Profile)" : "6. Ayurveda & Dashavidha Profile"}
-            </span>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-1 text-xs">
-              <div className="p-2 rounded-xl bg-white dark:bg-slate-900 border">
+          <div className="p-4 rounded-2xl bg-teal-50/70 dark:bg-teal-950/20 border-2 border-teal-300 space-y-3 shadow-sm">
+            <div className="flex items-center justify-between flex-wrap gap-1">
+              <span className="text-xs font-black text-teal-950 dark:text-teal-300 uppercase tracking-wider flex items-center gap-1.5">
+                <Flower2 className="h-4 w-4 text-teal-700" /> {isHindi ? "६. आयुर्वेद दशविध परीक्षा व प्रकृति (AYUSH Profile)" : "6. Ayurveda & Dashavidha Profile"}
+              </span>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-teal-200/60 dark:bg-teal-900/60 text-teal-950 dark:text-teal-200">
+                {isHindi ? "लक्षण-आधारित वर्गीकरण" : "Symptom-Tailored"}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
+              <div className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border space-y-0.5 shadow-2xs">
                 <span className="text-muted-foreground block text-[10px] font-bold">प्रकृति (Prakriti):</span>
-                <span className="font-extrabold text-foreground">{d.ayurveda.prakriti || "Vata-Pitta"}</span>
+                <span className="font-extrabold text-foreground text-xs block">
+                  {isHindi ? d.ayurveda.prakritiLabelHi || d.ayurveda.prakriti : d.ayurveda.prakritiLabelEn || d.ayurveda.prakriti || "Vata-Pitta"}
+                </span>
               </div>
-              <div className="p-2 rounded-xl bg-white dark:bg-slate-900 border">
+              <div className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border space-y-0.5 shadow-2xs">
                 <span className="text-muted-foreground block text-[10px] font-bold">विकृति (Vikriti):</span>
-                <span className="font-extrabold text-foreground">{d.ayurveda.vikriti || "Kapha"}</span>
+                <span className="font-extrabold text-emerald-800 dark:text-emerald-300 text-xs block">
+                  {isHindi ? d.ayurveda.vikritiLabelHi || d.ayurveda.vikriti : d.ayurveda.vikritiLabelEn || d.ayurveda.vikriti || "Vata Dushti"}
+                </span>
               </div>
-              <div className="p-2 rounded-xl bg-white dark:bg-slate-900 border">
+              <div className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border space-y-0.5 shadow-2xs">
                 <span className="text-muted-foreground block text-[10px] font-bold">अग्नि स्थिति (Agni):</span>
-                <span className="font-extrabold text-foreground">{d.ayurveda.anala || "Mandagni"}</span>
+                <span className="font-extrabold text-amber-800 dark:text-amber-300 text-xs block">
+                  {isHindi ? d.ayurveda.agniLabelHi || d.ayurveda.anala : d.ayurveda.agniLabelEn || d.ayurveda.anala || "Vishamagni"}
+                </span>
+              </div>
+              <div className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border space-y-0.5 shadow-2xs">
+                <span className="text-muted-foreground block text-[10px] font-bold">कोष्ठ (Bowel / Koshtha):</span>
+                <span className="font-extrabold text-foreground text-xs block">
+                  {isHindi ? d.ayurveda.koshthaLabelHi || d.ayurveda.koshtha || "मध्यम कोष्ठ" : d.ayurveda.koshthaLabelEn || d.ayurveda.koshtha || "Madhyama"}
+                </span>
+              </div>
+              <div className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border space-y-0.5 shadow-2xs">
+                <span className="text-muted-foreground block text-[10px] font-bold">सत्त्व व बल (Sattva & Bala):</span>
+                <span className="font-extrabold text-foreground text-xs block">
+                  {isHindi ? `${d.ayurveda.sattvaLabelHi || "मध्यम"} / ${d.ayurveda.balaLabelHi || "मध्यम"}` : `${d.ayurveda.sattva || "Madhyama"} / ${d.ayurveda.bala || "Madhyama"}`}
+                </span>
+              </div>
+              <div className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border space-y-0.5 shadow-2xs">
+                <span className="text-muted-foreground block text-[10px] font-bold">दोष अनुपात (Dosha):</span>
+                <span className="font-extrabold text-foreground text-xs block">
+                  {d.ayurveda.doshicDistribution ? `V:${d.ayurveda.doshicDistribution.vata}% P:${d.ayurveda.doshicDistribution.pitta}% K:${d.ayurveda.doshicDistribution.kapha}%` : "वात-पित्त प्रधान"}
+                </span>
               </div>
             </div>
+
+            {/* Ayurvedic Clinical Notes & Pathya Advice */}
+            {d.ayurveda.notes && (
+              <div className="p-2.5 rounded-xl bg-teal-100/50 dark:bg-teal-900/30 border border-teal-200 dark:border-teal-800/50 text-[11px] font-semibold text-teal-950 dark:text-teal-200">
+                <span className="font-extrabold uppercase mr-1">निदान व सम्प्राप्ति (Clinical Context):</span>
+                {d.ayurveda.notes}
+              </div>
+            )}
           </div>
         )}
 
