@@ -177,17 +177,6 @@ export default function HomePage({
       {/* ── Hero ── */}
       <section className="container max-w-7xl pt-14 text-center space-y-8">
 
-        {/* Badge */}
-        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass text-[11px] font-bold text-botanical-900 dark:text-botanical-200 border border-botanical-300/60 dark:border-botanical-700/40 shadow-sm">
-          <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-botanical-500 opacity-75" />
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-botanical-500" />
-          </span>
-          {isHindi
-            ? "एस.आई.एच 2026 समस्या आईडी 26047 · अगली पीढ़ी का आयुष नैदानिक केस-टेकिंग इंजन"
-            : "SIH 2026 Problem ID 26047 · Next-Gen Ayush Clinical Case-Taking Engine"}
-        </div>
-
         {/* Headline */}
         <div className="space-y-5 max-w-4xl mx-auto">
           <h1 className="text-[42px] sm:text-[62px] lg:text-[72px] font-black tracking-tight text-foreground leading-[1.08]">
