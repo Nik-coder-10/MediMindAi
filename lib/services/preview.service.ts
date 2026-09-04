@@ -224,7 +224,7 @@ export class PreviewService {
         clinicalSummary: null,
         ayurvedaAssessment: null,
       };
-      inMemoryClinicalStore.upsertSession(stubSession);
+      inMemoryClinicalStore.upsertSession(stubSession as any);
       session = stubSession as any;
     }
 

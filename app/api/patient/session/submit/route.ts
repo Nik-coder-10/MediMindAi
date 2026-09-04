@@ -74,9 +74,9 @@ export async function POST(req: NextRequest) {
           userId: user.id,
           firstName: user.patientProfile?.firstName || "Patient",
           lastName: user.patientProfile?.lastName || "",
-          dateOfBirth: user.patientProfile?.dateOfBirth || new Date("1985-01-01"),
-          gender: (user.patientProfile?.gender as any) || "MALE",
-          bloodGroup: (user.patientProfile?.bloodGroup as any) || "B+",
+          dateOfBirth: (user.patientProfile as any)?.dateOfBirth || new Date("1985-01-01"),
+          gender: (user.patientProfile as any)?.gender || "MALE",
+          bloodGroup: (user.patientProfile as any)?.bloodGroup || "B+",
           user: {
             id: user.id,
             email: user.email,

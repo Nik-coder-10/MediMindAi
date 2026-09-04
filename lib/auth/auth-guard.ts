@@ -353,9 +353,9 @@ export class AuthService {
           userId: user.id,
           firstName: user.patientProfile?.firstName || (user.role === Role.PATIENT ? "Patient" : "Consultation Patient"),
           lastName: user.patientProfile?.lastName || "",
-          dateOfBirth: user.patientProfile?.dateOfBirth || new Date("1985-01-01"),
-          gender: (user.patientProfile?.gender as any) || "MALE",
-          bloodGroup: (user.patientProfile?.bloodGroup as any) || "B+",
+          dateOfBirth: (user.patientProfile as any)?.dateOfBirth || new Date("1985-01-01"),
+          gender: ((user.patientProfile as any)?.gender as any) || "MALE",
+          bloodGroup: ((user.patientProfile as any)?.bloodGroup as any) || "B+",
           user: {
             id: user.id,
             email: user.email,

@@ -257,11 +257,12 @@ export default function PatientSummaryPreviewDashboardPage({
     setSubmitting(true);
     setError(null);
 
+    const activeSessionId =
+      previewData.sessionId ||
+      (typeof window !== "undefined" && sessionStorage.getItem("ayursetu_active_session_id")) ||
+      "sess-demo-001";
+
     try {
-      const activeSessionId =
-        previewData.sessionId ||
-        (typeof window !== "undefined" && sessionStorage.getItem("ayursetu_active_session_id")) ||
-        "sess-demo-001";
 
       const activeUserId =
         user?.id ||
