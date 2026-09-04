@@ -125,8 +125,10 @@ export function Navbar({ locale }: { locale: string }) {
               <span className="hidden sm:inline">{contrastConfig.label}</span>
             </button>
 
-            {/* Doctor Real-time Notification Bell & Drawer */}
-            <DoctorNotificationFeed locale={locale} />
+            {/* Clinical Real-time Notification Bell & Drawer — Only for Doctor & Admin */}
+            {isAuthenticated && user && (user.role === "DOCTOR" || user.role === "ADMIN") && (
+              <DoctorNotificationFeed locale={locale} />
+            )}
 
             {/* Auth */}
             {isAuthenticated && user ? (

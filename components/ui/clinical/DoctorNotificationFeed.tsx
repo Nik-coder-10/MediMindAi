@@ -123,6 +123,10 @@ export function DoctorNotificationFeed({ locale = "hi" }: DoctorNotificationFeed
 
   // Real-time Delivery via SSE + Polling Fallback
   useEffect(() => {
+    if (!user || (user.role !== "DOCTOR" && user.role !== "ADMIN")) {
+      return;
+    }
+
     fetchNotifications();
 
     let eventSource: EventSource | null = null;
@@ -256,6 +260,11 @@ export function DoctorNotificationFeed({ locale = "hi" }: DoctorNotificationFeed
         };
     }
   };
+
+  // Role Guard: Only display and poll clinical notifications for Doctor and Admin logins
+  if (!user || (user.role !== "DOCTOR" && user.role !== "ADMIN")) {
+    return null;
+  }
 
   return (
     <div className="relative">
