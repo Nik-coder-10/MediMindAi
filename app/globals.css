@@ -395,8 +395,9 @@
   }
 
   /* ─── Premium Mesh Backgrounds ─── */
+  /* ─── Premium Mesh Backgrounds ─── */
   .hero-mesh {
-    background-color: hsl(150, 20%, 98%);
+    background-color: transparent;
     background-image:
       radial-gradient(at 0% 0%, var(--mesh-1) 0px, transparent 55%),
       radial-gradient(at 100% 0%, var(--mesh-2) 0px, transparent 50%),
@@ -405,7 +406,7 @@
   }
 
   .dark .hero-mesh {
-    background-color: hsl(165, 35%, 6%);
+    background-color: transparent;
     background-image:
       radial-gradient(at 0% 0%, hsla(162,45%,12%,0.7) 0px, transparent 55%),
       radial-gradient(at 100% 0%, hsla(150,40%,9%,0.6) 0px, transparent 50%),
@@ -414,19 +415,19 @@
   }
 
   .patient-mesh {
-    background-color: hsl(150, 20%, 98%);
+    background-color: transparent;
     background-image:
-      radial-gradient(at 15% 10%, hsla(162, 50%, 94%, 0.85) 0px, transparent 45%),
-      radial-gradient(at 85% 5%, hsla(154, 40%, 95%, 0.75) 0px, transparent 45%),
-      radial-gradient(at 90% 90%, hsla(38, 45%, 96%, 0.5) 0px, transparent 50%);
+      radial-gradient(at 15% 10%, hsla(162, 50%, 94%, 0.45) 0px, transparent 45%),
+      radial-gradient(at 85% 5%, hsla(154, 40%, 95%, 0.4) 0px, transparent 45%),
+      radial-gradient(at 90% 90%, hsla(38, 45%, 96%, 0.3) 0px, transparent 50%);
   }
 
   .dark .patient-mesh {
-    background-color: hsl(165, 35%, 6%);
+    background-color: transparent;
     background-image:
-      radial-gradient(at 15% 10%, hsla(162, 45%, 10%, 0.6) 0px, transparent 45%),
-      radial-gradient(at 85% 5%, hsla(154, 40%, 8%, 0.6) 0px, transparent 45%),
-      radial-gradient(at 90% 90%, hsla(38, 30%, 8%, 0.3) 0px, transparent 50%);
+      radial-gradient(at 15% 10%, hsla(162, 45%, 10%, 0.4) 0px, transparent 45%),
+      radial-gradient(at 85% 5%, hsla(154, 40%, 8%, 0.4) 0px, transparent 45%),
+      radial-gradient(at 90% 90%, hsla(38, 30%, 8%, 0.2) 0px, transparent 50%);
   }
 
   /* ─── Bento Grid Hover ─── */
@@ -601,32 +602,42 @@
 .animate-forest-sway-left {
   transform-origin: top left;
   animation: forestSwayLeft 9.5s ease-in-out infinite;
+  will-change: transform;
+  backface-visibility: hidden;
 }
 
 .animate-forest-sway-right {
   transform-origin: top right;
   animation: forestSwayRight 11.5s ease-in-out infinite;
+  will-change: transform;
+  backface-visibility: hidden;
 }
 
 .animate-forest-sway-gentle {
   transform-origin: bottom center;
   animation: forestSwayGentle 8s ease-in-out infinite;
+  will-change: transform;
+  backface-visibility: hidden;
 }
 
 .animate-sunbeam {
   animation: sunbeamPulse 12s ease-in-out infinite;
+  will-change: opacity, transform;
 }
 
 .animate-leaf-drift-1 {
   animation: driftingLeaf1 16s ease-in-out infinite;
+  will-change: transform, opacity;
 }
 
 .animate-leaf-drift-2 {
   animation: driftingLeaf2 19s ease-in-out infinite;
+  will-change: transform, opacity;
 }
 
 .animate-prana {
   animation: pranaDrift 7s ease-in-out infinite;
+  will-change: transform, opacity;
 }
 
 @media (prefers-reduced-motion: reduce) {

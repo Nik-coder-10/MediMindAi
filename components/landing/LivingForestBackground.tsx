@@ -3,14 +3,22 @@
 import React from "react";
 import Image from "next/image";
 
-export function LivingForestBackground() {
+export function LivingForestBackground({
+  className = "",
+  isFixed = false,
+}: {
+  className?: string;
+  isFixed?: boolean;
+}) {
   return (
     <div
-      className="absolute inset-0 overflow-hidden pointer-events-none z-0 select-none"
+      className={`${
+        isFixed ? "fixed inset-0 h-screen" : "absolute inset-0"
+      } overflow-hidden pointer-events-none z-0 select-none ${className}`}
       aria-hidden="true"
     >
       {/* ─── LAYER 1: CINEMATIC AYURVEDIC FOREST ENVIRONMENT ─── */}
-      <div className="absolute inset-0 -top-8 h-[115%] w-full overflow-hidden opacity-20 dark:opacity-20 transition-opacity duration-700">
+      <div className="absolute inset-0 -top-8 h-[115%] w-full overflow-hidden opacity-20 dark:opacity-20 transition-opacity duration-700 pointer-events-none">
         <Image
           src="/images/ayurvedic-forest-hero.jpg"
           alt="Ayurvedic Forest Environment"

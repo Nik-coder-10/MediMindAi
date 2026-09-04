@@ -3,6 +3,7 @@ import { Inter, Noto_Sans_Devanagari } from "next/font/google";
 import { Providers } from "@/components/shared/Providers";
 import { Navbar } from "@/components/shared/Navbar";
 import { AyurSetuLogo } from "@/components/shared/AyurSetuLogo";
+import { LivingForestBackground } from "@/components/landing/LivingForestBackground";
 import "@/app/globals.css";
 
 const inter = Inter({
@@ -37,9 +38,12 @@ export default function RootLayout({
     <html lang={locale || "en"} suppressHydrationWarning>
       <body className={`${inter.variable} ${notoSansDevanagari.variable} font-sans`}>
         <Providers>
-          <div className="relative flex min-h-screen flex-col">
+          <div className="relative flex min-h-screen flex-col bg-background selection:bg-emerald-500/20">
+            {/* ─── Global Living Ayurvedic Forest Multi-Layer Atmosphere (All Subpages) ─── */}
+            <LivingForestBackground isFixed />
+
             <Navbar locale={locale || "en"} />
-            <main className="flex-1">{children}</main>
+            <main className="relative z-10 flex-1">{children}</main>
 
             {/* Premium Footer */}
             <footer className="glass-panel border-t border-white/40 dark:border-white/06 py-5">

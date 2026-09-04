@@ -170,9 +170,6 @@ export default function HomePage({
 
   return (
     <div className="relative min-h-screen hero-mesh pb-24 space-y-20 overflow-hidden">
-      {/* ─── Living Ayurvedic Forest Multi-Layer Environment ─── */}
-      <LivingForestBackground />
-
       {/* ── Hero ── */}
       <section className="container relative z-10 max-w-7xl pt-14 text-center space-y-8 animate-in fade-in-50 duration-700 slide-in-from-bottom-2">
 
