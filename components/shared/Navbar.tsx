@@ -43,20 +43,22 @@ export function Navbar({ locale }: { locale: string }) {
     },
   }[contrastMode];
 
+  const isHindi = locale === "hi";
+
   const navLinks = [
     {
       href: `/${locale}/doctor`,
-      label: "Doctor",
+      label: isHindi ? "चिकित्सक" : "Doctor",
       icon: <Stethoscope className="h-3.5 w-3.5" />,
     },
     {
       href: `/${locale}/patient`,
-      label: "Patient",
+      label: isHindi ? "रोगी" : "Patient",
       icon: <User className="h-3.5 w-3.5" />,
     },
     {
       href: `/${locale}/admin-dashboard`,
-      label: "Admin",
+      label: isHindi ? "व्यवस्थापक" : "Admin",
       icon: <ShieldCheck className="h-3.5 w-3.5" />,
     },
   ];
@@ -81,7 +83,7 @@ export function Navbar({ locale }: { locale: string }) {
                 AyurSetu
               </span>
               <span className="text-[9px] font-extrabold text-muted-foreground uppercase tracking-[0.14em]">
-                Ministry of Ayush
+                {isHindi ? "आयुष मंत्रालय" : "Ministry of Ayush"}
               </span>
             </div>
           </Link>
@@ -131,26 +133,26 @@ export function Navbar({ locale }: { locale: string }) {
                       ? `ABHA · ${user.abhaId?.slice(0, 8) || "Linked"}`
                       : user.role === "DOCTOR"
                       ? user.doctorRegNumber?.slice(0, 14) || "MD (Ayu)"
-                      : "Ministry Admin"}
+                      : isHindi ? "मंत्रालय व्यवस्थापक" : "Ministry Admin"}
                   </span>
                 </div>
                 {user.role === "PATIENT" && (
                   <Link
                     href={`/${locale}/patient/cases`}
-                    title="मेरे परामर्श (My Cases)"
+                    title={isHindi ? "मेरे परामर्श" : "My Cases"}
                     className="hidden sm:flex items-center gap-1 px-2.5 py-1.5 rounded-xl border border-botanical-200 dark:border-botanical-900/40 bg-botanical-50/80 dark:bg-botanical-950/30 text-botanical-800 dark:text-botanical-300 font-bold text-[11px] hover:bg-botanical-100 dark:hover:bg-botanical-950/50 transition-all min-h-[34px]"
                   >
                     <Activity className="h-3.5 w-3.5" />
-                    <span>{locale === "hi" ? "मेरे परामर्श" : "My Cases"}</span>
+                    <span>{isHindi ? "मेरे परामर्श" : "My Cases"}</span>
                   </Link>
                 )}
                 <button
                   onClick={logout}
-                  title="Log out"
+                  title={isHindi ? "लॉगआउट" : "Log out"}
                   className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl border border-red-200 dark:border-red-900/40 bg-red-50/60 dark:bg-red-950/20 text-[11px] font-bold text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-950/40 transition-all min-h-[34px]"
                 >
                   <LogOut className="h-3.5 w-3.5" />
-                  <span className="hidden sm:inline">{locale === "hi" ? "लॉगआउट" : "Logout"}</span>
+                  <span className="hidden sm:inline">{isHindi ? "लॉगआउट" : "Logout"}</span>
                 </button>
               </div>
             ) : (
@@ -159,7 +161,7 @@ export function Navbar({ locale }: { locale: string }) {
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border text-[12px] font-bold text-foreground hover:border-botanical-300 hover:bg-botanical-50/50 transition-all min-h-[34px]"
               >
                 <LogIn className="h-3.5 w-3.5 text-botanical-600" />
-                Login
+                {isHindi ? "लॉगिन" : "Login"}
               </Link>
             )}
 
@@ -169,7 +171,7 @@ export function Navbar({ locale }: { locale: string }) {
               className="hidden sm:flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-gradient-botanical text-white text-[12px] font-bold shadow-sm hover:shadow-botanical-glow transition-all duration-300 active:scale-[0.98] min-h-[34px]"
             >
               <Activity className="h-3.5 w-3.5" />
-              Start Case
+              {isHindi ? "परामर्श शुरू करें" : "Start Case"}
             </Link>
           </div>
         </div>

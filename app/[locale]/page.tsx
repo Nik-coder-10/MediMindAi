@@ -23,11 +23,33 @@ export default function HomePage({
 }: {
   params: { locale: string };
 }) {
+  const isHindi = locale === "hi";
+
   const stats = [
-    { value: "< 4 Min", label: "Avg Intake Time", icon: "⚡", color: "from-botanical-600 to-botanical-700" },
-    { value: "ABDM", label: "FHIR R4 Compliant", icon: "🛡️", color: "from-emerald-600 to-teal-600" },
-    { value: "Tridosha", label: "Auto Prakriti Analysis", icon: "🎯", color: "from-amber-600 to-amber-700" },
-    { value: "Red-Flags", label: "Zero-Miss Triage", icon: "🚨", color: "from-rose-600 to-rose-700" },
+    {
+      value: "< 4 Min",
+      label: isHindi ? "औसत परामर्श समय" : "Avg Intake Time",
+      icon: "⚡",
+      color: "from-botanical-600 to-botanical-700",
+    },
+    {
+      value: "ABDM",
+      label: isHindi ? "FHIR R4 संगत" : "FHIR R4 Compliant",
+      icon: "🛡️",
+      color: "from-emerald-600 to-teal-600",
+    },
+    {
+      value: isHindi ? "त्रिदोष" : "Tridosha",
+      label: isHindi ? "स्वतः प्रकृति विश्लेषण" : "Auto Prakriti Analysis",
+      icon: "🎯",
+      color: "from-amber-600 to-amber-700",
+    },
+    {
+      value: isHindi ? "रेड-फ्लैग्स" : "Red-Flags",
+      label: isHindi ? "शून्य-चूक ट्राइएज" : "Zero-Miss Triage",
+      icon: "🚨",
+      color: "from-rose-600 to-rose-700",
+    },
   ];
 
   const bentoCards = [
@@ -35,12 +57,18 @@ export default function HomePage({
       span: "md:col-span-2",
       icon: <HeartPulse className="h-6 w-6" />,
       iconBg: "bg-gradient-to-br from-botanical-600 to-botanical-800",
-      title: "Classical Dashavidha & Ashtavidha Pariksha Engine",
-      desc: "Structured clinical intake assessing Dushya, Desha, Bala, Kala, Anala (Agni), Prakriti, Vayas, Satva, Satmya, and Ahara with ICD-11 & NAMASTE dual-coding synchronization.",
+      title: isHindi
+        ? "शास्त्रीय दशविध व अष्टविध परीक्षा इंजन"
+        : "Classical Dashavidha & Ashtavidha Pariksha Engine",
+      desc: isHindi
+        ? "दूष्य, देश, बल, काल, अनल (अग्नि), प्रकृति, वय, सत्त्व, सात्म्य और आहार का संरचित नैदानिक मूल्यांकन — ICD-11 व नमस्ते (NAMASTE) कोड तुल्यकालन के साथ।"
+        : "Structured clinical intake assessing Dushya, Desha, Bala, Kala, Anala (Agni), Prakriti, Vayas, Satva, Satmya, and Ahara with ICD-11 & NAMASTE dual-coding synchronization.",
       extra: (
         <div className="p-4 rounded-2xl bg-white/80 dark:bg-forest-card/80 border border-botanical-200/60 dark:border-botanical-800/40 space-y-2.5 shadow-2xs">
           <div className="flex justify-between items-center text-[11px] font-bold">
-            <span className="text-foreground">Live Doshic Distribution</span>
+            <span className="text-foreground">
+              {isHindi ? "लाइव त्रिदोष संतुलन वितरण" : "Live Doshic Distribution"}
+            </span>
             <span className="font-mono text-botanical-700 dark:text-botanical-300">V:45% · P:35% · K:20%</span>
           </div>
           <div className="h-2.5 w-full rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden flex">
@@ -60,13 +88,19 @@ export default function HomePage({
       span: "md:col-span-1",
       icon: <Mic className="h-6 w-6" />,
       iconBg: "bg-gradient-to-br from-amber-600 to-amber-700",
-      title: "Multilingual Indian TTS & Voice Triage",
-      desc: "Empowering elderly, rural, and low-literacy patients with natural Hindi & Indian English audio read-outs and voice recording.",
+      title: isHindi
+        ? "बहुभाषी भारतीय वॉयस व ट्राइएज प्रणाली"
+        : "Multilingual Indian TTS & Voice Triage",
+      desc: isHindi
+        ? "बुजुर्ग, ग्रामीण एवं कम साक्षर रोगियों के लिए प्राकृतिक हिंदी एवं भारतीय अंग्रेजी में ऑडियो प्रश्नवाचन व वॉयस रिकॉर्डिंग।"
+        : "Empowering elderly, rural, and low-literacy patients with natural Hindi & Indian English audio read-outs and voice recording.",
       extra: (
         <div className="p-3.5 rounded-2xl bg-amber-50/90 dark:bg-amber-950/30 border border-amber-200/70 dark:border-amber-800/40 flex items-center gap-2.5 shadow-2xs">
           <span className="text-xl">🔊</span>
           <span className="text-[11px] font-bold text-amber-950 dark:text-amber-200">
-            Bilingual Voice Prompts on Every Question Node
+            {isHindi
+              ? "प्रत्येक प्रश्न नोड पर द्विभाषी ऑडियो सहायता"
+              : "Bilingual Voice Prompts on Every Question Node"}
           </span>
         </div>
       ),
@@ -75,11 +109,17 @@ export default function HomePage({
       span: "md:col-span-1",
       icon: <FileText className="h-6 w-6" />,
       iconBg: "bg-gradient-to-br from-botanical-700 to-forest",
-      title: "Document OCR & Lab Slip Parsing",
-      desc: "Upload historical prescriptions and lab results to extract medicines, HbA1c, and abnormal biomarkers into the doctor's dossier.",
+      title: isHindi
+        ? "दस्तावेज ओसीआर एवं लैब रिपोर्ट विश्लेषण"
+        : "Document OCR & Lab Slip Parsing",
+      desc: isHindi
+        ? "पुराने पर्चे और लैब जांच अपलोड करके दवाइयां, HbA1c, और असामान्य बायोमार्कर सीधे डॉक्टर के केस डोजियर में निकालें।"
+        : "Upload historical prescriptions and lab results to extract medicines, HbA1c, and abnormal biomarkers into the doctor's dossier.",
       extra: (
         <div className="px-3.5 py-3 rounded-2xl bg-botanical-50/90 dark:bg-botanical-950/40 border border-botanical-200/70 dark:border-botanical-800/40 font-mono text-[10px] font-bold text-botanical-950 dark:text-botanical-200 shadow-2xs">
-          Parsed: Yogaraj Guggulu · ESR: 38 mm/hr · HbA1c: 6.8%
+          {isHindi
+            ? "विश्लेषित: योगराज गुग्गुलु · ESR: 38 mm/hr · HbA1c: 6.8%"
+            : "Parsed: Yogaraj Guggulu · ESR: 38 mm/hr · HbA1c: 6.8%"}
         </div>
       ),
     },
@@ -87,14 +127,30 @@ export default function HomePage({
       span: "md:col-span-2",
       icon: <Award className="h-6 w-6" />,
       iconBg: "bg-gradient-to-br from-botanical-600 to-emerald-700",
-      title: "Institutional OPD Prescription & ABDM Linkage",
-      desc: "Export standard Ministry of Ayush & AIIA-formatted OPD prescription sheets with doctor registration, hospital affiliation, and Pathya-Apathya lifestyle advice.",
+      title: isHindi
+        ? "संस्थागत ओपीडी पर्चा एवं आभा (ABDM) लिंकेज"
+        : "Institutional OPD Prescription & ABDM Linkage",
+      desc: isHindi
+        ? "डॉक्टर पंजीकरण, अस्पताल संबद्धता, तथा पथ्य-अपथ्य जीवनशैली परामर्श युक्त मानक आयुष मंत्रालय व AIIA प्रारूप ओपीडी पर्चा निर्यात।"
+        : "Export standard Ministry of Ayush & AIIA-formatted OPD prescription sheets with doctor registration, hospital affiliation, and Pathya-Apathya lifestyle advice.",
       extra: (
         <div className="grid grid-cols-3 gap-2.5 text-[11px]">
           {[
-            { label: "Doctor Verification", value: "CCIM / State Board", color: "text-foreground" },
-            { label: "Prescription Export", value: "1-Click PDF / Print", color: "text-botanical-700 dark:text-botanical-400" },
-            { label: "National Registry", value: "ABHA PHR Linked", color: "text-foreground" },
+            {
+              label: isHindi ? "चिकित्सक सत्यापन" : "Doctor Verification",
+              value: isHindi ? "CCIM / राज्य बोर्ड" : "CCIM / State Board",
+              color: "text-foreground",
+            },
+            {
+              label: isHindi ? "पर्चा निर्यात" : "Prescription Export",
+              value: isHindi ? "1-क्लिक PDF / प्रिंट" : "1-Click PDF / Print",
+              color: "text-botanical-700 dark:text-botanical-400",
+            },
+            {
+              label: isHindi ? "राष्ट्रीय रजिस्ट्री" : "National Registry",
+              value: isHindi ? "आभा (ABHA) लिंक्ड" : "ABHA PHR Linked",
+              color: "text-foreground",
+            },
           ].map((item) => (
             <div
               key={item.label}
@@ -127,21 +183,35 @@ export default function HomePage({
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-botanical-500 opacity-75" />
             <span className="relative inline-flex rounded-full h-2 w-2 bg-botanical-500" />
           </span>
-          SIH 2026 Problem ID 26047 · Next-Gen Ayush Clinical Case-Taking Engine
+          {isHindi
+            ? "एस.आई.एच 2026 समस्या आईडी 26047 · अगली पीढ़ी का आयुष नैदानिक केस-टेकिंग इंजन"
+            : "SIH 2026 Problem ID 26047 · Next-Gen Ayush Clinical Case-Taking Engine"}
         </div>
 
         {/* Headline */}
         <div className="space-y-5 max-w-4xl mx-auto">
           <h1 className="text-[42px] sm:text-[62px] lg:text-[72px] font-black tracking-tight text-foreground leading-[1.08]">
-            Empowering{" "}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-botanical-700 via-botanical-600 to-emerald-500">
-              Ayush Healthcare
-            </span>{" "}
-            with AI Precision
+            {isHindi ? (
+              <>
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-botanical-700 via-botanical-600 to-emerald-500">
+                  आयुष स्वास्थ्य सेवा
+                </span>{" "}
+                को AI परिशुद्धता से सशक्त बनाना
+              </>
+            ) : (
+              <>
+                Empowering{" "}
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-botanical-700 via-botanical-600 to-emerald-500">
+                  Ayush Healthcare
+                </span>{" "}
+                with AI Precision
+              </>
+            )}
           </h1>
           <p className="text-[16px] sm:text-[18px] text-muted-foreground font-medium max-w-2xl mx-auto leading-relaxed">
-            Standardized classical Ashtavidha Pariksha, multilingual voice intake in Hindi &amp; English,
-            instant prescription OCR, and ABDM interoperability — built for national scale.
+            {isHindi
+              ? "मानकीकृत शास्त्रीय अष्टविध परीक्षा, हिंदी व अंग्रेजी में बहुभाषी वॉयस परामर्श, त्वरित पर्चा ओसीआर, एवं आयुष्मान भारत (ABDM) संगतता — राष्ट्रीय स्तर के लिए निर्मित।"
+              : "Standardized classical Ashtavidha Pariksha, multilingual voice intake in Hindi & English, instant prescription OCR, and ABDM interoperability — built for national scale."}
           </p>
         </div>
 
@@ -152,7 +222,7 @@ export default function HomePage({
             className="inline-flex items-center gap-2.5 h-14 px-8 rounded-2xl bg-gradient-botanical text-white text-[15px] font-extrabold shadow-glass-precision hover:shadow-botanical-glow transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.98]"
           >
             <Mic className="h-5 w-5" />
-            रोगी परामर्श (Patient Intake)
+            {isHindi ? "रोगी परामर्श (शुरू करें)" : "रोगी परामर्श (Patient Intake)"}
             <ArrowRight className="h-4 w-4" />
           </Link>
 
@@ -161,7 +231,7 @@ export default function HomePage({
             className="inline-flex items-center gap-2.5 h-14 px-7 rounded-2xl glass-card border border-white/80 dark:border-white/10 text-foreground text-[15px] font-extrabold hover:shadow-glass-lg transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.98]"
           >
             <Stethoscope className="h-5 w-5 text-botanical-600" />
-            चिकित्सक डेस्क (Doctor Desk)
+            {isHindi ? "चिकित्सक डेस्क (Doctor Desk)" : "चिकित्सक डेस्क (Doctor Desk)"}
           </Link>
 
           <Link
@@ -169,7 +239,7 @@ export default function HomePage({
             className="inline-flex items-center gap-2 h-14 px-5 rounded-2xl text-[14px] font-bold text-muted-foreground hover:text-foreground transition-colors"
           >
             <Lock className="h-4 w-4" />
-            Admin Console
+            {isHindi ? "व्यवस्थापक कंसोल" : "Admin Console"}
           </Link>
         </div>
 
@@ -198,10 +268,18 @@ export default function HomePage({
       <section className="container max-w-7xl space-y-8">
         <div className="text-center space-y-2.5 max-w-2xl mx-auto">
           <span className="editorial-label text-botanical-700 dark:text-botanical-400">
-            Core Technological Pillars
+            {isHindi ? "प्रमुख तकनीकी आधारस्तंभ" : "Core Technological Pillars"}
           </span>
           <h2 className="text-[30px] sm:text-[38px] font-black text-foreground tracking-tight">
-            Designed for Clinicians,<br className="hidden sm:block" /> Built for Patients
+            {isHindi ? (
+              <>
+                चिकित्सकों के लिए अभिकल्पित,<br className="hidden sm:block" /> रोगियों के लिए निर्मित
+              </>
+            ) : (
+              <>
+                Designed for Clinicians,<br className="hidden sm:block" /> Built for Patients
+              </>
+            )}
           </h2>
         </div>
 
@@ -238,10 +316,14 @@ export default function HomePage({
           <div className="relative flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="space-y-2.5 text-center md:text-left max-w-xl">
               <h3 className="text-[24px] sm:text-[30px] font-black text-white leading-tight">
-                Ready to experience modern Ayush clinical intelligence?
+                {isHindi
+                  ? "आधुनिक आयुष नैदानिक बुद्धिमत्ता का अनुभव करने के लिए तैयार हैं?"
+                  : "Ready to experience modern Ayush clinical intelligence?"}
               </h3>
               <p className="text-[14px] text-botanical-100 font-medium leading-relaxed">
-                Start as a patient for voice-guided intake, or access the clinical queue as an authenticated physician.
+                {isHindi
+                  ? "वॉयस-निर्देशित केस-टेकिंग के लिए रोगी के रूप में शुरू करें, या चिकित्सक के रूप में लॉग इन करें।"
+                  : "Start as a patient for voice-guided intake, or access the clinical queue as an authenticated physician."}
               </p>
             </div>
 
@@ -251,13 +333,13 @@ export default function HomePage({
                 className="inline-flex items-center gap-2 h-12 px-6 rounded-2xl bg-white text-botanical-800 text-[14px] font-extrabold shadow-md hover:shadow-glass-precision transition-all hover:-translate-y-0.5 active:scale-[0.98]"
               >
                 <Activity className="h-4 w-4 text-botanical-700" />
-                Start Case Intake
+                {isHindi ? "केस परामर्श शुरू करें" : "Start Case Intake"}
               </Link>
               <Link
                 href={`/${locale}/login`}
                 className="inline-flex items-center gap-2 h-12 px-6 rounded-2xl bg-white/10 border border-white/20 text-white text-[14px] font-extrabold hover:bg-white/20 transition-all active:scale-[0.98]"
               >
-                Portal Login
+                {isHindi ? "पोर्टल लॉगिन" : "Portal Login"}
               </Link>
             </div>
           </div>
