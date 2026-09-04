@@ -32,6 +32,7 @@ export class SummaryService {
       include: {
         patient: { include: { user: true } },
         chiefComplaints: true,
+        patientAnswers: true,
         redFlagEvents: true,
         medicalDocuments: { include: { extractedEntities: true } },
         ayurvedaAssessment: true,
@@ -121,6 +122,84 @@ export class SummaryService {
       ? safetyAlerts.map((sa) => `  - **[${sa.severity}] ${sa.title}**: ${sa.physicianAdvisory} *(Action: ${sa.recommendedAction})*`).join("\n")
       : "  - No critical drug interactions or allergy conflicts identified.";
 
+    // Parse intake mode from session notes, engine facts, or assessment
+    let intakeMode: "AYURVEDA" | "GENERAL" = "AYURVEDA";
+    try {
+      if (session.notes) {
+        const parsedNotes = JSON.parse(session.notes);
+        if (parsedNotes.intakeMode) intakeMode = parsedNotes.intakeMode;
+      }
+    } catch {}
+    if (!intakeMode && facts.intakeMode) {
+      intakeMode = facts.intakeMode;
+    }
+
+    const modeLabel = intakeMode === "GENERAL"
+      ? "🩺 सामान्य चिकित्सा OPD (General Clinical Mode)"
+      : "🌿 आयुष परामर्श (AYUSH Ayurveda Mode)";
+
+    // Section 8: Mode-specific findings
+    let modeSpecificSection = "";
+    if (intakeMode === "AYURVEDA") {
+      const dynamicAyur = AyurvedaAssessmentService.classifyFromProblem(
+        chiefComplaintText,
+        (session.patientAnswers || []).map((a: any) => ({ nodeCode: a.nodeCode, answerValue: a.answerValue })),
+        facts
+      );
+      const prak = session.ayurvedaAssessment?.prakriti || dynamicAyur.prakriti;
+      const vik = session.ayurvedaAssessment?.vikriti || dynamicAyur.vikriti;
+      const agn = session.ayurvedaAssessment?.anala || dynamicAyur.agni;
+      const kosh = (session.ayurvedaAssessment?.ashtavidhaData as any)?.koshtha || dynamicAyur.koshtha;
+      const sat = session.ayurvedaAssessment?.sattva || dynamicAyur.sattva;
+      const bal = session.ayurvedaAssessment?.bala || dynamicAyur.bala;
+      const notes = session.ayurvedaAssessment?.notes || dynamicAyur.nidanaPanchakaNotes;
+      const pathyaList = (session.ayurvedaAssessment?.aharaVihara as any)?.pathya || dynamicAyur.pathya;
+      const apathyaList = (session.ayurvedaAssessment?.aharaVihara as any)?.apathya || dynamicAyur.apathya;
+
+      modeSpecificSection = `## 8. 🌿 AYUSH & Dashavidha Pariksha Findings
+- **Prakriti (देहा प्रकृति)**: ${prak} (${dynamicAyur.prakritiLabelHi})
+- **Vikriti (दोष दृष्टि)**: ${vik} (${dynamicAyur.vikritiLabelHi})
+- **Agni (जठराग्नि स्थिति)**: ${agn} (${dynamicAyur.agniLabelHi})
+- **Koshtha (कोष्ठ व मल प्रवृत्ति)**: ${kosh} (${dynamicAyur.koshthaLabelHi})
+- **Sattva & Bala (सत्त्व व शारीरिक बल)**: ${sat} / ${bal}
+- **Nidana Panchaka Context**: ${notes}
+- **Pathya (हितकर आहार-विहार)**: ${pathyaList.slice(0, 2).join(", ")}
+- **Apathya (अहितकर निषेध)**: ${apathyaList.slice(0, 2).join(", ")}`;
+    } else {
+      modeSpecificSection = `## 8. 🩺 General Clinical Assessment & Systemic Functional Triage
+- **Consultation Mode**: General Clinical Outpatient (SOCRATES Triage)
+- **Functional ADL Impact**: ${facts.answers?.["GEN_ORGAN_DAILY_IMPACT"] || "Mild to moderate routine impact"}
+- **Pain / Discomfort Radiation**: ${facts.answers?.["GEN_PAIN_RADIATION"] || "Localized; no remote radiculopathy"}
+- **Medication Response**: ${facts.answers?.["GEN_MEDICATION_RELIEF"] || "Evaluated during intake"}
+- **Systemic Red Flags Screening**: ${facts.answers?.["GEN_SYSTEMIC_RED_FLAGS"] ? "Alert flagged during triage" : "Negative for constitutional B-symptoms (no unexplained weight loss/night sweats)"}
+- **Clinical Impression**: Standard biomedical OPD evaluation indicated. Screen for primary organ pathology and correlate with clinical examination.`;
+    }
+
+    // Section 12: Mode-tailored AI recommendations for attending physician
+    let aiRecommendationsSection = "";
+    if (intakeMode === "AYURVEDA") {
+      aiRecommendationsSection = `## 12. 💡 AI Clinical Recommendations for Attending Vaidya / Doctor
+- **Mode Protocol**: Classical AYUSH Protocol
+- **Differential Rogas (NAMASTE + ICD-11)**:
+  - Primary: Suspected Saama / Nirama Dosha imbalance according to anatomical site and Agni status.
+- **Recommended Shamana Chikitsa**:
+  - Deepana & Pachana formulations (e.g. Trikatu, Panchakola Phanta) if Ama is present.
+  - Classical Rasayana & Vyadhi-hara formulations with warm water / milk Anupana.
+- **Dietary & Lifestyle (Pathya-Apathya)**:
+  - Adhere to Ushna, Laghu Ahara; avoid cold baths, irregular snacking (Adhyashana), and day sleep (Diva-swapna).`;
+    } else {
+      aiRecommendationsSection = `## 12. 💡 AI Clinical Recommendations for Attending Physician
+- **Mode Protocol**: Standard Clinical Medicine / OPD Protocol
+- **Recommended Investigations (Diagnostic Workup)**:
+  - Baseline Hemogram (CBC, ESR/CRP) & Metabolic Panel (Blood Glucose, LFT/RFT).
+  - Targeted imaging: Appropriate X-ray / Ultrasound / 12-Lead ECG based on chief anatomical location.
+- **Symptomatic Pharmacotherapy Guidance**:
+  - First-line analgesic/anti-inflammatory or antacid regimen with appropriate gastroprotection.
+  - Review all current prescriptions for contraindications and renal/hepatic dosage adjustment.
+- **Follow-up & Safety Watchouts**:
+  - Re-evaluate in 3-5 days; prompt ER referral if red-flag systemic symptoms develop.`;
+    }
+
     const aiMarkdown = `
 # 📋 CLINICAL INTAKE & CASE-TAKING SUMMARY
 *AI-Drafted Consultation Note — Pending Attending Physician Sign-Off*
@@ -130,6 +209,7 @@ export class SummaryService {
 ## 1. Patient Demographics & Encounter Details
 - **Patient Name**: ${patientName}
 - **ABHA ID**: ${abhaId}
+- **Encounter Mode**: **${modeLabel}**
 - **Encounter Language**: ${session.language.toUpperCase()}
 - **Encounter ID**: ${sessionId}
 
@@ -156,32 +236,7 @@ ${extractedMeds.length > 0 ? extractedMeds.join("\n") : "- No previous medicatio
 ## 7. Relevant Investigations & Labs
 ${extractedLabs.length > 0 ? extractedLabs.join("\n") : "- No lab documents attached."}
 
-## 8. AYUSH & Dashavidha Pariksha Findings
-${(() => {
-  const dynamicAyur = AyurvedaAssessmentService.classifyFromProblem(
-    chiefComplaint?.symptomName || "",
-    (session.patientAnswers || []).map((a: any) => ({ nodeCode: a.nodeCode, answerValue: a.answerValue })),
-    facts
-  );
-  const prak = session.ayurvedaAssessment?.prakriti || dynamicAyur.prakriti;
-  const vik = session.ayurvedaAssessment?.vikriti || dynamicAyur.vikriti;
-  const agn = session.ayurvedaAssessment?.anala || dynamicAyur.agni;
-  const kosh = (session.ayurvedaAssessment?.ashtavidhaData as any)?.koshtha || dynamicAyur.koshtha;
-  const sat = session.ayurvedaAssessment?.sattva || dynamicAyur.sattva;
-  const bal = session.ayurvedaAssessment?.bala || dynamicAyur.bala;
-  const notes = session.ayurvedaAssessment?.notes || dynamicAyur.nidanaPanchakaNotes;
-  const pathyaList = (session.ayurvedaAssessment?.aharaVihara as any)?.pathya || dynamicAyur.pathya;
-  const apathyaList = (session.ayurvedaAssessment?.aharaVihara as any)?.apathya || dynamicAyur.apathya;
-
-  return `- **Prakriti (देहा प्रकृति)**: ${prak} (${dynamicAyur.prakritiLabelHi})
-- **Vikriti (दोष दृष्टि)**: ${vik} (${dynamicAyur.vikritiLabelHi})
-- **Agni (जठराग्नि स्थिति)**: ${agn} (${dynamicAyur.agniLabelHi})
-- **Koshtha (कोष्ठ व मल)**: ${kosh} (${dynamicAyur.koshthaLabelHi})
-- **Sattva & Bala (सत्त्व व बल)**: ${sat} / ${bal}
-- **Clinical Nidana Context**: ${notes}
-- **Pathya (हितकर आहार)**: ${pathyaList.slice(0, 2).join(", ")}
-- **Apathya (अहितकर आहार)**: ${apathyaList.slice(0, 2).join(", ")}`;
-})()}
+${modeSpecificSection}
 
 ## 9. 👨‍👩‍👧 Family History
 ${
@@ -211,6 +266,8 @@ ${
       : "- Cycles regular; no obstetric complications recorded."
     : "- Not applicable (Male patient)."
 }
+
+${aiRecommendationsSection}
     `.trim();
 
     const summary = await prisma.clinicalSummary.upsert({

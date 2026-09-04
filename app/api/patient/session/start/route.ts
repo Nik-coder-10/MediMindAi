@@ -72,6 +72,8 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    const intakeMode = validated.intakeMode || "AYURVEDA";
+
     if (!session) {
       const generatedSessionId = validated.sessionId || `sess-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
       try {
@@ -82,6 +84,7 @@ export async function POST(req: NextRequest) {
             language: validated.language || "hi",
             triagePriority: TriagePriority.ROUTINE,
             status: SessionStatus.IN_PROGRESS,
+            notes: JSON.stringify({ intakeMode }),
           },
         });
       } catch (createErr) {
@@ -97,9 +100,23 @@ export async function POST(req: NextRequest) {
           updatedAt: new Date(),
           completedAt: null,
           redFlagTriggered: false,
+          notes: JSON.stringify({ intakeMode }),
         };
       }
-    } else if (session.patientId && session.patientId !== effectivePatientId && session.patient?.userId !== user.id) {
+    } else {
+      // Ensure notes has intakeMode updated if session already existed
+      try {
+        let existingNotes: any = {};
+        try { existingNotes = session.notes ? JSON.parse(session.notes) : {}; } catch {}
+        existingNotes.intakeMode = intakeMode;
+        await prisma.clinicalSession.update({
+          where: { id: session.id },
+          data: { notes: JSON.stringify(existingNotes) },
+        });
+      } catch {}
+    }
+    
+    if (session.patientId && session.patientId !== effectivePatientId && session.patient?.userId !== user.id) {
       // SECURITY: Reject — this sessionId belongs to a different patient.
       // Never silently reassign ownership. Treat as 403 Forbidden (IDOR prevention).
       return new Response(JSON.stringify({ error: "Forbidden: session belongs to another patient" }), {
@@ -144,6 +161,7 @@ export async function POST(req: NextRequest) {
           updatedAt: new Date(),
           completedAt: null,
           redFlagTriggered: false,
+          notes: JSON.stringify({ intakeMode }),
           patient: {
             id: effectivePatientId,
             userId: user.id,

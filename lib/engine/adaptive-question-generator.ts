@@ -1242,7 +1242,7 @@ export class AdaptiveQuestionGenerator {
     let tailoredCoreQuestions: AdaptiveQuestion[] = [];
 
     if (isAyushMode) {
-      // AYUSH Mode: Emphasize Dosha dynamics, Agni (digestive fire), Prakriti, and Ama indicators
+      // AYUSH Mode: Classical Dashavidha Pariksha, Prakriti, Agni (digestive fire), Ama lakshana, Koshtha & Ahara-Vihara
       const ayushQuestions: AdaptiveQuestion[] = [
         {
           id: "AYU_PRAKRITI_DYNAMIC",
@@ -1290,12 +1290,59 @@ export class AdaptiveQuestionGenerator {
             { value: "NIRAMA_CLEAR", labelHi: "नहीं, जीभ साफ है और शरीर हल्का महसूस होता है (Nirama / Clear)", labelEn: "No, clean tongue & light body (Nirama)" },
           ],
         },
+        {
+          id: "AYU_KOSHTHA_DYNAMIC",
+          text: lang === "hi"
+            ? "आपका कोष्ठ (पेट साफ होने की स्थिति) कैसा रहता है?"
+            : "What is your bowel tendency (Koshtha nature)?",
+          textEn: "What is your bowel tendency (Koshtha nature)?",
+          type: "single_choice",
+          priority: "medium",
+          clinicalPurpose: "associated",
+          options: [
+            { value: "MRIDU_KOSHTHA", labelHi: "मृदु कोष्ठ - दूध या थोड़ा फल लेने पर भी पेट तुरंत साफ होता है", labelEn: "Mridu Koshtha (Soft/easy bowel movements, sensitive)" },
+            { value: "MADHYAMA_KOSHTHA", labelHi: "मध्यम कोष्ठ - प्रतिदिन सामान्य व बिना परेशानी के शौच", labelEn: "Madhyama Koshtha (Normal daily regular bowel)" },
+            { value: "KRURA_KOSHTHA", labelHi: "क्रूर कोष्ठ - सूखापन, सख्त मल व लगातार कब्जियत (हार्ड स्टूल)", labelEn: "Krura Koshtha (Hard, dry stool, chronic constipation)" },
+          ],
+        },
+        {
+          id: "AYU_AHARA_VIHARA_TRIGGERS",
+          text: lang === "hi"
+            ? "किस प्रकार के खानपान या मौसम से आपकी समस्या बढ़ती है? (निदान हेतु)"
+            : "What type of food, routine, or weather worsens your symptoms? (Nidana trigger)",
+          textEn: "What type of food, routine, or weather worsens your symptoms? (Nidana trigger)",
+          type: "single_choice",
+          priority: "medium",
+          clinicalPurpose: "aggravating",
+          options: [
+            { value: "COLD_DRY_WINDY", labelHi: "शीत वातावरण, ठंडे पानी या देर रात जागने से (वात प्रकोपक)", labelEn: "Cold weather, cold water, irregular sleep (Vata aggravating)" },
+            { value: "SPICY_OILY_FERMENTED", labelHi: "तीखा, तला-भुना, खटाई या चाय-कॉफी से (पित्त प्रकोपक)", labelEn: "Spicy, oily, sour, or fermented food (Pitta aggravating)" },
+            { value: "HEAVY_SWEET_DAY_SLEEP", labelHi: "मीठा, गरिष्ठ भोजन या दिन में सोने से (कफ प्रकोपक)", labelEn: "Heavy sweets, dairy, daytime napping (Kapha aggravating)" },
+            { value: "NO_SPECIFIC_TRIGGER", labelHi: "कोई विशेष खानपान का कारण नहीं", labelEn: "No specific dietary/seasonal trigger" },
+          ],
+        },
       ];
 
       tailoredCoreQuestions = [...coreQuestions, ...ayushQuestions];
     } else {
-      // GENERAL Clinic Mode: Standard clinical organ/pain triage (SOCRATES, Radiation, Aggravating triggers, General history)
+      // GENERAL Clinic Mode: Standard clinical organ/pain triage (SOCRATES, Radiation, Functional ADL, Prior meds, Systemic red flags)
+      // Strictly avoid Ayurvedic/Sanskrit terminology for General Mode patients
       const clinicQuestions: AdaptiveQuestion[] = [
+        {
+          id: "GEN_PAIN_RADIATION",
+          text: lang === "hi"
+            ? "क्या यह दर्द किसी अन्य हिस्से में फैलता है? (जैसे पीठ, हाथ, कंधे या पैर की तरफ)"
+            : "Does this pain or discomfort radiate or spread anywhere else (e.g. to back, shoulder, arm, or down the leg)?",
+          textEn: "Does this pain or discomfort radiate or spread anywhere else (e.g. to back, shoulder, arm, or down the leg)?",
+          type: "single_choice",
+          priority: "high",
+          clinicalPurpose: "location",
+          options: [
+            { value: "RADIATES_TO_LIMB", labelHi: "हाँ, बांह, पैर या उंगलियों की ओर फैलता है (Spreads to limbs)", labelEn: "Yes, radiates down arm or leg" },
+            { value: "RADIATES_TO_BACK_NECK", labelHi: "हाँ, पीठ, कंधे या गर्दन की ओर फैलता है (Spreads to back/neck)", labelEn: "Yes, radiates to back, shoulder, or neck" },
+            { value: "LOCALIZED_ONLY", labelHi: "नहीं, केवल उसी एक जगह पर सीमित है (Localized only)", labelEn: "No, stays strictly in one place" },
+          ],
+        },
         {
           id: "GEN_ORGAN_DAILY_IMPACT",
           text: lang === "hi"
@@ -1314,9 +1361,9 @@ export class AdaptiveQuestionGenerator {
         {
           id: "GEN_MEDICATION_RELIEF",
           text: lang === "hi"
-            ? "क्या आपने इस दर्द के लिए कोई पेनकिलर, एंटासिड या अन्य दवा ली और क्या उससे आराम मिला?"
-            : "Have you taken any painkiller, antacid, or other medication for relief?",
-          textEn: "Have you taken any painkiller, antacid, or other medication for relief?",
+            ? "क्या आपने इस समस्या के लिए कोई एलोपैथिक दवा (पेनकिलर, एंटासिड, एंटीबायोटिक) ली और क्या उससे आराम मिला?"
+            : "Have you taken any medication (painkiller, antacid, or other prescription) and did it give relief?",
+          textEn: "Have you taken any medication (painkiller, antacid, or other prescription) and did it give relief?",
           type: "single_choice",
           priority: "medium",
           clinicalPurpose: "relieving",
@@ -1326,10 +1373,36 @@ export class AdaptiveQuestionGenerator {
             { value: "NO_MEDICATION_TAKEN", labelHi: "कोई दवा नहीं ली", labelEn: "No medication taken yet" },
           ],
         },
+        {
+          id: "GEN_SYSTEMIC_RED_FLAGS",
+          text: lang === "hi"
+            ? "क्या आपको हाल ही में अनचाहा वजन घटना, तेज बुखार, रात में पसीना या सांस फूलने जैसे लक्षण हुए हैं?"
+            : "Have you noticed unintentional weight loss, high fevers, night sweats, or shortness of breath?",
+          textEn: "Have you noticed unintentional weight loss, high fevers, night sweats, or shortness of breath?",
+          type: "single_choice",
+          priority: "high",
+          clinicalPurpose: "red_flag",
+          options: [
+            { value: "RED_FLAG_PRESENT", labelHi: "हाँ, इनमें से लक्षण मौजूद हैं (Yes, present)", labelEn: "Yes, systemic symptoms present", isRedFlag: true },
+            { value: "NO_SYSTEMIC_SYMPTOMS", labelHi: "नहीं, ऐसा कोई गंभीर लक्षण नहीं है (None)", labelEn: "No systemic warning symptoms" },
+          ],
+        },
       ];
 
       // Filter out any purely ayurvedic specific tokens from core questions for General mode
-      const generalCore = coreQuestions.filter((q) => !q.id.includes("ayush_ama"));
+      const generalCore = coreQuestions
+        .filter((q) => !q.id.includes("ayush") && !q.id.includes("ama") && !q.id.includes("dosha"))
+        .map((q) => {
+          // Clean Sanskrit parenthetical annotations for General Clinic Mode
+          const cleanText = q.text.replace(/\s*\([^)]*(?:शूल|दोष|वात|पित्त|कफ|आम|संधि)[^)]*\)/g, "");
+          const cleanTextEn = q.textEn.replace(/\s*\([^)]*(?:Ama|Vata|Pitta|Kapha|Nirama)[^)]*\)/gi, "");
+          return {
+            ...q,
+            text: cleanText,
+            textEn: cleanTextEn,
+          };
+        });
+
       tailoredCoreQuestions = [...generalCore, ...clinicQuestions];
     }
 

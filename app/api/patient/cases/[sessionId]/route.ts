@@ -123,10 +123,20 @@ export async function GET(
       category: te.category,
     }));
 
+    // Extract intakeMode
+    let intakeMode: "AYURVEDA" | "GENERAL" = "AYURVEDA";
+    try {
+      if (session.notes) {
+        const parsed = JSON.parse(session.notes);
+        if (parsed.intakeMode) intakeMode = parsed.intakeMode;
+      }
+    } catch {}
+
     // 7. Assemble patient dossier
     const caseDetails = {
       sessionId: session.id,
       tokenNumber,
+      intakeMode,
       status: session.status,
       triagePriority: session.triagePriority,
       language: session.language,

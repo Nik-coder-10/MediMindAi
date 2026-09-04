@@ -165,10 +165,96 @@ export async function GET(
       console.warn("Clinical insights generation deferred:", (insErr as any)?.message);
     }
 
+    // Extract intakeMode from session notes or collected facts
+    let intakeMode: "AYURVEDA" | "GENERAL" = "AYURVEDA";
+    try {
+      if (session.notes) {
+        const parsed = JSON.parse(session.notes);
+        if (parsed.intakeMode) intakeMode = parsed.intakeMode;
+      }
+    } catch {}
+    if (!intakeMode && (session.engineState?.collectedFacts as any)?.intakeMode) {
+      intakeMode = (session.engineState?.collectedFacts as any).intakeMode;
+    }
+
+    const chiefText = session.chiefComplaints?.[0]?.symptomName || "";
+    const lowerChief = chiefText.toLowerCase();
+
+    // Mode-specific AI recommendations for physician review
+    const aiRecommendations = intakeMode === "AYURVEDA"
+      ? {
+          mode: "AYURVEDA",
+          title: "आयुर्वेदिक शामक व शोधन चिकित्सा परामर्श (AYUSH Recommendations)",
+          differentials: lowerChief.includes("chest") || lowerChief.includes("seena") || chiefText.includes("छाती")
+            ? [
+                { name: "Hridroga (Vata-Kaphaja / Saama)", namasteCode: "AYU-HR-003", icd11: "BA41.Z", urgency: "HIGH", description: "Hridaya Avarana with retrosternal stiffness. Advise Stat ECG & cardiac workup alongside Mridu Vatanulomana." },
+                { name: "Amlapitta with Urdhwaga Pitta Dushti", namasteCode: "AYU-AP-009", icd11: "DA42.Z", urgency: "MEDIUM", description: "Acid regurgitation and burning chest discomfort. Deepana-Pachana indicated." }
+              ]
+            : lowerChief.includes("knee") || lowerChief.includes("ghutn") || lowerChief.includes("joint") || chiefText.includes("जोड़") || chiefText.includes("घुटने")
+            ? [
+                { name: "Janu Sandhigata Vata (Osteoarthritis / Degenerative)", namasteCode: "AYU-SG-014", icd11: "FA00.Z", urgency: "MEDIUM", description: "Dhatu Kshaya janya Vata prakopa with joint crepitus. Snehana & Janu Basti recommended." },
+                { name: "Amavata (Rheumatoid / Inflammatory Joint Arthropathy)", namasteCode: "AYU-AV-012", icd11: "FA20.Z", urgency: "MEDIUM", description: "Saama Vata accumulation in Sandhi with morning stiffness. Langhana & Valuka Sweda indicated." }
+              ]
+            : [
+                { name: "Vataja / Pittaja Shoola (Generalized Doshic Imbalance)", namasteCode: "AYU-SH-001", icd11: "MG30.Z", urgency: "MEDIUM", description: "Localized Doshic vitiation. Shamana chikitsa and Pathya Ahara advised." }
+              ],
+          prescriptions: lowerChief.includes("knee") || lowerChief.includes("joint") || chiefText.includes("जोड़") || chiefText.includes("घुटने")
+            ? [
+                { name: "Tab Yogaraj Guggulu 500mg", dosage: "1 Tab", frequency: "1-0-1 (BD)", duration: "15 Days", instructions: "After meals with warm water" },
+                { name: "Ksheerabala Taila 101", dosage: "10 drops", frequency: "1-0-1 (BD)", duration: "15 Days", instructions: "With warm milk before bedtime" },
+                { name: "Mahanarayana Taila (Local)", dosage: "External application", frequency: "0-1-0 (Noon)", duration: "21 Days", instructions: "Gentle local Abhyanga followed by hot water fomentation" }
+              ]
+            : [
+                { name: "Tab Yogaraj Guggulu 500mg", dosage: "1 Tab", frequency: "1-0-1 (BD)", duration: "15 Days", instructions: "With lukewarm water after meals" },
+                { name: "Syp Amritarishta 15ml", dosage: "15ml (2 tsp)", frequency: "1-0-1 (BD)", duration: "15 Days", instructions: "Mixed with equal water after food" },
+                { name: "Avipattikar Churna 3g", dosage: "3g (1/2 tsp)", frequency: "0-0-1 (HS)", duration: "10 Days", instructions: "At bedtime with lukewarm water" }
+              ],
+          investigations: lowerChief.includes("chest") || chiefText.includes("छाती")
+            ? "12-Lead ECG (Stat), Cardiac Troponin I, Lipid Profile, Fasting Blood Glucose."
+            : "X-Ray bilateral joints (AP/Lateral view), Serum Uric Acid, ESR, CRP, HbA1c.",
+          dietAdvice: "Pathya: Mudga Yusha (light green gram soup), ginger-cumin boiled water, boiled vegetables. Apathya: Strictly avoid curd, heavy fried foods, fermented batter, and refrigerated drinks.",
+          followUp: "After 7-10 days for assessment of Agni and symptom remission (SOS if acute symptoms escalate)."
+        }
+      : {
+          mode: "GENERAL",
+          title: "मानक चिकित्सा OPD क्लिनिकल परामर्श (General Medicine Recommendations)",
+          differentials: lowerChief.includes("chest") || lowerChief.includes("seena") || chiefText.includes("छाती")
+            ? [
+                { name: "Acute Coronary Syndrome / Unstable Angina", namasteCode: "N/A", icd11: "BA41.Z", urgency: "HIGH", description: "Retrosternal chest discomfort requiring immediate cardiac evaluation and biomarker triage." },
+                { name: "Gastroesophageal Reflux Disease (GERD)", namasteCode: "N/A", icd11: "DA42.Z", urgency: "MEDIUM", description: "Acid reflux and non-cardiac retrosternal burning. Trial of PPI indicated." }
+              ]
+            : lowerChief.includes("knee") || lowerChief.includes("ghutn") || lowerChief.includes("joint") || chiefText.includes("जोड़") || chiefText.includes("घुटने")
+            ? [
+                { name: "Primary Osteoarthritis of Knee (Bilateral/Unilateral)", namasteCode: "N/A", icd11: "FA00.Z", urgency: "MEDIUM", description: "Degenerative joint disease with weight-bearing discomfort and crepitus." },
+                { name: "Inflammatory Polyarthritis / Crystal Arthropathy (Gout)", namasteCode: "N/A", icd11: "FA20.Z", urgency: "MEDIUM", description: "Joint effusion with elevated inflammatory markers or hyperuricemia." }
+              ]
+            : [
+                { name: "Acute Clinical Symptom Presentation (Under Evaluation)", namasteCode: "N/A", icd11: "MG30.Z", urgency: "MEDIUM", description: "Symptomatic presentation requiring physical examination and basic metabolic laboratory workup." }
+              ],
+          prescriptions: lowerChief.includes("knee") || lowerChief.includes("joint") || chiefText.includes("जोड़") || chiefText.includes("घुटने")
+            ? [
+                { name: "Tab Paracetamol 650mg", dosage: "1 Tab", frequency: "1-0-1 (BD)", duration: "5 Days", instructions: "After meals (symptomatic pain relief)" },
+                { name: "Tab Pantoprazole 40mg", dosage: "1 Tab", frequency: "1-0-0 (OD)", duration: "7 Days", instructions: "Empty stomach in the morning (Gastroprotection)" },
+                { name: "Diclofenac Gel (Topical)", dosage: "Thin layer", frequency: "1-0-1 (BD)", duration: "10 Days", instructions: "Apply locally on affected joints without vigorous rubbing" }
+              ]
+            : [
+                { name: "Cap Omeprazole 20mg", dosage: "1 Cap", frequency: "1-0-0 (OD)", duration: "10 Days", instructions: "Empty stomach in the morning" },
+                { name: "Tab Paracetamol 650mg", dosage: "1 Tab", frequency: "1 SOS", duration: "3 Days", instructions: "After food only when severe pain occurs" },
+                { name: "Multivitamin & Mineral Tab", dosage: "1 Tab", frequency: "0-1-0 (Post Lunch)", duration: "15 Days", instructions: "After lunch with a glass of water" }
+              ],
+          investigations: lowerChief.includes("chest") || chiefText.includes("छाती")
+            ? "12-Lead ECG Stat, Serum Troponin I / CK-MB, Chest X-Ray (PA), Fasting Lipid Profile."
+            : "Complete Blood Count (CBC), ESR, Serum Uric Acid, X-ray of affected joint (Weight bearing AP & Lat).",
+          dietAdvice: "Well-balanced diet, maintain optimal hydration (2-2.5L water/day), low sodium, avoid excessive caffeine, tobacco, and alcohol.",
+          followUp: "Review after 5-7 days with investigation reports (SOS visit if severe red-flag pain develops)."
+        };
+
     // 4. Assemble genuine case data
     const caseData = {
       sessionId,
       tokenNumber,
+      intakeMode,
+      aiRecommendations,
       patient: session.patient ? {
         id: session.patient.id,
         firstName: session.patient.firstName,
@@ -182,6 +268,7 @@ export async function GET(
       } : null,
       encounter: {
         tokenNumber,
+        intakeMode,
         triagePriority: session.triagePriority,
         redFlagTriggered: session.redFlagTriggered,
         startedAt: session.startedAt.toISOString(),

@@ -220,9 +220,26 @@ export class PdfSummaryService {
       color: rgb(0.4, 0.4, 0.4),
     });
 
+    // Parse intake mode
+    let intakeMode = "AYUSH Mode";
+    try {
+      if (session.notes) {
+        const parsed = JSON.parse(session.notes);
+        if (parsed.intakeMode === "GENERAL") intakeMode = "General Clinic";
+      }
+    } catch {}
+
+    page.drawText(sanitizePdfText(`Mode: ${intakeMode}`), {
+      x: margin + 300,
+      y: y - 18,
+      size: 9,
+      font: fontBold,
+      color: intakeMode.includes("General") ? rgb(0.1, 0.35, 0.6) : rgb(0.05, 0.45, 0.3),
+    });
+
     const isEmergency = triageLevel === "EMERGENCY" || redFlags.length > 0;
     page.drawText(sanitizePdfText(`Triage: ${triageLevel}`), {
-      x: width - margin - 120,
+      x: width - margin - 110,
       y: y - 22,
       size: 10,
       font: fontBold,

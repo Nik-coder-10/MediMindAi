@@ -231,6 +231,18 @@ export default function IndividualDoctorCaseViewPage({
                   {caseData.tokenNumber}
                 </span>
               )}
+              {/* Consultation Intake Mode Badge */}
+              <span
+                className={`text-xs font-extrabold px-3 py-0.5 rounded-full border shadow-2xs inline-flex items-center gap-1.5 ${
+                  caseData?.encounter?.intakeMode === "GENERAL" || caseData?.intakeMode === "GENERAL"
+                    ? "bg-slate-800 text-sky-200 border-slate-700"
+                    : "bg-emerald-800 text-emerald-100 border-emerald-700"
+                }`}
+              >
+                {caseData?.encounter?.intakeMode === "GENERAL" || caseData?.intakeMode === "GENERAL"
+                  ? "🩺 सामान्य चिकित्सा OPD (General Mode)"
+                  : "🌿 आयुष परामर्श (AYUSH Mode)"}
+              </span>
               <span
                 className={`text-xs font-extrabold px-3 py-0.5 rounded-full border ${
                   isEmergency ? "bg-rose-600 text-white border-rose-300 animate-pulse" : "bg-emerald-600 text-white"
@@ -1085,6 +1097,25 @@ export default function IndividualDoctorCaseViewPage({
         {/* Tab 4: Ayurveda Dashavidha & Prakriti Scorecard */}
         {activeTab === "AYUSH" && (
           <div className="space-y-6">
+            {(caseData?.intakeMode === "GENERAL" || caseData?.encounter?.intakeMode === "GENERAL") && (
+              <div className="p-4 rounded-2xl bg-sky-50 dark:bg-sky-950/40 border-2 border-sky-300 text-sky-950 dark:text-sky-200 flex items-center justify-between gap-3 shadow-xs">
+                <div className="flex items-center gap-3">
+                  <span className="text-xl">🩺</span>
+                  <div>
+                    <span className="text-xs font-black uppercase tracking-wider block">
+                      सामान्य चिकित्सा परामर्श मोड (General Clinic Mode Selected)
+                    </span>
+                    <p className="text-xs font-medium">
+                      इस रोगी ने प्राथमिक इनटेक में सामान्य चिकित्सा (General Clinic) का चयन किया था। नीचे दी गई आयुर्वेदिक प्रकृति व दोष प्रवृत्तियां संदर्भ हेतु विश्लेषित हैं।
+                    </p>
+                  </div>
+                </div>
+                <span className="text-2xs font-extrabold px-3 py-1 rounded-full bg-sky-200 text-sky-900 shrink-0">
+                  Standard OPD Case
+                </span>
+              </div>
+            )}
+
             <Card className="p-6 sm:p-8 rounded-3xl border-2 border-emerald-300 space-y-6 bg-card shadow-sm">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-extrabold text-foreground flex items-center gap-2">
@@ -1299,38 +1330,51 @@ export default function IndividualDoctorCaseViewPage({
 
             {/* Differential Diagnoses & NAMASTE / ICD-11 Coding */}
             <Card className="p-6 sm:p-8 rounded-3xl border-2 border-input space-y-4 bg-card shadow-sm">
-              <h3 className="text-base font-extrabold text-foreground flex items-center gap-2">
-                <Stethoscope className="h-5 w-5 text-emerald-600" />
-                <span>संभावित निदान व वर्गीकरण (Differential Diagnoses & NAMASTE / ICD-11)</span>
-              </h3>
-              <div className="space-y-3">
-                <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900 border flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-extrabold text-foreground">1. Hridroga / Angina Pectoris (Acute Coronary Evaluation)</span>
-                      <span className="px-2 py-0.5 rounded text-2xs font-extrabold bg-rose-100 text-rose-800">उच्च प्राथमिकता (Stat ECG)</span>
-                    </div>
-                    <span className="text-xs text-muted-foreground font-semibold">Crushing retrosternal chest pain radiating to left arm with diaphoresis.</span>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-xs font-mono font-extrabold bg-emerald-100 text-emerald-900 px-2.5 py-1 rounded-md">ICD-11: BA41.Z</span>
-                    <span className="text-xs font-mono font-bold text-muted-foreground block mt-0.5">NAMASTE: AYU-HR-003</span>
-                  </div>
-                </div>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b pb-3">
+                <h3 className="text-base font-extrabold text-foreground flex items-center gap-2">
+                  <Stethoscope className="h-5 w-5 text-emerald-600" />
+                  <span>
+                    {caseData?.intakeMode === "GENERAL" || caseData?.encounter?.intakeMode === "GENERAL"
+                      ? "मानक नैदानिक विभेदक निदान (Clinical Differential Diagnoses & ICD-11)"
+                      : "संभावित आयुर्वेदिक निदान व वर्गीकरण (Differential Diagnoses & NAMASTE / ICD-11)"}
+                  </span>
+                </h3>
+                <span className={`text-2xs font-bold px-2.5 py-0.5 rounded-full ${
+                  caseData?.intakeMode === "GENERAL" || caseData?.encounter?.intakeMode === "GENERAL"
+                    ? "bg-sky-100 text-sky-900 border border-sky-300"
+                    : "bg-emerald-100 text-emerald-900 border border-emerald-300"
+                }`}>
+                  {caseData?.intakeMode === "GENERAL" || caseData?.encounter?.intakeMode === "GENERAL"
+                    ? "General OPD Protocol"
+                    : "AYUSH NAMASTE Standard"}
+                </span>
+              </div>
 
-                <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900 border flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-extrabold text-foreground">2. Amavata (Saama Vata-Kaphaja Syndrome)</span>
-                      <span className="px-2 py-0.5 rounded text-2xs font-extrabold bg-amber-100 text-amber-800">मध्यम</span>
+              <div className="space-y-3">
+                {(caseData?.aiRecommendations?.differentials || [
+                  { name: "Hridroga / Angina Pectoris (Acute Coronary Evaluation)", namasteCode: "AYU-HR-003", icd11: "BA41.Z", urgency: "HIGH", description: "Crushing retrosternal chest pain radiating to left arm with diaphoresis." },
+                  { name: "Amavata (Saama Vata-Kaphaja Syndrome)", namasteCode: "AYU-AV-012", icd11: "FA20.Z", urgency: "MEDIUM", description: "Joint stiffness, high ESR (38 mm/hr) and high Uric Acid (7.8 mg/dL)." }
+                ]).map((diff: any, idx: number) => (
+                  <div key={idx} className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900 border flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-extrabold text-foreground">{idx + 1}. {diff.name}</span>
+                        <span className={`px-2 py-0.5 rounded text-2xs font-extrabold ${
+                          diff.urgency === "HIGH" ? "bg-rose-100 text-rose-800" : "bg-amber-100 text-amber-800"
+                        }`}>
+                          {diff.urgency === "HIGH" ? "उच्च प्राथमिकता" : "मध्यम"}
+                        </span>
+                      </div>
+                      <span className="text-xs text-muted-foreground font-semibold">{diff.description}</span>
                     </div>
-                    <span className="text-xs text-muted-foreground font-semibold">Joint stiffness, high ESR (38 mm/hr) and high Uric Acid (7.8 mg/dL).</span>
+                    <div className="text-right shrink-0">
+                      <span className="text-xs font-mono font-extrabold bg-emerald-100 text-emerald-900 px-2.5 py-1 rounded-md">ICD-11: {diff.icd11}</span>
+                      {diff.namasteCode && diff.namasteCode !== "N/A" && (
+                        <span className="text-xs font-mono font-bold text-muted-foreground block mt-0.5">NAMASTE: {diff.namasteCode}</span>
+                      )}
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <span className="text-xs font-mono font-extrabold bg-emerald-100 text-emerald-900 px-2.5 py-1 rounded-md">ICD-11: FA20.Z</span>
-                    <span className="text-xs font-mono font-bold text-muted-foreground block mt-0.5">NAMASTE: AYU-AV-012</span>
-                  </div>
-                </div>
+                ))}
               </div>
             </Card>
           </div>
@@ -1379,7 +1423,9 @@ export default function IndividualDoctorCaseViewPage({
                     <span>आधिकारिक चिकित्सक परामर्श एवं पर्ची (Physician Rx & Clinical Notes)</span>
                   </h3>
                   <p className="text-xs text-muted-foreground font-semibold">
-                    Doctor&apos;s authoritative clinical report, Rx medications, and lifestyle instructions.
+                    {caseData?.intakeMode === "GENERAL" || caseData?.encounter?.intakeMode === "GENERAL"
+                      ? "General Clinical OPD report, biomedical investigations, and prescription orders."
+                      : "Doctor's authoritative AYUSH clinical report, classical Rx medications, and Pathya guidance."}
                   </p>
                 </div>
 
@@ -1387,16 +1433,55 @@ export default function IndividualDoctorCaseViewPage({
                   <button
                     type="button"
                     onClick={() => {
-                      // Fetch / Pre-populate from AI Summary
-                      setDoctorRxNotes(
-                        `Clinical Findings: Retrosternal chest heaviness radiating to left arm. High ESR (38 mm/hr) & HbA1c (6.8%). Suspected Saama Vata-Pitta Dushti.\nImmediate Actions: 12-Lead ECG Stat, Troponin I.`
-                      );
-                      setActionSuccess("AI सारांश से मुख्य निष्कर्ष प्राप्त किए गए (Prefilled from AI Dossier)");
+                      const recs = caseData?.aiRecommendations;
+                      const isGen = caseData?.intakeMode === "GENERAL" || caseData?.encounter?.intakeMode === "GENERAL";
+
+                      if (recs) {
+                        const chief = caseData?.encounter?.chiefComplaint || "Consultation";
+                        if (isGen) {
+                          setDoctorRxNotes(
+                            `Clinical Impression (General OPD): Patient presented with '${chief}'. Systemic review and vital signs evaluated. Differential diagnosis under active workup.\nRecommended Clinical Plan: Initiate first-line symptomatic medical management with close follow-up.`
+                          );
+                        } else {
+                          setDoctorRxNotes(
+                            `Clinical Impression (AYUSH Mode): Patient presented with '${chief}'. Evaluated under Dashavidha Pariksha. Saama/Nirama status assessed.\nRecommended Ayurvedic Plan: Deepana-Pachana Shamana formulations with strict Pathya Ahara-Vihara adherence.`
+                          );
+                        }
+
+                        if (recs.prescriptions && recs.prescriptions.length > 0) {
+                          setDoctorPrescriptions(recs.prescriptions);
+                        }
+                        if (recs.investigations) {
+                          setDoctorInvestigations(recs.investigations);
+                        }
+                        if (recs.dietAdvice) {
+                          setDoctorDietAdvice(recs.dietAdvice);
+                        }
+                        if (recs.followUp) {
+                          setDoctorFollowUp(recs.followUp);
+                        }
+
+                        setActionSuccess(
+                          isGen
+                            ? "सामान्य चिकित्सा AI अंतर्दृष्टि प्राप्त की गई (General Medicine Insights Loaded)"
+                            : "आयुर्वेदिक AI अंतर्दृष्टि व नुस्खा प्राप्त किया गया (AYUSH Insights Loaded)"
+                        );
+                      } else {
+                        // Generic fallback
+                        setDoctorRxNotes(
+                          `Clinical Findings for '${caseData?.encounter?.chiefComplaint || "Intake"}': Evaluation completed. Follow-up investigations advised.`
+                        );
+                        setActionSuccess("AI सारांश से मुख्य निष्कर्ष प्राप्त किए गए (Prefilled from AI Dossier)");
+                      }
                     }}
                     className="min-h-[38px] px-3.5 rounded-xl border border-emerald-300 bg-emerald-50 text-emerald-900 font-bold text-xs inline-flex items-center gap-1.5 hover:bg-emerald-100"
                   >
                     <Sparkles className="h-3.5 w-3.5" />
-                    <span>AI सारांश से फेच करें (Fetch AI Insights)</span>
+                    <span>
+                      {caseData?.intakeMode === "GENERAL" || caseData?.encounter?.intakeMode === "GENERAL"
+                        ? "सामान्य AI अंतर्दृष्टि फेच करें (Fetch General Insights)"
+                        : "आयुर्वेद AI अंतर्दृष्टि फेच करें (Fetch AYUSH Insights)"}
+                    </span>
                   </button>
                 </div>
               </div>

@@ -214,8 +214,8 @@ export class PreviewService {
     const medications: Array<{ name: string; dosage?: string; frequency?: string; duration?: string }> = [];
     const labResults: Array<{ testName: string; value: string; unit?: string; referenceRange?: string; flag?: string }> = [];
 
-    session.medicalDocuments.forEach((doc) => {
-      doc.extractedEntities.forEach((ent) => {
+    session.medicalDocuments.forEach((doc: any) => {
+      doc.extractedEntities.forEach((ent: any) => {
         if (ent.type === "MEDICATION") {
           const sd = ent.structuredData as any;
           medications.push({
@@ -257,14 +257,14 @@ export class PreviewService {
       }`;
     }
 
-    const answers = session.patientAnswers.map((pa) => ({
+    const answers = session.patientAnswers.map((pa: any) => ({
       nodeCode: pa.nodeCode,
       questionText: pa.questionNode?.questionText || pa.nodeCode,
       questionTextHindi: pa.questionNode?.questionTextHindi || null,
       answerValue: pa.answerValue,
     }));
 
-    const documents = session.medicalDocuments.map((d) => ({
+    const documents = session.medicalDocuments.map((d: any) => ({
       id: d.id,
       fileName: d.fileName,
       fileSize: d.fileSize,
@@ -273,7 +273,7 @@ export class PreviewService {
       hasEntities: d.extractedEntities.length > 0,
     }));
 
-    const timeline = (session.patient?.timelineEvents || []).map((te) => ({
+    const timeline = (session.patient?.timelineEvents || []).map((te: any) => ({
       id: te.id,
       patientId: session.patientId,
       eventDate: te.eventDate.toISOString().split("T")[0],
@@ -294,7 +294,7 @@ export class PreviewService {
       });
     }
 
-    const redFlags = session.redFlagEvents.map((rf) => ({
+    const redFlags = session.redFlagEvents.map((rf: any) => ({
       ruleId: rf.ruleId,
       description: rf.description,
       severity: rf.severity,
@@ -303,7 +303,7 @@ export class PreviewService {
     // Dynamically classify problem-tailored Ayurvedic & Dashavidha profile
     const problemClassification = AyurvedaAssessmentService.classifyFromProblem(
       chiefComplaint.symptomName,
-      session.patientAnswers.map((pa) => ({ nodeCode: pa.nodeCode, answerValue: pa.answerValue })),
+      session.patientAnswers.map((pa: any) => ({ nodeCode: pa.nodeCode, answerValue: pa.answerValue })),
       facts
     );
 

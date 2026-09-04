@@ -268,6 +268,8 @@ export default function PatientSummaryPreviewDashboardPage({
         (typeof window !== "undefined" ? localStorage.getItem("ayursetu_user_id") : null) ||
         "pat-104-demo";
 
+      const storedIntakeMode = (typeof window !== "undefined" ? sessionStorage.getItem("ayursetu_intake_mode") : null) || "AYURVEDA";
+
       const res = await fetch("/api/patient/session/submit", {
         method: "POST",
         headers: {
@@ -280,6 +282,7 @@ export default function PatientSummaryPreviewDashboardPage({
           duration: previewData.chiefComplaint.duration,
           severity: previewData.chiefComplaint.severity,
           location: previewData.chiefComplaint.location,
+          intakeMode: storedIntakeMode,
         }),
       });
 
@@ -369,9 +372,20 @@ export default function PatientSummaryPreviewDashboardPage({
               {d?.patient.ageGender} • ABHA: <span className="font-mono font-bold text-foreground">{d?.patient.abhaId}</span>
             </div>
           </div>
-          <span className="text-xs font-extrabold px-3 py-1.5 rounded-full bg-botanical-100 dark:bg-botanical-950 text-botanical-900 dark:text-botanical-200 flex items-center gap-1.5 border border-botanical-200 shadow-2xs">
-            <ShieldCheck className="h-4 w-4 text-botanical-600" /> {isHindi ? "सहमति सत्यापित (ABDM)" : "Consent Verified"}
-          </span>
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className={`text-xs font-extrabold px-3 py-1.5 rounded-full flex items-center gap-1.5 border shadow-2xs ${
+              (typeof window !== "undefined" && sessionStorage.getItem("ayursetu_intake_mode") === "GENERAL")
+                ? "bg-slate-800 text-sky-200 border-slate-700"
+                : "bg-emerald-800 text-emerald-100 border-emerald-700"
+            }`}>
+              {(typeof window !== "undefined" && sessionStorage.getItem("ayursetu_intake_mode") === "GENERAL")
+                ? "🩺 सामान्य चिकित्सा (General Mode)"
+                : "🌿 आयुष परामर्श (AYUSH Mode)"}
+            </span>
+            <span className="text-xs font-extrabold px-3 py-1.5 rounded-full bg-botanical-100 dark:bg-botanical-950 text-botanical-900 dark:text-botanical-200 flex items-center gap-1.5 border border-botanical-200 shadow-2xs">
+              <ShieldCheck className="h-4 w-4 text-botanical-600" /> {isHindi ? "सहमति सत्यापित (ABDM)" : "Consent Verified"}
+            </span>
+          </div>
         </div>
 
         {/* 1. Chief Complaint - Extremely Large and Clear */}

@@ -16,6 +16,7 @@ const submitSessionSchema = z.object({
   duration: z.string().optional(),
   severity: z.string().optional(),
   location: z.string().optional(),
+  intakeMode: z.enum(["AYURVEDA", "GENERAL"]).optional(),
 });
 
 /**
@@ -73,12 +74,19 @@ export async function POST(req: NextRequest) {
         }
       }
 
-      // 2. Transition Session status to WAITING_FOR_DOCTOR
+      // 2. Transition Session status to WAITING_FOR_DOCTOR and preserve intakeMode
       try {
+        let currentNotesObj: any = {};
+        try { currentNotesObj = session.notes ? JSON.parse(session.notes) : {}; } catch {}
+        if (validated.intakeMode) {
+          currentNotesObj.intakeMode = validated.intakeMode;
+        }
+
         await prisma.clinicalSession.update({
           where: { id: session.id },
           data: {
             status: SessionStatus.WAITING_FOR_DOCTOR,
+            notes: Object.keys(currentNotesObj).length > 0 ? JSON.stringify(currentNotesObj) : session.notes,
             updatedAt: new Date(),
           },
         });
