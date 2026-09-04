@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuthStore } from "@/stores/use-auth-store";
+import { ClinicalMarkdownRenderer } from "@/components/ui/clinical/ClinicalMarkdownRenderer";
 
 export default function PatientIndividualCaseDetailsPage({
   params,
@@ -242,9 +243,7 @@ export default function PatientIndividualCaseDetailsPage({
                 </span>
               </div>
 
-              <div className="prose dark:prose-invert max-w-none text-sm leading-relaxed whitespace-pre-wrap font-mono text-foreground bg-muted/20 p-5 rounded-2xl border">
-                {caseData.summary.markdown}
-              </div>
+              <ClinicalMarkdownRenderer markdown={caseData.summary.markdown} compact />
             </Card>
           ) : (
             <Card className="p-10 text-center rounded-3xl border-2 border-dashed space-y-2 bg-muted/20">

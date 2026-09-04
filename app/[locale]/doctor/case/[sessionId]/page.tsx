@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuthStore } from "@/stores/use-auth-store";
+import { ClinicalMarkdownRenderer } from "@/components/ui/clinical/ClinicalMarkdownRenderer";
 
 export default function IndividualDoctorCaseViewPage({
   params,
@@ -549,9 +550,7 @@ export default function IndividualDoctorCaseViewPage({
                     </div>
                   </div>
                 ) : (
-                  <div className="prose dark:prose-invert max-w-none text-xs sm:text-sm leading-relaxed p-4 rounded-2xl bg-slate-50/60 dark:bg-slate-900/60 border">
-                    <pre className="whitespace-pre-wrap font-sans text-xs sm:text-sm">{editedMarkdown}</pre>
-                  </div>
+                  <ClinicalMarkdownRenderer markdown={editedMarkdown} />
                 )}
               </Card>
         )}
