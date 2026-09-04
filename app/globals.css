@@ -549,11 +549,95 @@
 }
 
 @keyframes pulseMicro {
-  "0%, 100%" { transform: scale(1); }
-  "50%" { transform: scale(1.05); }
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
 }
 
 @keyframes ripple {
-  "0%" { transform: scale(0.8); opacity: 1; }
-  "100%" { transform: scale(2.2); opacity: 0; }
+  0% { transform: scale(0.8); opacity: 1; }
+  100% { transform: scale(2.2); opacity: 0; }
 }
+
+/* ─── Living Ayurvedic Forest Animations ─── */
+@keyframes forestSwayLeft {
+  0%, 100% { transform: rotate(0deg) translate3d(0, 0, 0); }
+  50% { transform: rotate(1.8deg) translate3d(4px, 2px, 0); }
+}
+
+@keyframes forestSwayRight {
+  0%, 100% { transform: rotate(0deg) translate3d(0, 0, 0); }
+  50% { transform: rotate(-1.6deg) translate3d(-4px, 2px, 0); }
+}
+
+@keyframes forestSwayGentle {
+  0%, 100% { transform: rotate(0deg) translate3d(0, 0, 0); }
+  50% { transform: rotate(1deg) translate3d(2px, -2px, 0); }
+}
+
+@keyframes sunbeamPulse {
+  0%, 100% { opacity: 0.45; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(1.03); }
+}
+
+@keyframes driftingLeaf1 {
+  0% { transform: translate3d(0, 0, 0) rotate(0deg); opacity: 0; }
+  15% { opacity: 0.65; }
+  85% { opacity: 0.55; }
+  100% { transform: translate3d(140px, 260px, 0) rotate(190deg); opacity: 0; }
+}
+
+@keyframes driftingLeaf2 {
+  0% { transform: translate3d(0, 0, 0) rotate(0deg); opacity: 0; }
+  20% { opacity: 0.6; }
+  80% { opacity: 0.45; }
+  100% { transform: translate3d(-110px, 240px, 0) rotate(-160deg); opacity: 0; }
+}
+
+@keyframes pranaDrift {
+  0%, 100% { transform: translate3d(0, 0, 0); opacity: 0.2; }
+  50% { transform: translate3d(6px, -20px, 0); opacity: 0.65; }
+}
+
+.animate-forest-sway-left {
+  transform-origin: top left;
+  animation: forestSwayLeft 9.5s ease-in-out infinite;
+}
+
+.animate-forest-sway-right {
+  transform-origin: top right;
+  animation: forestSwayRight 11.5s ease-in-out infinite;
+}
+
+.animate-forest-sway-gentle {
+  transform-origin: bottom center;
+  animation: forestSwayGentle 8s ease-in-out infinite;
+}
+
+.animate-sunbeam {
+  animation: sunbeamPulse 12s ease-in-out infinite;
+}
+
+.animate-leaf-drift-1 {
+  animation: driftingLeaf1 16s ease-in-out infinite;
+}
+
+.animate-leaf-drift-2 {
+  animation: driftingLeaf2 19s ease-in-out infinite;
+}
+
+.animate-prana {
+  animation: pranaDrift 7s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-forest-sway-left,
+  .animate-forest-sway-right,
+  .animate-forest-sway-gentle,
+  .animate-sunbeam,
+  .animate-leaf-drift-1,
+  .animate-leaf-drift-2,
+  .animate-prana {
+    animation: none !important;
+  }
+}
+

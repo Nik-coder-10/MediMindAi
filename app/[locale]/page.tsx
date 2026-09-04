@@ -17,6 +17,7 @@ import {
   Lock,
   ChevronRight,
 } from "lucide-react";
+import { LivingForestBackground } from "@/components/landing/LivingForestBackground";
 
 export default function HomePage({
   params: { locale },
@@ -169,13 +170,11 @@ export default function HomePage({
 
   return (
     <div className="relative min-h-screen hero-mesh pb-24 space-y-20 overflow-hidden">
-      {/* Ambient botanical orbs */}
-      <div className="absolute top-0 left-[15%] w-[600px] h-[600px] rounded-full bg-botanical-500/10 blur-[140px] pointer-events-none -z-10" />
-      <div className="absolute top-[20%] right-[5%] w-[500px] h-[500px] rounded-full bg-emerald-400/10 blur-[120px] pointer-events-none -z-10" />
-      <div className="absolute bottom-[10%] left-[10%] w-[400px] h-[400px] rounded-full bg-amber-400/8 blur-[100px] pointer-events-none -z-10" />
+      {/* ─── Living Ayurvedic Forest Multi-Layer Environment ─── */}
+      <LivingForestBackground />
 
       {/* ── Hero ── */}
-      <section className="container max-w-7xl pt-14 text-center space-y-8">
+      <section className="container relative z-10 max-w-7xl pt-14 text-center space-y-8 animate-in fade-in-50 duration-700 slide-in-from-bottom-2">
 
         {/* Headline */}
         <div className="space-y-5 max-w-4xl mx-auto">
