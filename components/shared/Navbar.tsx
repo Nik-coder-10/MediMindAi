@@ -73,14 +73,14 @@ export function Navbar({ locale }: { locale: string }) {
             className="flex items-center gap-2.5 group"
             aria-label="AyurSetu home"
           >
-            <div className="w-8 h-8 rounded-xl bg-gradient-ayush flex items-center justify-center shadow-sm group-hover:shadow-indigo-glow transition-all duration-300">
+            <div className="w-8 h-8 rounded-xl bg-gradient-botanical flex items-center justify-center shadow-sm group-hover:shadow-botanical-glow transition-all duration-300">
               <Activity className="h-4 w-4 text-white" strokeWidth={2.5} />
             </div>
             <div className="flex flex-col leading-none">
-              <span className="text-[15px] font-black tracking-tight text-foreground">
+              <span className="text-[15px] font-black tracking-tight text-foreground group-hover:text-botanical-700 dark:group-hover:text-botanical-400 transition-colors">
                 AyurSetu
               </span>
-              <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-[0.12em]">
+              <span className="text-[9px] font-extrabold text-muted-foreground uppercase tracking-[0.14em]">
                 Ministry of Ayush
               </span>
             </div>
@@ -92,9 +92,9 @@ export function Navbar({ locale }: { locale: string }) {
               <Link
                 key={link.href}
                 href={link.href}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[13px] font-semibold text-muted-foreground hover:text-foreground hover:bg-indigo-50/60 dark:hover:bg-indigo-950/30 transition-all duration-200"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[13px] font-semibold text-muted-foreground hover:text-foreground hover:bg-botanical-50/80 dark:hover:bg-botanical-950/40 transition-all duration-200"
               >
-                <span className="text-indigo-400">{link.icon}</span>
+                <span className="text-botanical-600 dark:text-botanical-400">{link.icon}</span>
                 {link.label}
               </Link>
             ))}
@@ -110,9 +110,9 @@ export function Navbar({ locale }: { locale: string }) {
               onClick={cycleContrastMode}
               aria-label={`Switch contrast: ${contrastConfig.title}`}
               title={`Contrast: ${contrastConfig.title} — click to cycle`}
-              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-border bg-background/60 backdrop-blur-sm text-[11px] font-bold text-muted-foreground hover:text-foreground hover:border-indigo-300 transition-all duration-200 min-h-[34px]"
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl border border-border/80 bg-background/70 backdrop-blur-sm text-[11px] font-bold text-muted-foreground hover:text-foreground hover:border-botanical-300 transition-all duration-200 min-h-[34px]"
             >
-              <span className="text-indigo-500">{contrastConfig.icon}</span>
+              <span className="text-botanical-600 dark:text-botanical-400">{contrastConfig.icon}</span>
               <span className="hidden sm:inline">{contrastConfig.label}</span>
             </button>
 
@@ -138,7 +138,7 @@ export function Navbar({ locale }: { locale: string }) {
                   <Link
                     href={`/${locale}/patient/cases`}
                     title="मेरे परामर्श (My Cases)"
-                    className="hidden sm:flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-indigo-200 dark:border-indigo-900/40 bg-indigo-50/70 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-300 font-bold text-[11px] hover:bg-indigo-100 dark:hover:bg-indigo-950/50 transition-all min-h-[34px]"
+                    className="hidden sm:flex items-center gap-1 px-2.5 py-1.5 rounded-xl border border-botanical-200 dark:border-botanical-900/40 bg-botanical-50/80 dark:bg-botanical-950/30 text-botanical-800 dark:text-botanical-300 font-bold text-[11px] hover:bg-botanical-100 dark:hover:bg-botanical-950/50 transition-all min-h-[34px]"
                   >
                     <Activity className="h-3.5 w-3.5" />
                     <span>{locale === "hi" ? "मेरे परामर्श" : "My Cases"}</span>
@@ -147,7 +147,7 @@ export function Navbar({ locale }: { locale: string }) {
                 <button
                   onClick={logout}
                   title="Log out"
-                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-red-200 dark:border-red-900/40 bg-red-50/60 dark:bg-red-950/20 text-[11px] font-bold text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-950/40 transition-all min-h-[34px]"
+                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl border border-red-200 dark:border-red-900/40 bg-red-50/60 dark:bg-red-950/20 text-[11px] font-bold text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-950/40 transition-all min-h-[34px]"
                 >
                   <LogOut className="h-3.5 w-3.5" />
                   <span className="hidden sm:inline">{locale === "hi" ? "लॉगआउट" : "Logout"}</span>
@@ -156,9 +156,9 @@ export function Navbar({ locale }: { locale: string }) {
             ) : (
               <Link
                 href={`/${locale}/login`}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border text-[12px] font-bold text-foreground hover:border-indigo-300 hover:bg-indigo-50/50 transition-all min-h-[34px]"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border text-[12px] font-bold text-foreground hover:border-botanical-300 hover:bg-botanical-50/50 transition-all min-h-[34px]"
               >
-                <LogIn className="h-3.5 w-3.5 text-indigo-500" />
+                <LogIn className="h-3.5 w-3.5 text-botanical-600" />
                 Login
               </Link>
             )}
@@ -166,7 +166,7 @@ export function Navbar({ locale }: { locale: string }) {
             {/* CTA */}
             <Link
               href={`/${locale}/patient`}
-              className="hidden sm:flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-gradient-ayush text-white text-[12px] font-bold shadow-sm hover:shadow-indigo-glow transition-all duration-300 min-h-[34px]"
+              className="hidden sm:flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-gradient-botanical text-white text-[12px] font-bold shadow-sm hover:shadow-botanical-glow transition-all duration-300 active:scale-[0.98] min-h-[34px]"
             >
               <Activity className="h-3.5 w-3.5" />
               Start Case

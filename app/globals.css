@@ -9,95 +9,95 @@
 
 @layer base {
   :root {
-    /* === Core Palette — Indigo Authority + Teal Ayush === */
-    --background: 220 18% 97%;
-    --foreground: 224 32% 10%;
+    /* === Core Palette — Ayush Botanical Authority + Warm Alabaster === */
+    --background: 150 20% 98%;
+    --foreground: 165 40% 9%;
 
     --card: 0 0% 100%;
-    --card-foreground: 224 32% 10%;
+    --card-foreground: 165 40% 9%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 224 32% 10%;
+    --popover-foreground: 165 40% 9%;
 
-    /* Primary: Deep Indigo — Government Authority */
-    --primary: 243 75% 44%;
+    /* Primary: Deep Clinical Botanical (Vaidya Green) */
+    --primary: 162 57% 30%;
     --primary-foreground: 0 0% 100%;
 
-    /* Secondary: Soft Indigo surface */
-    --secondary: 240 20% 96%;
-    --secondary-foreground: 243 75% 35%;
+    /* Secondary: Soft Sage/Alabaster surface */
+    --secondary: 154 28% 95%;
+    --secondary-foreground: 162 57% 24%;
 
     /* Muted */
-    --muted: 220 14% 93%;
-    --muted-foreground: 220 10% 46%;
+    --muted: 150 14% 93%;
+    --muted-foreground: 160 12% 44%;
 
-    /* Accent: Teal — Ayush identity */
-    --accent: 174 72% 94%;
-    --accent-foreground: 174 60% 22%;
+    /* Accent: Fresh Eucalyptus / Mint */
+    --accent: 158 50% 92%;
+    --accent-foreground: 162 57% 20%;
 
-    /* Destructive: Clinical Red */
-    --destructive: 0 84% 48%;
+    /* Destructive: Clinical Crimson */
+    --destructive: 348 83% 47%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 16% 88%;
-    --input: 220 16% 88%;
-    --ring: 243 75% 44%;
-    --radius: 0.875rem;
+    --border: 155 16% 88%;
+    --input: 155 16% 88%;
+    --ring: 162 57% 30%;
+    --radius: 1rem;
 
-    /* === Premium Design Tokens === */
-    --glass-bg: rgba(255, 255, 255, 0.72);
-    --glass-border: rgba(255, 255, 255, 0.55);
-    --glass-shadow: 0 8px 40px -8px rgba(67, 56, 202, 0.12), 0 2px 12px -2px rgba(0,0,0,0.04);
+    /* === Premium Ayush Botanical & Glass Tokens === */
+    --glass-bg: rgba(255, 255, 255, 0.78);
+    --glass-border: rgba(255, 255, 255, 0.65);
+    --glass-shadow: 0 1px 3px rgba(12, 24, 21, 0.03), 0 8px 32px -4px rgba(12, 24, 21, 0.07);
 
-    --clay-bg: rgba(255, 255, 255, 0.95);
-    --clay-shadow: 0 4px 24px -4px rgba(67, 56, 202, 0.14), inset 0 1px 2px 0 rgba(255,255,255,0.9), inset 0 -1px 2px 0 rgba(67,56,202,0.06);
+    --clay-bg: rgba(255, 255, 255, 0.96);
+    --clay-shadow: 0 4px 24px -4px rgba(29, 106, 83, 0.12), inset 0 1px 2px 0 rgba(255,255,255,0.95), inset 0 -1px 2px 0 rgba(29,106,83,0.05);
 
-    --teal-primary: #0D9488;
-    --teal-light: #CCFBF1;
-    --teal-dark: #0F766E;
+    --teal-primary: #1D6A53;
+    --teal-light: #E3F1EC;
+    --teal-dark: #134537;
 
-    --indigo-primary: #4338CA;
-    --indigo-light: #EEF2FF;
-    --indigo-dark: #312E81;
+    --indigo-primary: #1D6A53;
+    --indigo-light: #E8F4EF;
+    --indigo-dark: #0F1D1A;
 
-    --mesh-1: hsla(243, 80%, 95%, 0.8);
-    --mesh-2: hsla(174, 80%, 95%, 0.6);
-    --mesh-3: hsla(220, 80%, 97%, 1);
-    --mesh-4: hsla(45, 80%, 96%, 0.5);
+    --mesh-1: hsla(162, 45%, 94%, 0.85);
+    --mesh-2: hsla(150, 45%, 95%, 0.7);
+    --mesh-3: hsla(38, 55%, 96%, 0.6);
+    --mesh-4: hsla(165, 40%, 97%, 1);
   }
 
   .dark {
-    --background: 230 22% 7%;
-    --foreground: 220 18% 92%;
-    --card: 230 22% 10%;
-    --card-foreground: 220 18% 92%;
-    --popover: 230 22% 10%;
-    --popover-foreground: 220 18% 92%;
-    --primary: 243 80% 65%;
+    --background: 165 35% 6%;
+    --foreground: 150 18% 92%;
+    --card: 165 30% 9%;
+    --card-foreground: 150 18% 92%;
+    --popover: 165 30% 9%;
+    --popover-foreground: 150 18% 92%;
+    --primary: 158 55% 48%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 230 22% 15%;
-    --secondary-foreground: 220 18% 90%;
-    --muted: 230 22% 13%;
-    --muted-foreground: 220 10% 56%;
-    --accent: 174 50% 14%;
-    --accent-foreground: 174 60% 80%;
-    --destructive: 0 72% 42%;
+    --secondary: 165 24% 14%;
+    --secondary-foreground: 150 18% 90%;
+    --muted: 165 20% 13%;
+    --muted-foreground: 155 10% 58%;
+    --accent: 162 40% 16%;
+    --accent-foreground: 158 55% 82%;
+    --destructive: 348 70% 45%;
     --destructive-foreground: 0 0% 100%;
-    --border: 230 22% 18%;
-    --input: 230 22% 18%;
-    --ring: 243 80% 65%;
+    --border: 165 22% 17%;
+    --input: 165 22% 17%;
+    --ring: 158 55% 48%;
 
-    --glass-bg: rgba(15, 18, 35, 0.72);
+    --glass-bg: rgba(14, 24, 21, 0.75);
     --glass-border: rgba(255, 255, 255, 0.08);
-    --glass-shadow: 0 8px 40px -8px rgba(0,0,0,0.4);
+    --glass-shadow: 0 8px 40px -8px rgba(0,0,0,0.5);
 
-    --clay-bg: rgba(20, 24, 45, 0.95);
-    --clay-shadow: 0 4px 24px -4px rgba(0,0,0,0.4), inset 0 1px 2px 0 rgba(255,255,255,0.04);
+    --clay-bg: rgba(18, 30, 26, 0.95);
+    --clay-shadow: 0 4px 24px -4px rgba(0,0,0,0.5), inset 0 1px 2px 0 rgba(255,255,255,0.05);
 
-    --mesh-1: hsla(243, 60%, 14%, 0.6);
-    --mesh-2: hsla(174, 60%, 10%, 0.5);
-    --mesh-3: hsla(230, 60%, 8%, 1);
-    --mesh-4: hsla(45, 40%, 12%, 0.3);
+    --mesh-1: hsla(162, 45%, 11%, 0.7);
+    --mesh-2: hsla(150, 40%, 8%, 0.6);
+    --mesh-3: hsla(165, 40%, 6%, 1);
+    --mesh-4: hsla(38, 30%, 10%, 0.3);
   }
 
   /* ============================
@@ -310,31 +310,31 @@
   }
 
   .glass-panel {
-    background: rgba(255, 255, 255, 0.72);
+    background: rgba(255, 255, 255, 0.78);
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
-    border: 1px solid rgba(255, 255, 255, 0.55);
-    box-shadow: 0 8px 40px -8px rgba(67,56,202,0.10), 0 2px 8px -2px rgba(0,0,0,0.04);
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    box-shadow: 0 8px 32px -6px rgba(29, 106, 83, 0.08), 0 2px 8px -2px rgba(12, 24, 21, 0.03);
   }
 
   .dark .glass-panel {
-    background: rgba(15, 18, 40, 0.72);
+    background: rgba(18, 30, 26, 0.76);
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
-    border: 1px solid rgba(255, 255, 255, 0.07);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     box-shadow: 0 8px 40px -8px rgba(0,0,0,0.5);
   }
 
   .glass-card {
-    background: linear-gradient(135deg, rgba(255,255,255,0.92) 0%, rgba(248,250,255,0.72) 100%);
+    background: linear-gradient(135deg, rgba(255,255,255,0.94) 0%, rgba(245,250,248,0.76) 100%);
     backdrop-filter: blur(16px) saturate(160%);
     -webkit-backdrop-filter: blur(16px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.7);
-    box-shadow: 0 4px 32px -4px rgba(67,56,202,0.08), 0 1px 8px rgba(0,0,0,0.04), inset 0 1px 0 rgba(255,255,255,0.9);
+    border: 1px solid rgba(255, 255, 255, 0.85);
+    box-shadow: 0 4px 28px -4px rgba(29, 106, 83, 0.06), 0 1px 4px rgba(12, 24, 21, 0.03), inset 0 1px 0 rgba(255,255,255,0.95);
   }
 
   .dark .glass-card {
-    background: linear-gradient(135deg, rgba(25,28,55,0.85) 0%, rgba(15,18,40,0.70) 100%);
+    background: linear-gradient(135deg, rgba(24, 38, 33, 0.88) 0%, rgba(15, 25, 22, 0.75) 100%);
     backdrop-filter: blur(16px) saturate(160%);
     -webkit-backdrop-filter: blur(16px) saturate(160%);
     border: 1px solid rgba(255,255,255,0.08);
@@ -345,7 +345,7 @@
   .clay {
     background: var(--clay-bg);
     box-shadow: var(--clay-shadow);
-    border: 1px solid rgba(255,255,255,0.8);
+    border: 1px solid rgba(255,255,255,0.85);
   }
 
   .clay-indigo {
@@ -358,26 +358,26 @@
   }
 
   .clay-teal {
-    background: linear-gradient(145deg, #F0FDFA 0%, #CCFBF1 100%);
+    background: linear-gradient(145deg, #F2F8F5 0%, #E3F1EC 100%);
     box-shadow:
-      0 6px 24px -4px rgba(13,148,136,0.2),
+      0 6px 24px -4px rgba(29, 106, 83, 0.16),
       inset 0 1px 3px rgba(255,255,255,0.95),
-      inset 0 -2px 4px rgba(13,148,136,0.10);
-    border: 1px solid rgba(153,246,228,0.5);
+      inset 0 -2px 4px rgba(29, 106, 83, 0.08);
+    border: 1px solid rgba(196, 226, 216, 0.7);
   }
 
   .clay-white {
-    background: linear-gradient(145deg, #FFFFFF 0%, #F8FAFF 100%);
+    background: linear-gradient(145deg, #FFFFFF 0%, #F8FAF8 100%);
     box-shadow:
-      0 8px 32px -6px rgba(67,56,202,0.12),
-      0 2px 8px -2px rgba(0,0,0,0.04),
+      0 8px 32px -6px rgba(29, 106, 83, 0.08),
+      0 2px 8px -2px rgba(12, 24, 21, 0.03),
       inset 0 1px 2px rgba(255,255,255,1),
-      inset 0 -1px 3px rgba(67,56,202,0.04);
-    border: 1px solid rgba(224,228,255,0.8);
+      inset 0 -1px 3px rgba(29, 106, 83, 0.03);
+    border: 1px solid rgba(227, 241, 236, 0.85);
   }
 
   .dark .clay-white {
-    background: linear-gradient(145deg, #1E2240 0%, #161933 100%);
+    background: linear-gradient(145deg, #1C2E28 0%, #14221D 100%);
     box-shadow:
       0 8px 32px -6px rgba(0,0,0,0.5),
       inset 0 1px 2px rgba(255,255,255,0.04),
@@ -387,46 +387,46 @@
 
   /* ─── Liquid Glass Pill ─── */
   .liquid-glass {
-    background: linear-gradient(135deg, rgba(255,255,255,0.88) 0%, rgba(238,242,255,0.60) 100%);
+    background: linear-gradient(135deg, rgba(255,255,255,0.90) 0%, rgba(242,248,245,0.65) 100%);
     backdrop-filter: blur(24px);
     -webkit-backdrop-filter: blur(24px);
     border: 1px solid rgba(255,255,255,0.85);
-    box-shadow: 0 4px 20px -2px rgba(67,56,202,0.10), inset 0 1px 1px rgba(255,255,255,0.95);
+    box-shadow: 0 4px 20px -2px rgba(29, 106, 83, 0.08), inset 0 1px 1px rgba(255,255,255,0.95);
   }
 
   /* ─── Premium Mesh Backgrounds ─── */
   .hero-mesh {
-    background-color: hsl(220, 18%, 97%);
+    background-color: hsl(150, 20%, 98%);
     background-image:
       radial-gradient(at 0% 0%, var(--mesh-1) 0px, transparent 55%),
       radial-gradient(at 100% 0%, var(--mesh-2) 0px, transparent 50%),
-      radial-gradient(at 50% 100%, var(--mesh-4) 0px, transparent 55%),
+      radial-gradient(at 50% 100%, var(--mesh-3) 0px, transparent 55%),
       radial-gradient(at 100% 100%, var(--mesh-1) 0px, transparent 50%);
   }
 
   .dark .hero-mesh {
-    background-color: hsl(230, 22%, 7%);
+    background-color: hsl(165, 35%, 6%);
     background-image:
-      radial-gradient(at 0% 0%, hsla(243,60%,16%,0.7) 0px, transparent 55%),
-      radial-gradient(at 100% 0%, hsla(174,60%,10%,0.5) 0px, transparent 50%),
-      radial-gradient(at 50% 100%, hsla(45,40%,12%,0.3) 0px, transparent 55%),
-      radial-gradient(at 100% 100%, hsla(243,50%,14%,0.6) 0px, transparent 50%);
+      radial-gradient(at 0% 0%, hsla(162,45%,12%,0.7) 0px, transparent 55%),
+      radial-gradient(at 100% 0%, hsla(150,40%,9%,0.6) 0px, transparent 50%),
+      radial-gradient(at 50% 100%, hsla(38,30%,10%,0.3) 0px, transparent 55%),
+      radial-gradient(at 100% 100%, hsla(162,40%,10%,0.6) 0px, transparent 50%);
   }
 
   .patient-mesh {
-    background-color: hsl(220, 18%, 97%);
+    background-color: hsl(150, 20%, 98%);
     background-image:
-      radial-gradient(at 15% 10%, hsla(174, 80%, 94%, 0.8) 0px, transparent 45%),
-      radial-gradient(at 85% 5%, hsla(243, 80%, 95%, 0.7) 0px, transparent 45%),
-      radial-gradient(at 90% 90%, hsla(174, 70%, 95%, 0.5) 0px, transparent 50%);
+      radial-gradient(at 15% 10%, hsla(162, 50%, 94%, 0.85) 0px, transparent 45%),
+      radial-gradient(at 85% 5%, hsla(154, 40%, 95%, 0.75) 0px, transparent 45%),
+      radial-gradient(at 90% 90%, hsla(38, 45%, 96%, 0.5) 0px, transparent 50%);
   }
 
   .dark .patient-mesh {
-    background-color: hsl(230, 22%, 7%);
+    background-color: hsl(165, 35%, 6%);
     background-image:
-      radial-gradient(at 15% 10%, hsla(174, 60%, 10%, 0.5) 0px, transparent 45%),
-      radial-gradient(at 85% 5%, hsla(243, 60%, 14%, 0.6) 0px, transparent 45%),
-      radial-gradient(at 90% 90%, hsla(174, 50%, 9%, 0.4) 0px, transparent 50%);
+      radial-gradient(at 15% 10%, hsla(162, 45%, 10%, 0.6) 0px, transparent 45%),
+      radial-gradient(at 85% 5%, hsla(154, 40%, 8%, 0.6) 0px, transparent 45%),
+      radial-gradient(at 90% 90%, hsla(38, 30%, 8%, 0.3) 0px, transparent 50%);
   }
 
   /* ─── Bento Grid Hover ─── */

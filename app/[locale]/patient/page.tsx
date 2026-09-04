@@ -71,12 +71,12 @@ export default function PatientLauncherPage({
     {
       id: "AYURVEDA" as const,
       icon: <Flower2 className="h-6 w-6" />,
-      iconBg: "bg-gradient-to-br from-teal-400 to-teal-600",
-      cardSelected: "shadow-[0_8px_32px_-4px_rgba(13,148,136,0.25),inset_0_1px_2px_rgba(255,255,255,0.9)] border-teal-400/60",
-      cardBase: "hover:shadow-[0_4px_20px_-4px_rgba(13,148,136,0.15)]",
-      selectedRing: "ring-2 ring-teal-400/40",
-      badgeBg: "bg-teal-100 dark:bg-teal-950/50 text-teal-700 dark:text-teal-400 border-teal-300/60",
-      labelColor: "text-teal-700 dark:text-teal-400",
+      iconBg: "bg-gradient-to-br from-botanical-600 to-botanical-800",
+      cardSelected: "shadow-[0_8px_32px_-4px_rgba(29,106,83,0.22),inset_0_1px_2px_rgba(255,255,255,0.95)] border-botanical-400/70",
+      cardBase: "hover:shadow-[0_4px_20px_-4px_rgba(29,106,83,0.15)]",
+      selectedRing: "ring-2 ring-botanical-400/40",
+      badgeBg: "bg-botanical-100 dark:bg-botanical-950/60 text-botanical-800 dark:text-botanical-300 border-botanical-300/60",
+      labelColor: "text-botanical-700 dark:text-botanical-300",
       badge: isHindi ? "मंत्रालय अनुशंसित" : "Ministry Recommended",
       title: isHindi ? "आयुर्वेद परामर्श (AYUSH)" : "Ayurveda (AYUSH) Mode",
       desc: isHindi
@@ -86,12 +86,12 @@ export default function PatientLauncherPage({
     {
       id: "GENERAL" as const,
       icon: <Stethoscope className="h-6 w-6" />,
-      iconBg: "bg-gradient-to-br from-indigo-400 to-indigo-600",
-      cardSelected: "shadow-[0_8px_32px_-4px_rgba(67,56,202,0.2),inset_0_1px_2px_rgba(255,255,255,0.9)] border-indigo-400/60",
-      cardBase: "hover:shadow-[0_4px_20px_-4px_rgba(67,56,202,0.12)]",
-      selectedRing: "ring-2 ring-indigo-400/40",
-      badgeBg: "bg-indigo-100 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-400 border-indigo-300/60",
-      labelColor: "text-indigo-700 dark:text-indigo-400",
+      iconBg: "bg-gradient-to-br from-slate-600 to-forest",
+      cardSelected: "shadow-[0_8px_32px_-4px_rgba(15,29,26,0.18),inset_0_1px_2px_rgba(255,255,255,0.95)] border-slate-400/70",
+      cardBase: "hover:shadow-[0_4px_20px_-4px_rgba(15,29,26,0.12)]",
+      selectedRing: "ring-2 ring-slate-400/40",
+      badgeBg: "bg-slate-100 dark:bg-forest-card text-slate-700 dark:text-slate-300 border-slate-300/60",
+      labelColor: "text-slate-700 dark:text-slate-300",
       badge: isHindi ? "आधुनिक चिकित्सा" : "Modern Clinical",
       title: isHindi ? "सामान्य चिकित्सा (General)" : "General Clinical Mode",
       desc: isHindi
@@ -115,8 +115,8 @@ export default function PatientLauncherPage({
 
       {/* Header */}
       <div className="text-center space-y-3">
-        <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full gov-badge text-[11px] font-black uppercase tracking-wider text-indigo-700 dark:text-indigo-300">
-          <Sparkles className="h-3.5 w-3.5" />
+        <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full gov-badge text-[11px] font-black uppercase tracking-wider text-botanical-800 dark:text-botanical-300 border border-botanical-200/60 dark:border-botanical-800/40 shadow-2xs">
+          <Sparkles className="h-3.5 w-3.5 text-botanical-600" />
           SIH 2026 · {isHindi ? "अखिल भारतीय आयुर्वेद संस्थान (AIIA)" : "All India Institute of Ayurveda (AIIA)"}
         </div>
         <h1 className="text-[28px] sm:text-[34px] font-black text-foreground tracking-tight leading-tight">

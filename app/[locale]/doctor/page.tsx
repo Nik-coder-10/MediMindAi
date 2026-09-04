@@ -168,12 +168,12 @@ export default function DoctorDashboardQueuePage({
   return (
     <div className="container max-w-7xl py-8 space-y-6">
       {/* Top Header & Statistics */}
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b pb-4">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border/80 pb-5">
         <div>
-          <span className="text-xs font-extrabold px-3 py-1 bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 rounded-full inline-flex items-center gap-1.5 border border-emerald-300">
-            <Stethoscope className="h-3.5 w-3.5" /> AIIA Kayachikitsa & Triage Desk
+          <span className="text-xs font-extrabold px-3.5 py-1 bg-botanical-100 dark:bg-botanical-950 text-botanical-800 dark:text-botanical-300 rounded-full inline-flex items-center gap-1.5 border border-botanical-200">
+            <Stethoscope className="h-3.5 w-3.5 text-botanical-600" /> AIIA Kayachikitsa & Triage Desk
           </span>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-foreground mt-1">
+          <h1 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight mt-1.5">
             चिकित्सक परामर्श कतार (Clinical Triage Queue)
           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground font-medium">
@@ -185,9 +185,9 @@ export default function DoctorDashboardQueuePage({
           type="button"
           onClick={fetchQueue}
           disabled={loading}
-          className="min-h-[44px] px-4 rounded-xl border border-input bg-card hover:bg-muted font-bold text-xs inline-flex items-center gap-2 shadow-2xs"
+          className="min-h-[44px] px-4 rounded-xl border border-border/80 bg-card hover:bg-muted/70 font-bold text-xs inline-flex items-center gap-2 shadow-2xs transition-all active:scale-95"
         >
-          <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+          <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin text-botanical-600" : "text-muted-foreground"}`} />
           <span>ताज़ा करें (Refresh Queue)</span>
         </button>
       </div>
@@ -198,10 +198,10 @@ export default function DoctorDashboardQueuePage({
           <button
             type="button"
             onClick={() => setFilter("ALL")}
-            className={`min-h-[40px] px-3.5 py-1.5 rounded-full text-xs font-extrabold border transition-all ${
+            className={`min-h-[40px] px-4 py-1.5 rounded-full text-xs font-black border transition-all ${
               filter === "ALL"
-                ? "bg-ayush-green text-white border-ayush-green shadow-xs"
-                : "bg-card text-muted-foreground hover:text-foreground"
+                ? "bg-gradient-botanical text-white border-botanical-500 shadow-sm"
+                : "bg-card text-muted-foreground hover:text-foreground border-border/80"
             }`}
           >
             सभी रोगी (All Patients • {queue.length})
@@ -209,10 +209,10 @@ export default function DoctorDashboardQueuePage({
           <button
             type="button"
             onClick={() => setFilter("EMERGENCY")}
-            className={`min-h-[40px] px-3.5 py-1.5 rounded-full text-xs font-extrabold border transition-all ${
+            className={`min-h-[40px] px-4 py-1.5 rounded-full text-xs font-black border transition-all ${
               filter === "EMERGENCY"
-                ? "bg-rose-600 text-white border-rose-600 shadow-xs"
-                : "bg-rose-50 text-rose-800 border-rose-200"
+                ? "bg-rose-600 text-white border-rose-600 shadow-sm"
+                : "bg-rose-50/80 text-rose-800 border-rose-200 dark:bg-rose-950/30 dark:text-rose-300"
             }`}
           >
             🚨 आपातकालीन (Emergency • {queue.filter((q) => q.triagePriority === "EMERGENCY").length})
@@ -220,10 +220,10 @@ export default function DoctorDashboardQueuePage({
           <button
             type="button"
             onClick={() => setFilter("URGENT")}
-            className={`min-h-[40px] px-3.5 py-1.5 rounded-full text-xs font-extrabold border transition-all ${
+            className={`min-h-[40px] px-4 py-1.5 rounded-full text-xs font-black border transition-all ${
               filter === "URGENT"
-                ? "bg-amber-600 text-white border-amber-600 shadow-xs"
-                : "bg-amber-50 text-amber-800 border-amber-200"
+                ? "bg-amber-600 text-white border-amber-600 shadow-sm"
+                : "bg-amber-50/80 text-amber-800 border-amber-200 dark:bg-amber-950/30 dark:text-amber-300"
             }`}
           >
             ⚡ प्राथमिकता (Urgent • {queue.filter((q) => q.triagePriority === "URGENT").length})

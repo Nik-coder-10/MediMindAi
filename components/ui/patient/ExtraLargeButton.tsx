@@ -10,21 +10,21 @@ const extraLargeButtonVariants = cva(
   {
     variants: {
       variant: {
-        // Deep indigo primary — authority action
+        // Deep botanical primary — authority action
         primary:
-          "bg-gradient-to-br from-indigo-600 to-indigo-700 text-white hover:from-indigo-500 hover:to-indigo-600 shadow-md hover:shadow-indigo-glow border border-indigo-500/30 rounded-2xl",
+          "bg-gradient-to-br from-botanical-700 via-botanical-600 to-botanical-700 text-white hover:from-botanical-600 hover:to-botanical-500 shadow-md hover:shadow-botanical-glow border border-botanical-500/30 rounded-2xl",
         // Teal success — Ayush identity
         success:
           "bg-gradient-to-br from-teal-600 to-teal-700 text-white hover:from-teal-500 hover:to-teal-600 shadow-md hover:shadow-teal-glow border border-teal-500/30 rounded-2xl",
         // Clay white secondary
         secondary:
-          "clay-white text-foreground hover:shadow-premium rounded-2xl",
+          "clay-white text-foreground hover:shadow-glass-precision border border-border/80 rounded-2xl",
         // Danger
         danger:
-          "bg-gradient-to-br from-red-600 to-red-700 text-white hover:from-red-500 hover:to-red-600 shadow-md border border-red-500/30 rounded-2xl",
-        // Calm sky
+          "bg-gradient-to-br from-rose-600 to-rose-700 text-white hover:from-rose-500 hover:to-rose-600 shadow-md border border-rose-500/30 rounded-2xl",
+        // Calm sky / sage
         calmSky:
-          "bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 border border-indigo-200 dark:border-indigo-800 rounded-2xl",
+          "bg-botanical-50 dark:bg-botanical-950/40 text-botanical-800 dark:text-botanical-300 hover:bg-botanical-100 border border-botanical-200 dark:border-botanical-800 rounded-2xl",
       },
       size: {
         default: "min-h-[56px] min-w-[56px] px-6 py-3.5 text-[17px]",

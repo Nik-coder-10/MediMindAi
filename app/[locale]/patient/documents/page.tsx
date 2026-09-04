@@ -227,20 +227,20 @@ export default function PatientDocumentsScanPage({
           {/* Option A: Dedicated Guided Camera */}
           <motion.button
             type="button"
-            whileHover={{ scale: 1.02 }}
+            whileHover={{ scale: 1.015 }}
             whileTap={{ scale: 0.98 }}
             onClick={() => setShowCameraModal(true)}
             disabled={uploading}
-            className="p-6 rounded-3xl border-3 border-emerald-500 bg-emerald-50/70 dark:bg-emerald-950/30 hover:bg-emerald-100/70 text-emerald-950 dark:text-emerald-200 flex flex-col items-center justify-center gap-3 shadow-md transition-all text-center min-h-[160px]"
+            className="p-6 rounded-3xl border-2 border-botanical-500/80 bg-botanical-50/70 dark:bg-botanical-950/30 hover:bg-botanical-100/70 text-botanical-950 dark:text-botanical-200 flex flex-col items-center justify-center gap-3 shadow-glass-precision transition-all text-center min-h-[160px]"
           >
-            <div className="w-16 h-16 rounded-2xl bg-emerald-600 text-white flex items-center justify-center shadow-lg shadow-emerald-700/20">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-botanical text-white flex items-center justify-center shadow-md shadow-botanical-700/20">
               <Camera className="h-8 w-8" />
             </div>
             <div>
               <span className="text-lg font-black block">
                 {isHindi ? "कैमरे से फोटो लें (Live Camera)" : "Take Photo with Camera"}
               </span>
-              <span className="text-xs font-semibold text-muted-foreground block">
+              <span className="text-xs font-semibold text-muted-foreground block mt-0.5">
                 {isHindi ? "मार्गदर्शक फ्रेम व लिखावट स्पष्टता के साथ" : "With guidance frame & handwriting auto-crop"}
               </span>
             </div>
@@ -256,18 +256,18 @@ export default function PatientDocumentsScanPage({
               className="hidden"
             />
             <motion.div
-              whileHover={{ scale: 1.02 }}
+              whileHover={{ scale: 1.015 }}
               whileTap={{ scale: 0.98 }}
-              className="p-6 rounded-3xl border-3 border-border bg-card hover:bg-muted/50 text-foreground flex flex-col items-center justify-center gap-3 shadow-sm transition-all text-center min-h-[160px]"
+              className="p-6 rounded-3xl border-2 border-border/80 bg-card hover:bg-muted/50 text-foreground flex flex-col items-center justify-center gap-3 shadow-glass-precision transition-all text-center min-h-[160px]"
             >
-              <div className="w-16 h-16 rounded-2xl bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 flex items-center justify-center shadow-sm">
+              <div className="w-16 h-16 rounded-2xl bg-botanical-100 dark:bg-forest-card text-botanical-700 dark:text-botanical-300 flex items-center justify-center shadow-2xs">
                 <UploadCloud className="h-8 w-8" />
               </div>
               <div>
                 <span className="text-lg font-black block">
                   {isHindi ? "फ़ाइल / PDF अपलोड करें (Upload File)" : "Upload File / PDF"}
                 </span>
-                <span className="text-xs font-semibold text-muted-foreground block">
+                <span className="text-xs font-semibold text-muted-foreground block mt-0.5">
                   {isHindi ? "गैलरी या स्टोरेज से पर्चा चुनें" : "Select from device storage or gallery"}
                 </span>
               </div>

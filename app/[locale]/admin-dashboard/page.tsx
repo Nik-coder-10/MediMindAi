@@ -219,7 +219,7 @@ export default function AdminClinicalConfigPage({
       </div>
 
       {/* Navigation Tabs */}
-      <div className="flex items-center gap-2 overflow-x-auto border-b pb-2">
+      <div className="flex items-center gap-2 overflow-x-auto border-b border-border/80 pb-2">
         {[
           { id: "QUESTIONS", label: "प्रश्न वृक्ष (Question Trees)", icon: <Layers className="h-4 w-4" /> },
           { id: "RULES", label: "रेड-फ्लैग नियम (Red-Flag Rules)", icon: <AlertTriangle className="h-4 w-4" /> },
@@ -230,10 +230,10 @@ export default function AdminClinicalConfigPage({
             key={tab.id}
             type="button"
             onClick={() => setActiveTab(tab.id as any)}
-            className={`min-h-[44px] px-4 rounded-2xl text-xs font-extrabold inline-flex items-center gap-2 transition-all ${
+            className={`min-h-[44px] px-4 rounded-2xl text-xs font-black inline-flex items-center gap-2 transition-all shrink-0 select-none ${
               activeTab === tab.id
-                ? "bg-ayush-green text-white shadow-xs"
-                : "bg-card text-muted-foreground hover:text-foreground border"
+                ? "bg-gradient-botanical text-white shadow-sm border border-botanical-500/40"
+                : "bg-card text-muted-foreground hover:text-foreground border border-border/80 hover:border-botanical-300 hover:bg-botanical-50/40 dark:hover:bg-botanical-950/20"
             }`}
           >
             {tab.icon}

@@ -72,16 +72,16 @@ export default function PatientComplaintVoicePage({
         text="Please describe your main health concern. You can tap the big microphone to speak."
       />
 
-      <Card className="border-3 border-emerald-300 shadow-xl p-6 sm:p-8 rounded-3xl bg-white dark:bg-card space-y-6 text-center">
+      <Card className="border border-botanical-200/80 dark:border-botanical-800/40 shadow-glass-precision p-6 sm:p-8 rounded-3xl bg-card space-y-6 text-center">
         <div className="space-y-2">
-          <span className="text-xs font-extrabold px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full inline-flex items-center gap-1">
-            <Sparkles className="h-3.5 w-3.5" /> चरण ३ • मुख्य लक्षण (Chief Complaint)
+          <span className="text-xs font-extrabold px-3 py-1 bg-botanical-100 dark:bg-botanical-950/60 text-botanical-800 dark:text-botanical-300 rounded-full inline-flex items-center gap-1.5 border border-botanical-200/80">
+            <Sparkles className="h-3.5 w-3.5 text-botanical-600" /> चरण ३ • मुख्य लक्षण (Chief Complaint)
           </span>
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground">
+          <h2 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight">
             आपको क्या समस्या हो रही है?
           </h2>
-          <p className="text-sm font-medium text-muted-foreground">
-            Describe how you are feeling in your own words.
+          <p className="text-sm font-medium text-muted-foreground max-w-md mx-auto">
+            Describe how you are feeling in your own words. Speak naturally in Hindi or English.
           </p>
         </div>
 
@@ -98,21 +98,21 @@ export default function PatientComplaintVoicePage({
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="p-4 rounded-2xl bg-emerald-50 border-2 border-emerald-300 text-left space-y-1"
+            className="p-4 rounded-2xl bg-botanical-50/80 dark:bg-botanical-950/30 border border-botanical-300 text-left space-y-1 shadow-2xs"
           >
-            <span className="text-xs font-bold text-emerald-800 uppercase">पहचाना गया संदेश (Transcribed):</span>
-            <p className="text-base font-extrabold text-emerald-950">{complaintText}</p>
+            <span className="text-xs font-bold text-botanical-800 dark:text-botanical-300 uppercase tracking-wider">पहचाना गया संदेश (Transcribed):</span>
+            <p className="text-base font-black text-botanical-950 dark:text-botanical-100">{complaintText}</p>
           </motion.div>
         )}
 
         {/* Fallback Text Input Toggle */}
-        <div className="pt-2">
+        <div className="pt-1">
           <button
             type="button"
             onClick={() => setShowKeyboard(!showKeyboard)}
-            className="text-xs font-bold text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 min-h-[40px] px-3 py-1.5 rounded-lg border"
+            className="text-xs font-bold text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 min-h-[40px] px-3.5 py-1.5 rounded-xl border border-border/80 hover:border-botanical-300 transition-colors"
           >
-            <Keyboard className="h-4 w-4" />
+            <Keyboard className="h-4 w-4 text-botanical-600" />
             <span>{showKeyboard ? "कीबोर्ड छिपाएं" : "लिखकर बताएं (Type with keyboard)"}</span>
           </button>
 
@@ -122,14 +122,14 @@ export default function PatientComplaintVoicePage({
               value={complaintText}
               onChange={(e) => setComplaintText(e.target.value)}
               placeholder="अपनी समस्या यहाँ लिखें..."
-              className="mt-3 w-full p-4 rounded-2xl border-2 border-input focus:border-ayush-green text-base font-semibold"
+              className="mt-3 w-full p-4 rounded-2xl border border-input focus:border-botanical-500 focus:ring-2 focus:ring-botanical-500/30 text-base font-semibold bg-background transition-all outline-none"
             />
           )}
         </div>
 
         {/* Quick Tap Choices */}
         <div className="space-y-2 pt-2 text-left">
-          <span className="text-xs font-extrabold text-muted-foreground uppercase">
+          <span className="text-xs font-black text-muted-foreground uppercase tracking-wider block">
             या इनमें से एक चुनें (Or quick tap):
           </span>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
@@ -138,11 +138,11 @@ export default function PatientComplaintVoicePage({
                 key={sym.textEn}
                 type="button"
                 onClick={() => setComplaintText(`${sym.textHi} (${sym.textEn})`)}
-                className="min-h-[56px] p-3 rounded-2xl border-2 border-muted hover:border-ayush-green bg-background flex items-center gap-3 font-bold text-left hover:bg-emerald-50/50 transition-all shadow-sm"
+                className="min-h-[56px] p-3.5 rounded-2xl border border-border/80 hover:border-botanical-400 bg-background/90 flex items-center gap-3 font-bold text-left hover:bg-botanical-50/50 dark:hover:bg-botanical-950/20 transition-all shadow-2xs active:scale-[0.98]"
               >
                 <span className="text-2xl">{sym.icon}</span>
                 <div>
-                  <div className="text-sm font-extrabold text-foreground">{sym.textHi}</div>
+                  <div className="text-sm font-extrabold text-foreground leading-tight">{sym.textHi}</div>
                   <div className="text-xs text-muted-foreground">{sym.textEn}</div>
                 </div>
               </button>

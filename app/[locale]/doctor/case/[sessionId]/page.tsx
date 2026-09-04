@@ -422,10 +422,10 @@ export default function IndividualDoctorCaseViewPage({
             key={tab.id}
             type="button"
             onClick={() => setActiveTab(tab.id as any)}
-            className={`min-h-[44px] px-4 rounded-2xl text-xs font-extrabold inline-flex items-center gap-2 transition-all shrink-0 ${
+            className={`min-h-[44px] px-4 rounded-2xl text-xs font-black inline-flex items-center gap-2 transition-all shrink-0 select-none ${
               activeTab === tab.id
-                ? "bg-ayush-green text-white shadow-xs"
-                : "bg-card text-muted-foreground hover:text-foreground border"
+                ? "bg-gradient-botanical text-white shadow-sm border border-botanical-500/40"
+                : "bg-card text-muted-foreground hover:text-foreground border border-border/80 hover:border-botanical-300 hover:bg-botanical-50/40 dark:hover:bg-botanical-950/20"
             }`}
           >
             {tab.icon}

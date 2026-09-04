@@ -306,9 +306,9 @@ export default function PatientSummaryPreviewDashboardPage({
       <ProgressStepper currentStep={6} />
 
       {/* Audio Prompt & Listen Control */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 rounded-2xl bg-emerald-50/80 dark:bg-emerald-950/30 border-2 border-emerald-300 shadow-sm">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 rounded-2xl bg-botanical-50/80 dark:bg-botanical-950/30 border border-botanical-200/80 dark:border-botanical-800/40 shadow-glass-precision">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+          <div className="w-10 h-10 rounded-xl bg-gradient-botanical text-white flex items-center justify-center shrink-0 shadow-xs">
             <Sparkles className="h-5 w-5" />
           </div>
           <div>
@@ -327,40 +327,40 @@ export default function PatientSummaryPreviewDashboardPage({
           className={`min-h-[48px] px-4 py-2 rounded-xl text-xs font-extrabold flex items-center justify-center gap-2 border transition-all active:scale-95 shrink-0 ${
             isPlayingAudio
               ? "bg-rose-600 text-white border-rose-600 animate-pulse shadow-md"
-              : "bg-white dark:bg-slate-900 text-emerald-800 dark:text-emerald-300 border-emerald-300 hover:bg-emerald-100/50 shadow-2xs"
+              : "bg-white dark:bg-forest-card text-botanical-800 dark:text-botanical-300 border-botanical-300 hover:bg-botanical-100/50 shadow-2xs"
           }`}
           aria-label={isPlayingAudio ? "Stop reading summary" : "Listen to summary in audio"}
         >
-          {isPlayingAudio ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4 text-emerald-600" />}
+          {isPlayingAudio ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4 text-botanical-600" />}
           <span>{isPlayingAudio ? (isHindi ? "आवाज़ रोकें" : "Stop Audio") : (isHindi ? "बोलकर सुनें" : "Listen Audio")}</span>
         </button>
       </div>
 
       {/* Main Review Card */}
-      <Card className="border-3 border-emerald-400/80 shadow-xl rounded-3xl bg-white dark:bg-card p-5 sm:p-8 space-y-6 text-left">
+      <Card className="border border-botanical-200/80 dark:border-botanical-800/40 shadow-glass-precision rounded-3xl bg-card p-5 sm:p-8 space-y-6 text-left">
         {/* Patient Identity Badge */}
-        <div className="p-4 rounded-2xl bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/40 dark:to-teal-950/30 border-2 border-emerald-200 flex flex-wrap items-center justify-between gap-3">
+        <div className="p-4 rounded-2xl bg-gradient-to-br from-botanical-50 to-emerald-50/60 dark:from-botanical-950/40 dark:to-forest-card border border-botanical-200/80 flex flex-wrap items-center justify-between gap-3 shadow-2xs">
           <div className="space-y-0.5">
-            <span className="text-[11px] font-extrabold text-emerald-800 dark:text-emerald-400 uppercase tracking-wider">
+            <span className="text-[11px] font-extrabold text-botanical-800 dark:text-botanical-300 uppercase tracking-wider">
               {isHindi ? "रोगी विवरण (Patient Details)" : "Patient Details"}
             </span>
             <div className="text-lg font-black text-foreground">{d?.patient.name}</div>
             <div className="text-xs font-semibold text-muted-foreground">
-              {d?.patient.ageGender} • ABHA: <span className="font-mono">{d?.patient.abhaId}</span>
+              {d?.patient.ageGender} • ABHA: <span className="font-mono font-bold text-foreground">{d?.patient.abhaId}</span>
             </div>
           </div>
-          <span className="text-xs font-extrabold px-3 py-1.5 rounded-full bg-emerald-200 dark:bg-emerald-900 text-emerald-900 dark:text-emerald-200 flex items-center gap-1.5 shadow-2xs">
-            <ShieldCheck className="h-4 w-4" /> {isHindi ? "सहमति सत्यापित (ABDM)" : "Consent Verified"}
+          <span className="text-xs font-extrabold px-3 py-1.5 rounded-full bg-botanical-100 dark:bg-botanical-950 text-botanical-900 dark:text-botanical-200 flex items-center gap-1.5 border border-botanical-200 shadow-2xs">
+            <ShieldCheck className="h-4 w-4 text-botanical-600" /> {isHindi ? "सहमति सत्यापित (ABDM)" : "Consent Verified"}
           </span>
         </div>
 
         {/* 1. Chief Complaint - Extremely Large and Clear */}
-        <div className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-900/90 border-2 border-slate-200 dark:border-slate-800 space-y-2">
+        <div className="p-5 rounded-2xl bg-slate-50/90 dark:bg-forest-card/50 border border-slate-200 dark:border-slate-800 space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-black text-emerald-800 dark:text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
-              <Stethoscope className="h-4 w-4" /> {isHindi ? "१. मुख्य समस्या (Chief Complaint)" : "1. Chief Health Concern"}
+            <span className="text-xs font-black text-botanical-800 dark:text-botanical-400 uppercase tracking-wider flex items-center gap-1.5">
+              <Stethoscope className="h-4 w-4 text-botanical-600" /> {isHindi ? "१. मुख्य समस्या (Chief Complaint)" : "1. Chief Health Concern"}
             </span>
-            <span className="text-[11px] font-black px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-900 dark:text-emerald-300">
+            <span className="text-[11px] font-black px-2.5 py-0.5 rounded-full bg-botanical-100 dark:bg-botanical-950 text-botanical-900 dark:text-botanical-300">
               {d?.chiefComplaint.severity}
             </span>
           </div>

@@ -87,61 +87,64 @@ export default function PatientConsentPage({
 
   return (
     <div className="container max-w-3xl py-10 space-y-6">
-      <Card className="border-2 border-emerald-500/30 shadow-lg">
-        <CardHeader className="bg-emerald-50/50 dark:bg-emerald-950/20 border-b pb-6">
-          <div className="space-y-1">
-            <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200">
-              <ShieldCheck className="h-3.5 w-3.5" /> {labels.badge}
+      <Card className="border border-botanical-200/80 dark:border-botanical-800/40 shadow-glass-precision rounded-3xl overflow-hidden bg-card">
+        <CardHeader className="bg-gradient-to-r from-botanical-50/90 to-transparent dark:from-botanical-950/30 border-b border-border/80 pb-6 px-6 sm:px-8">
+          <div className="space-y-1.5">
+            <span className="inline-flex items-center gap-1.5 text-xs font-extrabold px-3 py-1 rounded-full bg-botanical-100 text-botanical-800 dark:bg-botanical-950 dark:text-botanical-300 border border-botanical-200">
+              <ShieldCheck className="h-3.5 w-3.5 text-botanical-600" /> {labels.badge}
             </span>
-            <CardTitle className="text-2xl font-bold">{template.title}</CardTitle>
+            <CardTitle className="text-2xl sm:text-3xl font-black text-foreground tracking-tight">{template.title}</CardTitle>
           </div>
         </CardHeader>
 
-
-        <CardContent className="space-y-6 pt-6">
+        <CardContent className="space-y-6 pt-6 px-6 sm:px-8">
           {/* Audio explanation banner */}
-          <div className="flex items-center justify-between p-4 rounded-xl bg-muted/60 border">
+          <div className="flex items-center justify-between p-4 rounded-2xl bg-botanical-50/60 dark:bg-botanical-950/20 border border-botanical-200/70 dark:border-botanical-800/40 shadow-2xs">
             <div className="space-y-0.5">
-              <p className="text-sm font-semibold">{labels.voiceTitle}</p>
+              <p className="text-sm font-bold text-foreground">{labels.voiceTitle}</p>
               <p className="text-xs text-muted-foreground">{labels.voiceSubtitle}</p>
             </div>
             <Button
               variant="outline"
               onClick={handlePlayAudio}
               aria-label={labels.play}
-              className="flex items-center gap-2 border-emerald-300 min-h-[44px]"
+              className="flex items-center gap-2 border-botanical-300 min-h-[44px] rounded-xl hover:bg-botanical-100/60"
             >
-              <Volume2 className={`h-4 w-4 ${isPlayingAudio ? "text-emerald-600 animate-bounce" : ""}`} />
-              <span className="text-xs font-bold">{isPlayingAudio ? labels.playing : labels.play}</span>
+              <Volume2 className={`h-4 w-4 ${isPlayingAudio ? "text-botanical-600 animate-bounce" : "text-botanical-700"}`} />
+              <span className="text-xs font-bold text-foreground">{isPlayingAudio ? labels.playing : labels.play}</span>
             </Button>
           </div>
 
-          <p className="text-sm leading-relaxed text-foreground bg-slate-50 dark:bg-slate-900 p-4 rounded-lg border">
+          <p className="text-sm leading-relaxed text-foreground bg-slate-50/80 dark:bg-forest-card/50 p-4 rounded-2xl border border-border/70">
             {template.explanation}
           </p>
 
           {/* Granular Purpose Checkboxes */}
           <div className="space-y-3">
-            <h4 className="text-sm font-bold tracking-tight">{labels.purposeTitle}</h4>
-            <div className="grid gap-3">
+            <h4 className="text-sm font-black tracking-tight text-foreground">{labels.purposeTitle}</h4>
+            <div className="grid gap-2.5">
               {Object.entries(template.purposes).map(([key, label]) => {
                 const isChecked = agreedPurposes[key];
                 return (
                   <div
                     key={key}
                     onClick={() => handleTogglePurpose(key)}
-                    className={`flex items-start gap-3 p-3.5 rounded-lg border cursor-pointer transition-all ${
-                      isChecked ? "bg-emerald-50/40 border-emerald-300" : "bg-background border-input opacity-70"
+                    className={`flex items-start gap-3 p-3.5 rounded-2xl border cursor-pointer transition-all duration-200 ${
+                      isChecked
+                        ? "bg-botanical-50/60 dark:bg-botanical-950/30 border-botanical-300 shadow-2xs"
+                        : "bg-background border-input opacity-70 hover:opacity-100"
                     }`}
                   >
                     <div
-                      className={`h-5 w-5 rounded flex items-center justify-center border mt-0.5 ${
-                        isChecked ? "bg-emerald-600 border-emerald-600 text-white" : "border-input"
+                      className={`h-5 w-5 rounded-lg flex items-center justify-center border mt-0.5 transition-colors ${
+                        isChecked
+                          ? "bg-botanical-600 border-botanical-600 text-white shadow-2xs"
+                          : "border-input bg-background"
                       }`}
                     >
-                      {isChecked && <Check className="h-3.5 w-3.5" />}
+                      {isChecked && <Check className="h-3.5 w-3.5 stroke-[3]" />}
                     </div>
-                    <span className="text-sm font-medium text-foreground">{label}</span>
+                    <span className="text-sm font-semibold text-foreground leading-snug">{label}</span>
                   </div>
                 );
               })}
@@ -149,11 +152,11 @@ export default function PatientConsentPage({
           </div>
         </CardContent>
 
-        <CardFooter className="flex flex-col sm:flex-row gap-3 justify-between border-t pt-6 bg-muted/20">
+        <CardFooter className="flex flex-col sm:flex-row gap-3 justify-between border-t border-border/80 pt-6 px-6 sm:px-8 bg-muted/20">
           <Button
             variant="outline"
             onClick={() => router.back()}
-            className="w-full sm:w-auto"
+            className="w-full sm:w-auto min-h-[46px] rounded-xl font-bold"
           >
             {labels.back}
           </Button>
@@ -162,7 +165,7 @@ export default function PatientConsentPage({
             size="lg"
             onClick={handleGrantConsent}
             disabled={isSubmitting || !Object.values(agreedPurposes).some(Boolean)}
-            className="w-full sm:w-auto flex items-center gap-2"
+            className="w-full sm:w-auto min-h-[48px] rounded-xl flex items-center gap-2 font-black shadow-md hover:shadow-botanical-glow"
           >
             <FileCheck className="h-5 w-5" />
             <span>{isSubmitting ? labels.submitting : template.acceptButton}</span>

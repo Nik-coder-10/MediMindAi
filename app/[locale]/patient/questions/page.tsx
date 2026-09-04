@@ -343,11 +343,11 @@ export default function AdaptiveQuestionsFlowPage({
             />
 
             {/* Question Card */}
-            <div className="clay-white rounded-3xl overflow-hidden">
+            <div className="clay-white rounded-3xl overflow-hidden border border-botanical-200/80 dark:border-botanical-800/40 shadow-glass-precision">
               {/* Card header band */}
-              <div className="px-6 pt-5 pb-4 border-b border-border/40 flex items-center justify-between">
+              <div className="px-6 pt-5 pb-4 border-b border-border/70 flex items-center justify-between bg-gradient-to-r from-botanical-50/70 to-transparent dark:from-botanical-950/30">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200/60 dark:border-indigo-800/40 text-indigo-700 dark:text-indigo-400 text-[10px] font-black uppercase tracking-wider">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-botanical-100 dark:bg-botanical-950/50 border border-botanical-200/80 dark:border-botanical-800/60 text-botanical-800 dark:text-botanical-300 text-[10px] font-black uppercase tracking-wider">
                     Q{stepNumber} · {currentQuestion.chiefComplaintCategory.replace("_", " ")}
                   </span>
                   <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 text-[10px] font-bold border border-emerald-200">
@@ -357,7 +357,7 @@ export default function AdaptiveQuestionsFlowPage({
                 <button
                   type="button"
                   onClick={() => setIsPaused(true)}
-                  className="flex items-center gap-1 text-[11px] font-bold text-muted-foreground hover:text-foreground transition-colors min-h-[36px] px-2 rounded-lg hover:bg-muted/50"
+                  className="flex items-center gap-1 text-[11px] font-bold text-muted-foreground hover:text-foreground transition-colors min-h-[36px] px-2.5 rounded-xl hover:bg-muted/60"
                 >
                   <PauseCircle className="h-3.5 w-3.5" />
                   <span className="hidden sm:inline">रोकें</span>
@@ -365,7 +365,7 @@ export default function AdaptiveQuestionsFlowPage({
               </div>
 
               {/* Question text */}
-              <div className="px-6 py-5 text-center space-y-1.5">
+              <div className="px-6 py-6 text-center space-y-2">
                 {locale === "hi" ? (
                   <>
                     <h2 className="text-[22px] sm:text-[26px] font-black text-foreground leading-snug tracking-tight">
@@ -397,17 +397,17 @@ export default function AdaptiveQuestionsFlowPage({
                         whileTap={{ scale: 0.975 }}
                         onClick={() => handleSelectOption(opt)}
                         className={cn(
-                          "relative min-h-[68px] p-3.5 rounded-2xl flex items-center justify-between gap-2 cursor-pointer transition-all duration-250",
+                          "relative min-h-[68px] p-3.5 rounded-2xl flex items-center justify-between gap-2.5 cursor-pointer transition-all duration-200 select-none",
                           isSelected
-                            ? "bg-gradient-to-br from-indigo-50 to-indigo-100/60 dark:from-indigo-950/40 dark:to-indigo-900/20 border-2 border-indigo-400 shadow-[0_0_0_4px_rgba(67,56,202,0.08)]"
-                            : "bg-muted/40 dark:bg-muted/20 border-2 border-transparent hover:border-indigo-300/60 hover:bg-indigo-50/40 dark:hover:bg-indigo-950/20"
+                            ? "bg-gradient-to-br from-botanical-50 to-botanical-100/70 dark:from-botanical-950/50 dark:to-botanical-900/30 border-2 border-botanical-500 shadow-[0_0_0_4px_rgba(46,139,110,0.12)]"
+                            : "bg-background/90 border border-border/80 hover:border-botanical-300 hover:bg-botanical-50/40 dark:hover:bg-botanical-950/20 shadow-2xs"
                         )}
                       >
                         {/* Option label */}
                         <div className="flex-1 min-w-0">
                           <div className={cn(
                             "text-[14px] font-bold leading-snug",
-                            isSelected ? "text-indigo-900 dark:text-indigo-200" : "text-foreground"
+                            isSelected ? "text-botanical-950 dark:text-botanical-100" : "text-foreground"
                           )}>
                             {activeLabel}
                           </div>
@@ -432,10 +432,10 @@ export default function AdaptiveQuestionsFlowPage({
                             }
                             title="Listen"
                             className={cn(
-                              "w-8 h-8 rounded-lg flex items-center justify-center transition-all border",
+                              "w-8 h-8 rounded-xl flex items-center justify-center transition-all border",
                               isPlayingThis
-                                ? "bg-teal-600 text-white border-teal-500 animate-pulse"
-                                : "bg-background border-border text-muted-foreground hover:border-teal-400 hover:text-teal-600"
+                                ? "bg-botanical-600 text-white border-botanical-500 animate-pulse"
+                                : "bg-background border-border text-muted-foreground hover:border-botanical-400 hover:text-botanical-700"
                             )}
                           >
                             <Volume2 className="h-3.5 w-3.5" />
@@ -444,8 +444,8 @@ export default function AdaptiveQuestionsFlowPage({
                           <div className={cn(
                             "w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all",
                             isSelected
-                              ? "bg-indigo-600 border-indigo-600 shadow-sm"
-                              : "border-border"
+                              ? "bg-botanical-600 border-botanical-600 shadow-2xs"
+                              : "border-input bg-background"
                           )}>
                             {isSelected && <Check className="h-3.5 w-3.5 text-white stroke-[3]" />}
                           </div>

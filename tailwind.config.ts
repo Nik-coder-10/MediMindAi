@@ -106,6 +106,31 @@ const config: Config = {
           slate: "#1E293B",
           slateLight: "#F1F5F9",
         },
+        // Ayush Modernist (Clinical Botanical + Precision Glass) Tokens
+        botanical: {
+          50: "#F2F8F5",
+          100: "#E3F1EC",
+          200: "#C4E2D8",
+          300: "#98CDC0",
+          400: "#65B2A1",
+          500: "#41A885",
+          600: "#2E8B6E",
+          700: "#1D6A53",
+          800: "#175442",
+          900: "#134537",
+          950: "#09271F",
+        },
+        forest: {
+          DEFAULT: "#0F1D1A",
+          surface: "#162723",
+          card: "#1E322D",
+          border: "#28433C",
+        },
+        amberGold: {
+          DEFAULT: "#C58A38",
+          light: "#FEF7ED",
+          dark: "#9A6318",
+        },
         // Clinical semantic colors
         clinic: {
           critical: "#DC2626",
@@ -136,8 +161,10 @@ const config: Config = {
         "clay-sm": "0 2px 12px -2px rgba(67,56,202,0.10), inset 0 1px 1px rgba(255,255,255,0.9)",
         "glass": "0 8px 40px -8px rgba(67,56,202,0.12), 0 2px 12px -2px rgba(0,0,0,0.04)",
         "glass-lg": "0 16px 60px -12px rgba(67,56,202,0.18), 0 4px 16px -4px rgba(0,0,0,0.06)",
+        "glass-precision": "0 1px 2px rgba(12,24,21,0.03), 0 8px 32px -4px rgba(12,24,21,0.06)",
         "indigo-glow": "0 0 0 4px rgba(67,56,202,0.15), 0 4px 20px -2px rgba(67,56,202,0.25)",
         "teal-glow": "0 0 0 4px rgba(13,148,136,0.15), 0 4px 20px -2px rgba(13,148,136,0.25)",
+        "botanical-glow": "0 0 0 4px rgba(46,139,110,0.16), 0 4px 20px -2px rgba(46,139,110,0.25)",
         "neo-alert": "5px 5px 0px 0px #DC2626",
         "premium": "0 2px 4px rgba(0,0,0,0.02), 0 8px 32px -4px rgba(67,56,202,0.08), 0 24px 64px -8px rgba(67,56,202,0.06)",
         "2xs": "0 1px 2px rgba(0,0,0,0.04)",
@@ -146,7 +173,9 @@ const config: Config = {
       backgroundImage: {
         "gradient-indigo": "linear-gradient(135deg, #4338CA 0%, #312E81 100%)",
         "gradient-teal": "linear-gradient(135deg, #0D9488 0%, #0F766E 100%)",
-        "gradient-ayush": "linear-gradient(135deg, #4338CA 0%, #0D9488 100%)",
+        "gradient-botanical": "linear-gradient(135deg, #2E8B6E 0%, #1D6A53 100%)",
+        "gradient-botanical-light": "linear-gradient(135deg, #E3F1EC 0%, #C4E2D8 100%)",
+        "gradient-ayush": "linear-gradient(135deg, #1D6A53 0%, #0D9488 100%)",
         "gradient-glass": "linear-gradient(135deg, rgba(255,255,255,0.92) 0%, rgba(248,250,255,0.72) 100%)",
         "gradient-clay-white": "linear-gradient(145deg, #FFFFFF 0%, #F8FAFF 100%)",
         "gradient-clay-indigo": "linear-gradient(145deg, #EEF2FF 0%, #E0E7FF 100%)",

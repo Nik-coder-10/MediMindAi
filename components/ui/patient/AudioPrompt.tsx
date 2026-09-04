@@ -96,24 +96,24 @@ export function AudioPrompt({
       transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
       className={cn(
         "relative flex items-center gap-4 p-4 rounded-2xl overflow-hidden",
-        "clay-teal border-0",
+        "clay-teal border border-botanical-200/80 dark:border-botanical-800/40 shadow-glass-precision",
         className
       )}
     >
       {/* Subtle background glow */}
-      <div className="absolute inset-0 bg-gradient-to-br from-teal-50/80 to-transparent dark:from-teal-950/20 pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-br from-botanical-50/90 to-transparent dark:from-botanical-950/20 pointer-events-none" />
 
-      {/* Voice button — clay skeuomorphic */}
+      {/* Voice button — botanical tactile */}
       <div className="relative shrink-0">
         <button
           type="button"
           onClick={handleToggleSpeech}
           aria-label={isPlaying ? "Stop audio" : "Play audio guidance"}
           className={cn(
-            "relative w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-300 focus:outline-none focus-visible:ring-4 focus-visible:ring-teal-300",
+            "relative w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-300 focus:outline-none focus-visible:ring-4 focus-visible:ring-botanical-300",
             isPlaying
-              ? "bg-gradient-to-br from-teal-500 to-teal-700 shadow-[0_4px_16px_-2px_rgba(13,148,136,0.5),inset_0_1px_2px_rgba(255,255,255,0.3)] scale-95"
-              : "bg-gradient-to-br from-teal-400 to-teal-600 shadow-[0_6px_20px_-4px_rgba(13,148,136,0.4),inset_0_1px_2px_rgba(255,255,255,0.3)] hover:shadow-[0_8px_28px_-4px_rgba(13,148,136,0.5)] active:scale-95"
+              ? "bg-gradient-to-br from-botanical-600 to-botanical-800 shadow-[0_4px_16px_-2px_rgba(29,106,83,0.5),inset_0_1px_2px_rgba(255,255,255,0.3)] scale-95"
+              : "bg-gradient-to-br from-botanical-500 to-botanical-700 shadow-[0_6px_20px_-4px_rgba(29,106,83,0.35),inset_0_1px_2px_rgba(255,255,255,0.3)] hover:shadow-[0_8px_28px_-4px_rgba(29,106,83,0.45)] active:scale-95"
           )}
         >
           {isPlaying ? (
@@ -131,7 +131,7 @@ export function AudioPrompt({
               animate={{ opacity: 0, scale: 1.8 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 1.2, repeat: Infinity, ease: "easeOut" }}
-              className="absolute inset-0 rounded-2xl border-2 border-teal-400 pointer-events-none"
+              className="absolute inset-0 rounded-2xl border-2 border-botanical-400 pointer-events-none"
             />
           )}
         </AnimatePresence>
