@@ -50,7 +50,8 @@ export default function PatientCasesDashboardPage({
   const [filter, setFilter] = useState<string>("ALL");
   const [searchQuery, setSearchQuery] = useState<string>("");
 
-  const isHindi = locale === "hi";
+  const isHindi = locale === "hi" || locale === "raj";
+  const isRaj = locale === "raj";
 
   const fetchCases = React.useCallback(async () => {
     setLoading(true);

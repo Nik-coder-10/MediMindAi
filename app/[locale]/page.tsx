@@ -24,30 +24,32 @@ export default function HomePage({
 }: {
   params: { locale: string };
 }) {
+  const isRajasthani = locale === "raj";
   const isHindi = locale === "hi";
+  const isRegional = isHindi || isRajasthani;
 
   const stats = [
     {
       value: "< 4 Min",
-      label: isHindi ? "औसत परामर्श समय" : "Avg Intake Time",
+      label: isRajasthani ? "अंदाजन जांच रो टेम" : isHindi ? "औसत परामर्श समय" : "Avg Intake Time",
       icon: "⚡",
       color: "from-botanical-600 to-botanical-700",
     },
     {
       value: "ABDM",
-      label: isHindi ? "FHIR R4 संगत" : "FHIR R4 Compliant",
+      label: isRajasthani ? "FHIR R4 जोड़" : isHindi ? "FHIR R4 संगत" : "FHIR R4 Compliant",
       icon: "🛡️",
       color: "from-emerald-600 to-teal-600",
     },
     {
-      value: isHindi ? "त्रिदोष" : "Tridosha",
-      label: isHindi ? "स्वतः प्रकृति विश्लेषण" : "Auto Prakriti Analysis",
+      value: isRajasthani ? "त्रिदोष" : isHindi ? "त्रिदोष" : "Tridosha",
+      label: isRajasthani ? "आपोआप प्रकृति जांच" : isHindi ? "स्वतः प्रकृति विश्लेषण" : "Auto Prakriti Analysis",
       icon: "🎯",
       color: "from-amber-600 to-amber-700",
     },
     {
-      value: isHindi ? "रेड-फ्लैग्स" : "Red-Flags",
-      label: isHindi ? "शून्य-चूक ट्राइएज" : "Zero-Miss Triage",
+      value: isRajasthani ? "रेड-फ्लैग्स" : isHindi ? "रेड-फ्लैग्स" : "Red-Flags",
+      label: isRajasthani ? "बिना चूक जांच" : isHindi ? "शून्य-चूक ट्राइएज" : "Zero-Miss Triage",
       icon: "🚨",
       color: "from-rose-600 to-rose-700",
     },
@@ -58,17 +60,21 @@ export default function HomePage({
       span: "md:col-span-2",
       icon: <HeartPulse className="h-6 w-6" />,
       iconBg: "bg-gradient-to-br from-botanical-600 to-botanical-800",
-      title: isHindi
+      title: isRajasthani
+        ? "शास्त्रीय दशविध अर अष्टविध परीक्षा इंजन"
+        : isHindi
         ? "शास्त्रीय दशविध व अष्टविध परीक्षा इंजन"
         : "Classical Dashavidha & Ashtavidha Pariksha Engine",
-      desc: isHindi
+      desc: isRajasthani
+        ? "दूष्य, देश, बल, काल, अग्नि, प्रकृति, वय, सत्त्व, सात्म्य अर आहार रो संरचित डाक्टरी ब्यौरो — ICD-11 व नमस्ते (NAMASTE) कोड मुजब।"
+        : isHindi
         ? "दूष्य, देश, बल, काल, अनल (अग्नि), प्रकृति, वय, सत्त्व, सात्म्य और आहार का संरचित नैदानिक मूल्यांकन — ICD-11 व नमस्ते (NAMASTE) कोड तुल्यकालन के साथ।"
         : "Structured clinical intake assessing Dushya, Desha, Bala, Kala, Anala (Agni), Prakriti, Vayas, Satva, Satmya, and Ahara with ICD-11 & NAMASTE dual-coding synchronization.",
       extra: (
         <div className="p-4 rounded-2xl bg-white/80 dark:bg-forest-card/80 border border-botanical-200/60 dark:border-botanical-800/40 space-y-2.5 shadow-2xs">
           <div className="flex justify-between items-center text-[11px] font-bold">
             <span className="text-foreground">
-              {isHindi ? "लाइव त्रिदोष संतुलन वितरण" : "Live Doshic Distribution"}
+              {isRajasthani ? "लाइव त्रिदोष संतुलन फैलाव" : isHindi ? "लाइव त्रिदोष संतुलन वितरण" : "Live Doshic Distribution"}
             </span>
             <span className="font-mono text-botanical-700 dark:text-botanical-300">V:45% · P:35% · K:20%</span>
           </div>
@@ -89,17 +95,23 @@ export default function HomePage({
       span: "md:col-span-1",
       icon: <Mic className="h-6 w-6" />,
       iconBg: "bg-gradient-to-br from-amber-600 to-amber-700",
-      title: isHindi
+      title: isRajasthani
+        ? "राजस्थानी, हिंदी व अंग्रेजी वॉयस सुविधा"
+        : isHindi
         ? "बहुभाषी भारतीय वॉयस व ट्राइएज प्रणाली"
         : "Multilingual Indian TTS & Voice Triage",
-      desc: isHindi
+      desc: isRajasthani
+        ? "बुजुर्ग, ग्रामीण अर कम पढ़्या-लिख्या लोगां खातर सहज राजस्थानी (मारवाड़ी) अर हिंदी में आवाज सूं सवाल सुणन अर बोलण री सुविधा।"
+        : isHindi
         ? "बुजुर्ग, ग्रामीण एवं कम साक्षर रोगियों के लिए प्राकृतिक हिंदी एवं भारतीय अंग्रेजी में ऑडियो प्रश्नवाचन व वॉयस रिकॉर्डिंग।"
         : "Empowering elderly, rural, and low-literacy patients with natural Hindi & Indian English audio read-outs and voice recording.",
       extra: (
         <div className="p-3.5 rounded-2xl bg-amber-50/90 dark:bg-amber-950/30 border border-amber-200/70 dark:border-amber-800/40 flex items-center gap-2.5 shadow-2xs">
           <span className="text-xl">🔊</span>
           <span className="text-[11px] font-bold text-amber-950 dark:text-amber-200">
-            {isHindi
+            {isRajasthani
+              ? "हर सवाल माथै मीठी राजस्थानी आवाज री सुविधा"
+              : isHindi
               ? "प्रत्येक प्रश्न नोड पर द्विभाषी ऑडियो सहायता"
               : "Bilingual Voice Prompts on Every Question Node"}
           </span>
@@ -110,15 +122,21 @@ export default function HomePage({
       span: "md:col-span-1",
       icon: <FileText className="h-6 w-6" />,
       iconBg: "bg-gradient-to-br from-botanical-700 to-forest",
-      title: isHindi
+      title: isRajasthani
+        ? "पुरानी परची ओसीआर अर जांच रिपोर्ट जांच"
+        : isHindi
         ? "दस्तावेज ओसीआर एवं लैब रिपोर्ट विश्लेषण"
         : "Document OCR & Lab Slip Parsing",
-      desc: isHindi
+      desc: isRajasthani
+        ? "पुरानी परचियां अर खून जांच री फोटो खींच’र अपलोड करो अर डॉक्टर साब नै पूरो ब्यौरो भेजो।"
+        : isHindi
         ? "पुराने पर्चे और लैब जांच अपलोड करके दवाइयां, HbA1c, और असामान्य बायोमार्कर सीधे डॉक्टर के केस डोजियर में निकालें।"
         : "Upload historical prescriptions and lab results to extract medicines, HbA1c, and abnormal biomarkers into the doctor's dossier.",
       extra: (
         <div className="px-3.5 py-3 rounded-2xl bg-botanical-50/90 dark:bg-botanical-950/40 border border-botanical-200/70 dark:border-botanical-800/40 font-mono text-[10px] font-bold text-botanical-950 dark:text-botanical-200 shadow-2xs">
-          {isHindi
+          {isRajasthani
+            ? "परखीज ग्यो: योगराज गुग्गुलु · ESR: 38 mm/hr · HbA1c: 6.8%"
+            : isHindi
             ? "विश्लेषित: योगराज गुग्गुलु · ESR: 38 mm/hr · HbA1c: 6.8%"
             : "Parsed: Yogaraj Guggulu · ESR: 38 mm/hr · HbA1c: 6.8%"}
         </div>
@@ -128,28 +146,32 @@ export default function HomePage({
       span: "md:col-span-2",
       icon: <Award className="h-6 w-6" />,
       iconBg: "bg-gradient-to-br from-botanical-600 to-emerald-700",
-      title: isHindi
+      title: isRajasthani
+        ? "हस्पताल ओपीडी परची अर आभा (ABDM) जोड़"
+        : isHindi
         ? "संस्थागत ओपीडी पर्चा एवं आभा (ABDM) लिंकेज"
         : "Institutional OPD Prescription & ABDM Linkage",
-      desc: isHindi
+      desc: isRajasthani
+        ? "डॉक्टर पंजीकरण, हस्पताल अर पथ्य-अपथ्य खान-पान हिदायत मुजब एसएमएस हस्पताल व आयुष मंत्रालय प्रारूप ओपीडी परची।"
+        : isHindi
         ? "डॉक्टर पंजीकरण, अस्पताल संबद्धता, तथा पथ्य-अपथ्य जीवनशैली परामर्श युक्त मानक आयुष मंत्रालय व AIIA प्रारूप ओपीडी पर्चा निर्यात।"
         : "Export standard Ministry of Ayush & AIIA-formatted OPD prescription sheets with doctor registration, hospital affiliation, and Pathya-Apathya lifestyle advice.",
       extra: (
         <div className="grid grid-cols-3 gap-2.5 text-[11px]">
           {[
             {
-              label: isHindi ? "चिकित्सक सत्यापन" : "Doctor Verification",
-              value: isHindi ? "CCIM / राज्य बोर्ड" : "CCIM / State Board",
+              label: isRajasthani ? "डॉक्टर साब जांच" : isHindi ? "चिकित्सक सत्यापन" : "Doctor Verification",
+              value: isRajasthani ? "CCIM / राज्य बोर्ड" : isHindi ? "CCIM / राज्य बोर्ड" : "CCIM / State Board",
               color: "text-foreground",
             },
             {
-              label: isHindi ? "पर्चा निर्यात" : "Prescription Export",
-              value: isHindi ? "1-क्लिक PDF / प्रिंट" : "1-Click PDF / Print",
+              label: isRajasthani ? "परची निकालो" : isHindi ? "पर्चा निर्यात" : "Prescription Export",
+              value: isRajasthani ? "१-क्लिक PDF / प्रिंट" : isHindi ? "1-क्लिक PDF / प्रिंट" : "1-Click PDF / Print",
               color: "text-botanical-700 dark:text-botanical-400",
             },
             {
-              label: isHindi ? "राष्ट्रीय रजिस्ट्री" : "National Registry",
-              value: isHindi ? "आभा (ABHA) लिंक्ड" : "ABHA PHR Linked",
+              label: isRajasthani ? "राष्ट्रीय खाता" : isHindi ? "राष्ट्रीय रजिस्ट्री" : "National Registry",
+              value: isRajasthani ? "आभा (ABHA) जोड़" : isHindi ? "आभा (ABHA) लिंक्ड" : "ABHA PHR Linked",
               color: "text-foreground",
             },
           ].map((item) => (
@@ -176,7 +198,14 @@ export default function HomePage({
         {/* Headline */}
         <div className="space-y-5 max-w-4xl mx-auto">
           <h1 className="text-[42px] sm:text-[62px] lg:text-[72px] font-black tracking-tight text-foreground leading-[1.08]">
-            {isHindi ? (
+            {isRajasthani ? (
+              <>
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-botanical-700 via-botanical-600 to-emerald-500">
+                  आयुष स्वास्थ्य सेवा
+                </span>{" "}
+                नै AI री मजबूती सूं आगे बढ़ावणो
+              </>
+            ) : isHindi ? (
               <>
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-botanical-700 via-botanical-600 to-emerald-500">
                   आयुष स्वास्थ्य सेवा
@@ -194,7 +223,9 @@ export default function HomePage({
             )}
           </h1>
           <p className="text-[16px] sm:text-[18px] text-muted-foreground font-medium max-w-2xl mx-auto leading-relaxed">
-            {isHindi
+            {isRajasthani
+              ? "शास्त्रीय अष्टविध परीक्षा, मारवाड़ी (राजस्थानी), हिंदी अर अंग्रेजी में बोल'र जांच करावण री सुविधा, पर्ची री तुरंत फोटो सूं जांच अर आयुष्मान भारत (ABDM) जोड़।"
+              : isHindi
               ? "मानकीकृत शास्त्रीय अष्टविध परीक्षा, हिंदी व अंग्रेजी में बहुभाषी वॉयस परामर्श, त्वरित पर्चा ओसीआर, एवं आयुष्मान भारत (ABDM) संगतता — राष्ट्रीय स्तर के लिए निर्मित।"
               : "Standardized classical Ashtavidha Pariksha, multilingual voice intake in Hindi & English, instant prescription OCR, and ABDM interoperability — built for national scale."}
           </p>
@@ -207,7 +238,7 @@ export default function HomePage({
             className="inline-flex items-center gap-2.5 h-14 px-8 rounded-2xl bg-gradient-botanical text-white text-[15px] font-extrabold shadow-glass-precision hover:shadow-botanical-glow transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.98]"
           >
             <Mic className="h-5 w-5" />
-            {isHindi ? "रोगी परामर्श (शुरू करें)" : "रोगी परामर्श (Patient Intake)"}
+            {isRajasthani ? "रोगी परामर्श (शुरू करो सा)" : isHindi ? "रोगी परामर्श (शुरू करें)" : "रोगी परामर्श (Patient Intake)"}
             <ArrowRight className="h-4 w-4" />
           </Link>
 
@@ -216,7 +247,7 @@ export default function HomePage({
             className="inline-flex items-center gap-2.5 h-14 px-7 rounded-2xl glass-card border border-white/80 dark:border-white/10 text-foreground text-[15px] font-extrabold hover:shadow-glass-lg transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.98]"
           >
             <Stethoscope className="h-5 w-5 text-botanical-600" />
-            {isHindi ? "चिकित्सक डेस्क (Doctor Desk)" : "चिकित्सक डेस्क (Doctor Desk)"}
+            {isRajasthani ? "डॉक्टर डेस्क (Doctor Desk)" : isHindi ? "चिकित्सक डेस्क (Doctor Desk)" : "चिकित्सक डेस्क (Doctor Desk)"}
           </Link>
 
           <Link
@@ -224,7 +255,7 @@ export default function HomePage({
             className="inline-flex items-center gap-2 h-14 px-5 rounded-2xl text-[14px] font-bold text-muted-foreground hover:text-foreground transition-colors"
           >
             <Lock className="h-4 w-4" />
-            {isHindi ? "व्यवस्थापक कंसोल" : "Admin Console"}
+            {isRajasthani ? "प्रशासनिक कंसोल" : isHindi ? "व्यवस्थापक कंसोल" : "Admin Console"}
           </Link>
         </div>
 

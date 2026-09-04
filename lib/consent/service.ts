@@ -27,12 +27,26 @@ export const ConsentTemplates = {
     acceptButton: "I Understand & Grant Consent",
     revokeButton: "Revoke Consent",
   },
+  raj: {
+    title: "डिजिटल आयुष क्लिनिकल परामर्श अर डेटा सहमति (ABDM)",
+    explanation:
+      "आयुर्सेतु सेवा में आपरो घणो मान-सम्मान अर स्वागत है सा। इण परामर्श मांय आपरी बीमारी रा लक्षणां रो ब्यौरो, आवाज री रिकॉर्डिंग, पुरानी डाक्टरी परची अर आयुष जांच डेटा पूरो सुरक्षित लिख्यो जावेगो। ओ ब्यौरो आपरे जांच कर्ता डॉक्टर साब कनै भेजण अर आयुष्मान भारत डिजिटल मिशन (ABDM) हेल्थ लॉकर में रिकॉर्ड जोड़ण खातर काम आवेगो सा।",
+    purposes: {
+      HISTORY_TAKING: "आयुष केस-टेकिंग अर प्रकृति-दोष मूल्यांकन",
+      DOCUMENT_OCR: "पुरानी डाक्टरी परची व जांच पर्चा स्कैनिंग",
+      DOCTOR_SHARING: "जांच कर्ता वैद्य/डॉक्टर साब कनै डेटा भेजणो",
+      ABDM_EXCHANGE: "आयुष्मान भारत डिजिटल मिशन (ABDM) रिकॉर्ड लिंकेज",
+    },
+    audioUrl: "/audio/consent-explanation-raj.mp3",
+    acceptButton: "हूँ सहमत हूँ अर मंजूरी द्यूं हूँ (I Agree & Grant Consent)",
+    revokeButton: "सहमति पाछी लो (Revoke Consent)",
+  },
 };
 
 export interface ConsentRequestDTO {
   patientId: string;
   purposes: string[];
-  language: "en" | "hi";
+  language: "en" | "hi" | "raj";
   ipAddress?: string;
   userAgent?: string;
 }

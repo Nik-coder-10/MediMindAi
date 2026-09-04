@@ -44,21 +44,22 @@ export function Navbar({ locale }: { locale: string }) {
   }[contrastMode];
 
   const isHindi = locale === "hi";
+  const isRaj = locale === "raj";
 
   const navLinks = [
     {
       href: `/${locale}/doctor`,
-      label: isHindi ? "चिकित्सक" : "Doctor",
+      label: isRaj ? "वैद्य जी" : isHindi ? "चिकित्सक" : "Doctor",
       icon: <Stethoscope className="h-3.5 w-3.5" />,
     },
     {
       href: `/${locale}/patient`,
-      label: isHindi ? "रोगी" : "Patient",
+      label: isRaj ? "मरीज / रोगी" : isHindi ? "रोगी" : "Patient",
       icon: <User className="h-3.5 w-3.5" />,
     },
     {
       href: `/${locale}/admin-dashboard`,
-      label: isHindi ? "व्यवस्थापक" : "Admin",
+      label: isRaj ? "व्यवस्थापक" : isHindi ? "व्यवस्थापक" : "Admin",
       icon: <ShieldCheck className="h-3.5 w-3.5" />,
     },
   ];
@@ -90,7 +91,7 @@ export function Navbar({ locale }: { locale: string }) {
                 AyurSetu
               </span>
               <span className="text-[8.5px] font-extrabold text-muted-foreground uppercase tracking-[0.1em]">
-                {isHindi ? "आयुष मंत्रालय • MediMindAI" : "A MediMindAI Project"}
+                {isRaj ? "आयुष मंत्रालय • राजस्थान" : isHindi ? "आयुष मंत्रालय • MediMindAI" : "A MediMindAI Project"}
               </span>
             </div>
           </Link>
@@ -142,26 +143,26 @@ export function Navbar({ locale }: { locale: string }) {
                       ? `ABHA · ${user.abhaId?.slice(0, 8) || "Linked"}`
                       : user.role === "DOCTOR"
                       ? user.doctorRegNumber?.slice(0, 14) || "MD (Ayu)"
-                      : isHindi ? "मंत्रालय व्यवस्थापक" : "Ministry Admin"}
+                      : isRaj ? "व्यवस्थापक" : isHindi ? "मंत्रालय व्यवस्थापक" : "Ministry Admin"}
                   </span>
                 </div>
                 {user.role === "PATIENT" && (
                   <Link
                     href={`/${locale}/patient/cases`}
-                    title={isHindi ? "मेरे परामर्श" : "My Cases"}
+                    title={isRaj ? "म्हारा परामर्श" : isHindi ? "मेरे परामर्श" : "My Cases"}
                     className="hidden sm:flex items-center gap-1 px-2.5 py-1.5 rounded-xl border border-botanical-200 dark:border-botanical-900/40 bg-botanical-50/80 dark:bg-botanical-950/30 text-botanical-800 dark:text-botanical-300 font-bold text-[11px] hover:bg-botanical-100 dark:hover:bg-botanical-950/50 transition-all min-h-[34px]"
                   >
                     <Activity className="h-3.5 w-3.5" />
-                    <span>{isHindi ? "मेरे परामर्श" : "My Cases"}</span>
+                    <span>{isRaj ? "म्हारा परामर्श" : isHindi ? "मेरे परामर्श" : "My Cases"}</span>
                   </Link>
                 )}
                 <button
                   onClick={logout}
-                  title={isHindi ? "लॉगआउट" : "Log out"}
+                  title={isRaj ? "बाहर निकलो" : isHindi ? "लॉगआउट" : "Log out"}
                   className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl border border-red-200 dark:border-red-900/40 bg-red-50/60 dark:bg-red-950/20 text-[11px] font-bold text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-950/40 transition-all min-h-[34px]"
                 >
                   <LogOut className="h-3.5 w-3.5" />
-                  <span className="hidden sm:inline">{isHindi ? "लॉगआउट" : "Logout"}</span>
+                  <span className="hidden sm:inline">{isRaj ? "बाहर निकलो" : isHindi ? "लॉगआउट" : "Logout"}</span>
                 </button>
               </div>
             ) : (
@@ -170,7 +171,7 @@ export function Navbar({ locale }: { locale: string }) {
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border text-[12px] font-bold text-foreground hover:border-botanical-300 hover:bg-botanical-50/50 transition-all min-h-[34px]"
               >
                 <LogIn className="h-3.5 w-3.5 text-botanical-600" />
-                {isHindi ? "लॉगिन" : "Login"}
+                {isRaj ? "दाखिल होवो" : isHindi ? "लॉगिन" : "Login"}
               </Link>
             )}
 
@@ -180,7 +181,7 @@ export function Navbar({ locale }: { locale: string }) {
               className="hidden sm:flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-gradient-botanical text-white text-[12px] font-bold shadow-sm hover:shadow-botanical-glow transition-all duration-300 active:scale-[0.98] min-h-[34px]"
             >
               <Activity className="h-3.5 w-3.5" />
-              {isHindi ? "परामर्श शुरू करें" : "Start Case"}
+              {isRaj ? "इलाज / परामर्श शुरू करो" : isHindi ? "परामर्श शुरू करें" : "Start Case"}
             </Link>
           </div>
         </div>

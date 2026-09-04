@@ -15,8 +15,8 @@ export default function PatientConsentPage({
   params: { locale: string };
 }) {
   const router = useRouter();
-  const [selectedLang, setSelectedLang] = useState<"hi" | "en">(
-    locale === "hi" ? "hi" : "en"
+  const [selectedLang, setSelectedLang] = useState<"hi" | "en" | "raj">(
+    locale === "raj" ? "raj" : locale === "hi" ? "hi" : "en"
   );
   const [agreedPurposes, setAgreedPurposes] = useState<Record<string, boolean>>({
     HISTORY_TAKING: true,
@@ -27,7 +27,7 @@ export default function PatientConsentPage({
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const template = ConsentTemplates[selectedLang] || ConsentTemplates.hi;
+  const template = ConsentTemplates[selectedLang] || ConsentTemplates.raj || ConsentTemplates.hi;
 
   const handleTogglePurpose = (key: string) => {
     setAgreedPurposes((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -72,6 +72,16 @@ export default function PatientConsentPage({
       purposeTitle: "सहमति के उद्देश्य (Consent Purposes):",
       back: "रद्द करें / पीछे (Back)",
       submitting: "सहमति दर्ज हो रही है...",
+    },
+    raj: {
+      badge: "आयुष्मान भारत डिजिटल मिशन (ABDM) सहमति प्रबंधक v1.0",
+      voiceTitle: "आवाज में सुणो (Voice Explanation)",
+      voiceSubtitle: "सहमति री शर्तां राजस्थानी में सुणन खातर बटन दाबो सा।",
+      play: "आवाज सुणो (Play Audio)",
+      playing: "आवाज चाल री है...",
+      purposeTitle: "सहमति रा उद्देश्य (Consent Purposes):",
+      back: "रद्द करो / पाछै (Back)",
+      submitting: "सहमति लिखीज री है...",
     },
     en: {
       badge: "ABDM Consent Manager (v1.0)",

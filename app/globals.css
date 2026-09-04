@@ -736,3 +736,60 @@
   }
 }
 
+/* ============================================================
+   TOP HOSPITAL OPD PRESCRIPTION PRINT SYSTEM (SMS / AIIMS STYLE)
+   ============================================================ */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 8mm 10mm 8mm 10mm;
+  }
+
+  html, body {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    font-size: 11px !important;
+    line-height: 1.25 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Hide everything on the page except the official OPD prescription slip */
+  body > *:not(#__next),
+  header,
+  footer,
+  nav,
+  .no-print,
+  .fixed,
+  button,
+  .living-forest-background,
+  .backdrop-blur-md {
+    display: none !important;
+  }
+
+  /* Hide main app containers during print when printing official slip */
+  body:has(#official-opd-prescription) main > div:not(#official-opd-prescription),
+  body:has(#official-opd-prescription) .container:not(#official-opd-prescription) {
+    display: none !important;
+  }
+
+  #official-opd-prescription {
+    display: block !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    background: #ffffff !important;
+    box-shadow: none !important;
+    page-break-after: avoid !important;
+    page-break-inside: avoid !important;
+  }
+}
+
+

@@ -10,6 +10,7 @@
 |---|---|---|---|---|
 | **हिंदी (Hindi - Primary)** | `hi` | [`messages/hi.json`](file:///c:/Users/Hp/OneDrive/Desktop/SIH_2026/messages/hi.json) | `hi-IN` | `hi-IN-SwaraNeural` (Bhashini / Azure) |
 | **English (Secondary)** | `en` | [`messages/en.json`](file:///c:/Users/Hp/OneDrive/Desktop/SIH_2026/messages/en.json) | `en-IN` | `en-IN-NeerjaNeural` |
+| **राजस्थानी (Rajasthani - मारवाड़ी / ढूंढाड़ी)** | `raj` | [`messages/raj.json`](file:///c:/Users/Hp/OneDrive/Desktop/SIH_2026/messages/raj.json) | `hi-IN` (Vernacular Rajasthani) | `hi-IN-SwaraNeural` / Rajasthani Dialect prosody |
 | **मराठी (Marathi - Regional)** | `mr` | [`messages/mr.json`](file:///c:/Users/Hp/OneDrive/Desktop/SIH_2026/messages/mr.json) | `mr-IN` | `mr-IN-AarohiNeural` |
 | **தமிழ் (Tamil)** | `ta` | Prepared in Voice Registry | `ta-IN` | `ta-IN-PallaviNeural` |
 | **বাংলা (Bengali)** | `bn` | Prepared in Voice Registry | `bn-IN` | `bn-IN-TanishaaNeural` |

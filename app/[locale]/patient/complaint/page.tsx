@@ -22,12 +22,35 @@ export default function PatientComplaintVoicePage({
   const [complaintText, setComplaintText] = useState("");
   const [showKeyboard, setShowKeyboard] = useState(false);
 
+  const isRajasthani = locale === "raj";
+  const isHindi = locale === "hi";
+
   const quickSymptoms = [
-    { textHi: "छाती में दर्द व भारीपन", textEn: "Chest Pain & Pressure", icon: "🫀" },
-    { textHi: "तेज सिरदर्द व चक्कर", textEn: "Severe Headache", icon: "🧠" },
-    { textHi: "पेट में जलन व दर्द", textEn: "Abdominal Pain / Acidity", icon: "⚡" },
-    { textHi: "जोड़ों में तेज जकड़न", textEn: "Joint Pain & Stiffness", icon: "🦴" },
-    { textHi: "तेज बुखार व ठंड लगना", textEn: "High Fever & Chills", icon: "🌡️" },
+    {
+      textHi: isRajasthani ? "छाती में दरद अर भारीपण" : "छाती में दर्द व भारीपन",
+      textEn: "Chest Pain & Pressure",
+      icon: "🫀",
+    },
+    {
+      textHi: isRajasthani ? "घणो माथो दरद अर चक्कर" : "तेज सिरदर्द व चक्कर",
+      textEn: "Severe Headache",
+      icon: "🧠",
+    },
+    {
+      textHi: isRajasthani ? "पेट में बाळू अर दरद" : "पेट में जलन व दर्द",
+      textEn: "Abdominal Pain / Acidity",
+      icon: "⚡",
+    },
+    {
+      textHi: isRajasthani ? "जोड़ां में तेज जकड़न अर दरद" : "जोड़ों में तेज जकड़न",
+      textEn: "Joint Pain & Stiffness",
+      icon: "🦴",
+    },
+    {
+      textHi: isRajasthani ? "घणो ताव (बुखार) अर सी लागणो" : "तेज बुखार व ठंड लगना",
+      textEn: "High Fever & Chills",
+      icon: "🌡️",
+    },
   ];
 
   const handleTranscription = (transcript: string) => {
@@ -68,20 +91,30 @@ export default function PatientComplaintVoicePage({
       <ProgressStepper currentStep={3} />
 
       <AudioPrompt
-        hindiText="कृपया अपनी मुख्य बीमारी या समस्या बताएं। आप माइक का बटन दबाकर बोल सकते हैं।"
+        locale={locale}
+        hindiText={
+          isRajasthani
+            ? "घणी विनती है, आपरी मुख्य तकलीफ या बीमारी बताओ सा। आप माइक रो बटन दाब’र बोल सको हो।"
+            : "कृपया अपनी मुख्य बीमारी या समस्या बताएं। आप माइक का बटन दबाकर बोल सकते हैं।"
+        }
         text="Please describe your main health concern. You can tap the big microphone to speak."
       />
 
       <Card className="border border-botanical-200/80 dark:border-botanical-800/40 shadow-glass-precision p-6 sm:p-8 rounded-3xl bg-card space-y-6 text-center">
         <div className="space-y-2">
           <span className="text-xs font-extrabold px-3 py-1 bg-botanical-100 dark:bg-botanical-950/60 text-botanical-800 dark:text-botanical-300 rounded-full inline-flex items-center gap-1.5 border border-botanical-200/80">
-            <Sparkles className="h-3.5 w-3.5 text-botanical-600" /> चरण ३ • मुख्य लक्षण (Chief Complaint)
+            <Sparkles className="h-3.5 w-3.5 text-botanical-600" />{" "}
+            {isRajasthani
+              ? "चरण ३ • मुख्य लक्षण (Chief Complaint)"
+              : "चरण ३ • मुख्य लक्षण (Chief Complaint)"}
           </span>
           <h2 className="text-2xl sm:text-3xl font-black text-foreground tracking-tight">
-            आपको क्या समस्या हो रही है?
+            {isRajasthani ? "आपणै कांई तकलीफ हो री है सा?" : "आपको क्या समस्या हो रही है?"}
           </h2>
           <p className="text-sm font-medium text-muted-foreground max-w-md mx-auto">
-            Describe how you are feeling in your own words. Speak naturally in Hindi or English.
+            {isRajasthani
+              ? "आपरी भाषा में खुल'र बताओ। आप मारवाड़ी/राजस्थानी या हिंदी में बोल सको हो।"
+              : "Describe how you are feeling in your own words. Speak naturally in Hindi or English."}
           </p>
         </div>
 
@@ -89,7 +122,7 @@ export default function PatientComplaintVoicePage({
         <div className="py-4">
           <VoiceInputButton
             onTranscriptionComplete={handleTranscription}
-            language={locale === "hi" ? "hi-IN" : "en-IN"}
+            language={isRajasthani || isHindi ? "hi-IN" : "en-IN"}
           />
         </div>
 

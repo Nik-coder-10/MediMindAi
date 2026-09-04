@@ -22,6 +22,7 @@ export function PatientLanguageSwitcher({ currentLocale }: { currentLocale: stri
 
   const languages = [
     { code: "hi", name: "हिंदी", icon: "🇮🇳" },
+    { code: "raj", name: "राजस्थानी", icon: "🐪" },
     { code: "en", name: "EN", icon: "🌐" },
   ];
 

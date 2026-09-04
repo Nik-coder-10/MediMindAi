@@ -19,8 +19,8 @@ export default function PatientLanguagePage({
 
   const languageOptions = [
     { code: "hi", title: "हिंदी", sub: "Hindi", icon: "🇮🇳", greeting: "नमस्ते" },
-    { code: "en", title: "English", sub: "English", icon: "🌐", greeting: "Hello" },
-    { code: "mr", title: "मराठी", sub: "Marathi", icon: "🚩", greeting: "नमस्कार" },
+    { code: "raj", title: "राजस्थानी", sub: "Rajasthani (मारवाड़ी / ढूंढाड़ी)", icon: "🐪", greeting: "खम्मा घणी सा" },
+    { code: "en", title: "English", sub: "English (India)", icon: "🌐", greeting: "Hello" },
   ];
 
   const handleContinue = () => {

@@ -27,6 +27,7 @@ export default function KioskLauncherPage({
 }) {
   const router = useRouter();
   const isHindi = locale === "hi";
+  const isRaj = locale === "raj";
 
   const [resumableSession, setResumableSession] = useState<DurableIntakeSnapshot | null>(null);
   const [idleWarning, setIdleWarning] = useState(false);
@@ -143,10 +144,12 @@ export default function KioskLauncherPage({
               <Clock className="h-8 w-8" />
             </div>
             <h2 className="text-xl font-black text-foreground">
-              {isHindi ? "क्या आप यहाँ हैं?" : "Are you still here?"}
+              {isRaj ? "कांईं आप अठैई हो?" : isHindi ? "क्या आप यहाँ हैं?" : "Are you still here?"}
             </h2>
             <p className="text-sm font-semibold text-muted-foreground">
-              {isHindi
+              {isRaj
+                ? `${secondsLeft} सेकंड में आप ही रीसेट हो जावैगो`
+                : isHindi
                 ? `${secondsLeft} सेकंड में स्वचालित रीसेट होगा`
                 : `Auto-reset in ${secondsLeft} seconds for next patient`}
             </p>
@@ -155,7 +158,7 @@ export default function KioskLauncherPage({
               onClick={resetIdleTimer}
               className="w-full min-h-[56px] rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-base cursor-pointer transition-all"
             >
-              {isHindi ? "हाँ, जारी रखें" : "Yes, Continue"}
+              {isRaj ? "हाँ, चालू राखो" : isHindi ? "हाँ, जारी रखें" : "Yes, Continue"}
             </button>
           </div>
         </div>
@@ -168,12 +171,12 @@ export default function KioskLauncherPage({
         </div>
         <h1 className="text-3xl sm:text-4xl font-black text-white">AyurSetu</h1>
         <p className="text-base font-bold text-emerald-300">
-          {isHindi ? "रोगी परामर्श केंद्र" : "Patient Consultation Kiosk"}
+          {isRaj ? "मरीज परामर्श केंद्र (कियोस्क)" : isHindi ? "रोगी परामर्श केंद्र" : "Patient Consultation Kiosk"}
         </p>
         <div className="flex items-center justify-center gap-2 mt-2">
           <ShieldCheck className="h-4 w-4 text-emerald-400" />
           <span className="text-xs font-semibold text-emerald-400/80">
-            {isHindi ? "AIIA • स्वास्थ्य मंत्रालय" : "AIIA • Ministry of Ayush, Govt. of India"}
+            {isRaj ? "AIIA • आयुष मंत्रालय • राजस्थान" : isHindi ? "AIIA • स्वास्थ्य मंत्रालय" : "AIIA • Ministry of Ayush, Govt. of India"}
           </span>
         </div>
       </div>
@@ -191,10 +194,10 @@ export default function KioskLauncherPage({
           </div>
           <div className="text-left">
             <p className="text-xl font-black leading-tight">
-              {isHindi ? "नया मरीज" : "New Patient"}
+              {isRaj ? "नयो मरीज" : isHindi ? "नया मरीज" : "New Patient"}
             </p>
             <p className="text-xs font-semibold text-emerald-100/80">
-              {isHindi ? "परामर्श शुरू करें" : "Start intake for new patient"}
+              {isRaj ? "परामर्श शुरू करो" : isHindi ? "परामर्श शुरू करें" : "Start intake for new patient"}
             </p>
           </div>
         </button>
@@ -208,11 +211,11 @@ export default function KioskLauncherPage({
               </div>
               <div>
                 <p className="text-sm font-black text-amber-200">
-                  {isHindi ? "अधूरा सत्र मिला" : "In-progress session found"}
+                  {isRaj ? "अधूरी पर्ची मिली" : isHindi ? "अधूरा सत्र मिला" : "In-progress session found"}
                 </p>
                 <p className="text-xs font-semibold text-amber-300/70">
                   {resumableSession.chiefComplaint} • {resumableSession.collectedAnswers?.length || 0}{" "}
-                  {isHindi ? "उत्तर सहेजे गए" : "answers saved"}
+                  {isRaj ? "जवाब सुरक्षित है" : isHindi ? "उत्तर सहेजे गए" : "answers saved"}
                 </p>
               </div>
             </div>
@@ -223,14 +226,14 @@ export default function KioskLauncherPage({
                 className="flex-1 min-h-[52px] rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-sm flex items-center justify-center gap-2 cursor-pointer transition-all"
               >
                 <Play className="h-4 w-4 fill-current" />
-                {isHindi ? "जारी रखें" : "Resume"}
+                {isRaj ? "आगे बढ़ाओ" : isHindi ? "जारी रखें" : "Resume"}
               </button>
               <button
                 type="button"
                 onClick={handleDismissResume}
                 className="px-4 min-h-[52px] rounded-2xl bg-white/10 hover:bg-white/20 text-white/70 font-bold text-xs cursor-pointer transition-all"
               >
-                {isHindi ? "नया" : "Discard"}
+                {isRaj ? "नयो" : isHindi ? "नया" : "Discard"}
               </button>
             </div>
           </div>
@@ -239,7 +242,7 @@ export default function KioskLauncherPage({
 
       {/* Footer */}
       <div className="mt-12 text-center text-xs text-slate-500 z-10 space-y-1">
-        <p>{isHindi ? "इस कियोस्क को छोड़ें नहीं — अगले मरीज़ के लिए अपने आप रीसेट होगा" : "Kiosk auto-resets after 10 min of inactivity for next patient"}</p>
+        <p>{isRaj ? "ईं कियोस्क नै छोड़ो मती — अगला मरीज खातिर आप ही रीसेट हो ज्यावैगो" : isHindi ? "इस कियोस्क को छोड़ें नहीं — अगले मरीज़ के लिए अपने आप रीसेट होगा" : "Kiosk auto-resets after 10 min of inactivity for next patient"}</p>
         <p>SIH 2026 · Problem 26047 · AyurSetu v2.0</p>
       </div>
     </div>

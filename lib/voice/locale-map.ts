@@ -42,6 +42,13 @@ export const SUPPORTED_VOICE_LOCALES: Record<string, VoiceLocaleConfig> = {
     label: "Bengali",
     nativeLabel: "বাংলা",
   },
+  raj: {
+    code: "raj",
+    asrCode: "hi-IN", // Standard speech recognition with Rajasthani vernacular fallback
+    ttsVoice: "hi-IN-SwaraNeural", // Indian native neural cadence
+    label: "Rajasthani",
+    nativeLabel: "राजस्थानी",
+  },
 };
 
 export function getVoiceLocale(lang: string): VoiceLocaleConfig {

@@ -41,7 +41,9 @@ export default function PatientDocumentsScanPage({
   >([]);
   const [extractedEntities, setExtractedEntities] = useState<ExtractedEntitiesResult | null>(null);
 
+  const isRajasthani = locale === "raj";
   const isHindi = locale === "hi";
+  const isRegional = isHindi || isRajasthani;
 
   // Escape key listener to easily dismiss modal
   useEffect(() => {
@@ -216,20 +218,28 @@ export default function PatientDocumentsScanPage({
       <ProgressStepper currentStep={5} />
 
       <AudioPrompt
-        hindiText="यदि आपके पास कोई पुरानी पर्ची या जांच रिपोर्ट है, तो कैमरे से फोटो खींचकर अपलोड करें।"
+        locale={locale}
+        hindiText={
+          isRajasthani
+            ? "जे आपरे कनै कोई पुरानी परची या जांच री रिपोर्ट है, तो कैमरे सूं फोटो खींच’र अपलोड करो सा।"
+            : "यदि आपके पास कोई पुरानी पर्ची या जांच रिपोर्ट है, तो कैमरे से फोटो खींचकर अपलोड करें।"
+        }
         text="If you have any previous prescriptions or lab reports, please take a photo or upload them."
       />
 
       <Card className="border-3 border-emerald-300 shadow-xl p-6 sm:p-8 rounded-3xl bg-white dark:bg-card space-y-6 text-center">
         <div className="space-y-2">
           <span className="text-xs font-extrabold px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full inline-flex items-center gap-1">
-            <Sparkles className="h-3.5 w-3.5" /> चरण ५ • पुरानी पर्ची व जांच (Medical Records)
+            <Sparkles className="h-3.5 w-3.5" />{" "}
+            {isRajasthani ? "चरण ५ • पुरानी परची व जांच (Medical Records)" : "चरण ५ • पुरानी पर्ची व जांच (Medical Records)"}
           </span>
           <h2 className="text-2xl sm:text-3xl font-extrabold text-foreground">
-            पर्चे की फोटो खींचें या अपलोड करें
+            {isRajasthani ? "परची री फोटो खींचो या अपलोड करो सा" : "पर्चे की फोटो खींचें या अपलोड करें"}
           </h2>
           <p className="text-sm font-medium text-muted-foreground">
-            Upload old prescription, discharge slip, or blood test reports.
+            {isRajasthani
+              ? "पुरानी डाक्टरी परची, हस्पताल री छुट्टी आळी परची या खून जांच री रिपोर्ट अपलोड करो सा।"
+              : "Upload old prescription, discharge slip, or blood test reports."}
           </p>
         </div>
 

@@ -6,6 +6,9 @@ import { Volume2, VolumeX, Mic } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 
+import { speakWithIndianVoice } from "@/lib/voice/tts";
+import { toRajasthani } from "@/lib/voice/rajasthani";
+
 interface AudioPromptProps {
   text: string;
   hindiText?: string;
@@ -22,7 +25,11 @@ export function AudioPrompt({
   locale,
 }: AudioPromptProps) {
   const pathname = usePathname();
-  const isHindi = locale ? locale === "hi" : pathname.startsWith("/hi");
+  const currentLocale = locale || (pathname.startsWith("/raj") ? "raj" : pathname.startsWith("/hi") ? "hi" : "en");
+  const isRajasthani = currentLocale === "raj";
+  const isHindi = currentLocale === "hi";
+  const isRegional = isHindi || isRajasthani;
+
   const [isPlaying, setIsPlaying] = useState(false);
 
   // Cancel + reset when locale changes
@@ -31,7 +38,7 @@ export function AudioPrompt({
       window.speechSynthesis.cancel();
     }
     setIsPlaying(false);
-  }, [locale]);
+  }, [currentLocale]);
 
   // Cancel when question changes
   useEffect(() => {
@@ -51,43 +58,35 @@ export function AudioPrompt({
     }
 
     setIsPlaying(true);
-    const spokenText = isHindi ? (hindiText || text) : text;
-
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(spokenText);
-    utterance.lang = isHindi ? "hi-IN" : "en-IN";
-    utterance.rate = 0.88;
-    utterance.pitch = 1.0;
-
-    const voices = window.speechSynthesis.getVoices();
-    if (isHindi) {
-      const hVoice = voices.find(
-        (v) =>
-          v.lang === "hi-IN" ||
-          v.lang.startsWith("hi") ||
-          v.name.toLowerCase().includes("hindi") ||
-          v.name.toLowerCase().includes("swara") ||
-          v.name.toLowerCase().includes("madhur")
-      );
-      if (hVoice) utterance.voice = hVoice;
-    } else {
-      const eVoice = voices.find(
-        (v) =>
-          v.lang === "en-IN" ||
-          v.name.toLowerCase().includes("india") ||
-          v.name.toLowerCase().includes("neerja") ||
-          v.name.toLowerCase().includes("prabhat") ||
-          v.lang.startsWith("en")
-      );
-      if (eVoice) utterance.voice = eVoice;
+    let spokenText = isRegional ? (hindiText || text) : text;
+    if (isRajasthani) {
+      spokenText = toRajasthani(spokenText);
     }
 
-    utterance.onstart = () => setIsPlaying(true);
-    utterance.onend = () => setIsPlaying(false);
-    utterance.onerror = () => setIsPlaying(false);
+    const spoken = speakWithIndianVoice(
+      spokenText,
+      isRajasthani ? "raj" : isHindi ? "hi" : "en",
+      () => setIsPlaying(false),
+      () => setIsPlaying(false)
+    );
 
-    window.speechSynthesis.speak(utterance);
-  }, [isHindi, isPlaying, text, hindiText]);
+    if (!spoken) {
+      setIsPlaying(false);
+    }
+  }, [isRegional, isRajasthani, isHindi, isPlaying, text, hindiText]);
+
+  // Compute display texts
+  const primaryText = isRajasthani
+    ? toRajasthani(hindiText || text)
+    : isHindi
+    ? (hindiText || text)
+    : text;
+
+  const secondaryText = isRajasthani
+    ? (hindiText ? toRajasthani(text) : "")
+    : isHindi
+    ? (hindiText ? text : "")
+    : "";
 
   return (
     <motion.div
@@ -108,7 +107,7 @@ export function AudioPrompt({
         <button
           type="button"
           onClick={handleToggleSpeech}
-          aria-label={isPlaying ? "Stop audio" : "Play audio guidance"}
+          aria-label={isPlaying ? "Stop audio" : isRajasthani ? "आवाज में सुणो (Play Audio)" : isHindi ? "ऑडियो सुनें" : "Play audio guidance"}
           className={cn(
             "relative w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-300 focus:outline-none focus-visible:ring-4 focus-visible:ring-botanical-300",
             isPlaying
@@ -141,7 +140,13 @@ export function AudioPrompt({
       <div className="relative flex-1 min-w-0 space-y-0.5">
         <div className="editorial-label text-teal-700 dark:text-teal-400 flex items-center gap-1.5 mb-1">
           <Mic className="h-3 w-3" />
-          <span>{isHindi ? "आवाज में निर्देश" : "Audio Guidance"}</span>
+          <span>
+            {isRajasthani
+              ? "आवाज में हिदायत (राजस्थानी)"
+              : isHindi
+              ? "आवाज में निर्देश (हिंदी)"
+              : "Audio Guidance"}
+          </span>
           {isPlaying && (
             <span className="flex gap-0.5 ml-1 items-end h-3">
               {[0, 0.1, 0.2].map((delay) => (
@@ -156,20 +161,12 @@ export function AudioPrompt({
           )}
         </div>
 
-        {isHindi ? (
-          <>
-            {hindiText && (
-              <p className="text-[15px] font-bold text-foreground leading-snug line-clamp-3">
-                {hindiText}
-              </p>
-            )}
-            <p className="text-[12px] text-muted-foreground font-medium leading-relaxed line-clamp-2 mt-0.5">
-              {text}
-            </p>
-          </>
-        ) : (
-          <p className="text-[15px] font-bold text-foreground leading-snug line-clamp-3">
-            {text}
+        <p className="text-[15px] font-bold text-foreground leading-snug line-clamp-3">
+          {primaryText}
+        </p>
+        {secondaryText && (
+          <p className="text-[12px] text-muted-foreground font-medium leading-relaxed line-clamp-2 mt-0.5">
+            {secondaryText}
           </p>
         )}
       </div>

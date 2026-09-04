@@ -46,7 +46,9 @@ export default function PatientSummaryPreviewDashboardPage({
   params: { locale: string };
 }) {
   const router = useRouter();
+  const isRajasthani = locale === "raj";
   const isHindi = locale === "hi";
+  const isRegional = isHindi || isRajasthani;
   const { user } = useAuthStore();
 
   const [loading, setLoading] = useState(true);
@@ -226,7 +228,9 @@ export default function PatientSummaryPreviewDashboardPage({
     if (!previewData) return;
 
     let narrative = "";
-    if (isHindi) {
+    if (isRajasthani) {
+      narrative = `ओ आपरी दी गई जानकारी रो पूरो ब्यौरो है जो डॉक्टर साब कनै भेजीजेगो सा। आपरी मुख्य तकलीफ है: ${previewData.chiefComplaint.symptomName}। अवधि है: ${previewData.chiefComplaint.duration}। ${previewData.medications.length > 0 ? `पुरानी परची सूं ${previewData.medications.length} दवाइयां मिली है।` : ""} डॉक्टर साब कनै भेजण खातर नीचै दियोड़ो लीलो बटन दाबो सा।`;
+    } else if (isHindi) {
       narrative = `यह आपके द्वारा दी गई जानकारी का सारांश है जो डॉक्टर को भेजा जाएगा। आपकी मुख्य समस्या है: ${previewData.chiefComplaint.symptomName}। अवधि है: ${previewData.chiefComplaint.duration}। ${previewData.medications.length > 0 ? `पुराने पर्चे से ${previewData.medications.length} दवाइयां पाई गई हैं।` : ""} डॉक्टर को भेजने के लिए नीचे हरा बटन दबाएं।`;
     } else {
       narrative = `This is the summary of information that will be shared with the doctor. Your primary concern is: ${previewData.chiefComplaint.symptomName}, duration: ${previewData.chiefComplaint.duration}. ${previewData.medications.length > 0 ? `${previewData.medications.length} medications identified from previous prescription.` : ""} To send this to the doctor, please tap the green submit button below.`;
@@ -235,7 +239,7 @@ export default function PatientSummaryPreviewDashboardPage({
     setIsPlayingAudio(true);
     speakWithIndianVoice(
       narrative,
-      isHindi ? "hi" : "en",
+      isRajasthani ? "raj" : isHindi ? "hi" : "en",
       () => setIsPlayingAudio(false),
       () => setIsPlayingAudio(false)
     );

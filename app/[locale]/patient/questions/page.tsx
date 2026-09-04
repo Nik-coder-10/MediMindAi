@@ -10,6 +10,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { EngineQuestionDefinition, QuestionOption } from "@/lib/engine/types";
 import { EmergencyAlertModal } from "@/components/ui/patient/EmergencyAlertModal";
 import { speakWithIndianVoice } from "@/lib/voice/tts";
+import { toRajasthani } from "@/lib/voice/rajasthani";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/use-auth-store";
 import { SessionRecoveryStore } from "@/lib/offline/session-recovery.store";
@@ -22,44 +23,44 @@ export default function AdaptiveQuestionsFlowPage({
 }) {
   const router = useRouter();
   const { user } = useAuthStore();
-  const [sessionId, setSessionId] = useState<string>(() => {
-    if (typeof window !== "undefined") {
-      const stored = sessionStorage.getItem("ayursetu_active_session_id");
-      if (stored) return stored;
-    }
-    return "";
-  });
-  const [currentQuestion, setCurrentQuestion] = useState<EngineQuestionDefinition | null>(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const saved = sessionStorage.getItem("ayursetu_current_question");
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          if (parsed && parsed.nodeCode) return parsed;
-        }
-      } catch {}
-    }
-    return null;
-  });
+  const [mounted, setMounted] = useState(false);
+  const [sessionId, setSessionId] = useState<string>("");
+  const [currentQuestion, setCurrentQuestion] = useState<EngineQuestionDefinition | null>(null);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [isPaused, setIsPaused] = useState(false);
   const [redFlagBanner, setRedFlagBanner] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [stepNumber, setStepNumber] = useState<number>(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const savedStep = sessionStorage.getItem("ayursetu_current_step");
-        if (savedStep) return parseInt(savedStep, 10) || 1;
-      } catch {}
-    }
-    return 1;
-  });
+  const [stepNumber, setStepNumber] = useState<number>(1);
   const [playingOptionAudio, setPlayingOptionAudio] = useState<string | null>(null);
+
+  useEffect(() => {
+    setMounted(true);
+    try {
+      const stored = sessionStorage.getItem("ayursetu_active_session_id");
+      if (stored) setSessionId(stored);
+
+      const savedQ = sessionStorage.getItem("ayursetu_current_question");
+      if (savedQ) {
+        const parsed = JSON.parse(savedQ);
+        if (parsed && parsed.nodeCode) setCurrentQuestion(parsed);
+      }
+
+      const savedStep = sessionStorage.getItem("ayursetu_current_step");
+      if (savedStep) {
+        const parsedStep = parseInt(savedStep, 10);
+        if (parsedStep) setStepNumber(parsedStep);
+      }
+    } catch {}
+  }, []);
+
+  const isRajasthani = locale === "raj";
+  const isHindi = locale === "hi";
+  const isRegional = isHindi || isRajasthani;
 
   const handleSpeakOptionAudio = (
     e: React.MouseEvent,
     text: string,
-    lang: "hi" | "en",
+    lang: "hi" | "en" | "raj" | string,
     optionKey: string
   ) => {
     e.stopPropagation();
@@ -75,7 +76,7 @@ export default function AdaptiveQuestionsFlowPage({
     setPlayingOptionAudio(optionKey);
     speakWithIndianVoice(
       text,
-      lang,
+      isRajasthani ? "raj" : isHindi ? "hi" : "en",
       () => setPlayingOptionAudio(null),
       () => setPlayingOptionAudio(null)
     );
@@ -89,7 +90,7 @@ export default function AdaptiveQuestionsFlowPage({
     async function initEngine() {
       const activeId = sessionId || (typeof window !== "undefined" ? sessionStorage.getItem("ayursetu_active_session_id") : null) || "";
       const storedComplaint = typeof window !== "undefined" ? sessionStorage.getItem("ayursetu_chief_complaint") : null;
-      const complaint = storedComplaint || (locale === "hi" ? "सिरदर्द व शरीर में दर्द" : "Headache and body ache");
+      const complaint = storedComplaint || (isRegional ? "सिरदर्द व शरीर में दर्द" : "Headache and body ache");
       const urlParams = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : null;
       const intakeMode = urlParams?.get("mode") || (typeof window !== "undefined" ? sessionStorage.getItem("ayursetu_intake_mode") : null) || "AYURVEDA";
       const cacheKey = `${activeId}_${complaint}_${intakeMode}_${locale}`;
@@ -133,7 +134,7 @@ export default function AdaptiveQuestionsFlowPage({
             body: JSON.stringify({
               sessionId: activeId || undefined,
               chiefComplaint: complaint,
-              language: locale === "hi" ? "hi" : "en",
+              language: isRegional ? "hi" : "en",
               intakeMode: intakeMode,
             }),
           });
@@ -346,7 +347,7 @@ export default function AdaptiveQuestionsFlowPage({
         />
       )}
 
-      {!currentQuestion ? (
+      {!mounted || !currentQuestion ? (
         <div className="clay-white rounded-3xl p-12 text-center space-y-4">
           <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto" />
           <h3 className="text-base font-extrabold text-foreground">
@@ -397,7 +398,16 @@ export default function AdaptiveQuestionsFlowPage({
 
               {/* Question text */}
               <div className="px-6 py-6 text-center space-y-2">
-                {locale === "hi" ? (
+                {isRajasthani ? (
+                  <>
+                    <h2 className="text-[22px] sm:text-[26px] font-black text-foreground leading-snug tracking-tight">
+                      {toRajasthani(currentQuestion.questionTextHindi || currentQuestion.questionText)}
+                    </h2>
+                    <p className="text-[13px] text-muted-foreground font-medium">
+                      {currentQuestion.questionText}
+                    </p>
+                  </>
+                ) : isHindi ? (
                   <>
                     <h2 className="text-[22px] sm:text-[26px] font-black text-foreground leading-snug tracking-tight">
                       {currentQuestion.questionTextHindi}
@@ -419,8 +429,12 @@ export default function AdaptiveQuestionsFlowPage({
                   {currentQuestion.options?.map((opt) => {
                     const isSelected = selectedAnswer === opt.value;
                     const isPlayingThis = playingOptionAudio === opt.value;
-                    const activeLabel = locale === "hi" ? opt.labelHi : opt.labelEn;
-                    const subtitle = locale === "hi" ? opt.labelEn : "";
+                    const activeLabel = isRajasthani
+                      ? toRajasthani(opt.labelHi || opt.labelEn)
+                      : isHindi
+                      ? opt.labelHi
+                      : opt.labelEn;
+                    const subtitle = isRegional ? opt.labelEn : "";
 
                     return (
                       <motion.div
@@ -457,7 +471,7 @@ export default function AdaptiveQuestionsFlowPage({
                               handleSpeakOptionAudio(
                                 e,
                                 activeLabel,
-                                locale === "hi" ? "hi" : "en",
+                                isRajasthani ? "raj" : isHindi ? "hi" : "en",
                                 opt.value
                               )
                             }
@@ -497,7 +511,7 @@ export default function AdaptiveQuestionsFlowPage({
                     className="text-[12px] font-bold text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 min-h-[40px] px-3.5 py-2 rounded-xl border border-border hover:border-indigo-300 bg-background hover:bg-indigo-50/50 dark:hover:bg-indigo-950/20 transition-all"
                   >
                     <HelpCircle className="h-3.5 w-3.5" />
-                    <span>{locale === "hi" ? "स्पष्ट नहीं / छोड़ें" : "Not sure / Skip"}</span>
+                    <span>{isRajasthani ? "साफ कोनी / छोड़ो सा" : isHindi ? "स्पष्ट नहीं / छोड़ें" : "Not sure / Skip"}</span>
                   </button>
 
                   <button
@@ -505,8 +519,8 @@ export default function AdaptiveQuestionsFlowPage({
                     onClick={(e) =>
                       handleSpeakOptionAudio(
                         e,
-                        locale === "hi" ? "स्पष्ट नहीं है, छोड़ें" : "Not sure, skip question",
-                        locale === "hi" ? "hi" : "en",
+                        isRajasthani ? "साफ कोनी है, सवाल छोड़ो सा" : isHindi ? "स्पष्ट नहीं है, छोड़ें" : "Not sure, skip question",
+                        isRajasthani ? "raj" : isHindi ? "hi" : "en",
                         "skip-opt"
                       )
                     }
@@ -530,7 +544,7 @@ export default function AdaptiveQuestionsFlowPage({
           icon={<ArrowLeft className="h-5 w-5" />}
           onClick={() => router.back()}
         >
-          {locale === "hi" ? "पीछे" : "Back"}
+          {isRajasthani ? "पाछै" : isHindi ? "पीछे" : "Back"}
         </ExtraLargeButton>
 
         <ExtraLargeButton
@@ -541,8 +555,8 @@ export default function AdaptiveQuestionsFlowPage({
           onClick={handleNextQuestion}
         >
           {loading
-            ? locale === "hi" ? "सहेज रहे हैं..." : "Saving..."
-            : locale === "hi" ? "अगला प्रश्न" : "Next Question"}
+            ? isRajasthani ? "सहेज रह्या हां..." : isHindi ? "सहेज रहे हैं..." : "Saving..."
+            : isRajasthani ? "आगलो सवाल" : isHindi ? "अगला प्रश्न" : "Next Question"}
         </ExtraLargeButton>
       </div>
     </div>
