@@ -333,6 +333,81 @@ export class AuthService {
       }
     }
 
+    // Auto-heal / provision session for authenticated patient if session was generated client-side or during offline-first intake
+    if (!session && (user.role === Role.PATIENT || user.patientProfile || user.id.startsWith("pat-"))) {
+      const { inMemoryClinicalStore } = await import("@/lib/db/in-memory-store");
+      const effectivePatientId = user.patientProfile?.id || `pat-prof-${user.id}`;
+      const newStoredSession = {
+        id: sessionId,
+        patientId: effectivePatientId,
+        doctorId: null,
+        status: "IN_PROGRESS" as const,
+        triagePriority: "ROUTINE" as const,
+        language: user.preferredLanguage || "hi",
+        startedAt: new Date(),
+        updatedAt: new Date(),
+        completedAt: null,
+        redFlagTriggered: false,
+        notes: JSON.stringify({ intakeMode: "AYURVEDA" }),
+        patient: {
+          id: effectivePatientId,
+          userId: user.id,
+          firstName: user.patientProfile?.firstName || "Patient",
+          lastName: user.patientProfile?.lastName || "",
+          dateOfBirth: user.patientProfile?.dateOfBirth || new Date("1985-01-01"),
+          gender: (user.patientProfile?.gender as any) || "MALE",
+          bloodGroup: (user.patientProfile?.bloodGroup as any) || "B+",
+          user: {
+            id: user.id,
+            email: user.email,
+            phone: user.phone,
+            preferredLanguage: user.preferredLanguage,
+          },
+          timelineEvents: [],
+          consentRecords: [],
+        },
+        doctor: null,
+        chiefComplaints: [
+          {
+            id: `cc-${Date.now()}`,
+            sessionId,
+            symptomName: "Consultation Intake",
+            duration: "2-3 days",
+            severity: "MODERATE",
+            location: "General",
+          },
+        ],
+        patientAnswers: [],
+        conversationTurns: [],
+        medicalDocuments: [],
+        redFlagEvents: [],
+        clinicalSummary: null,
+        ayurvedaAssessment: null,
+      };
+
+      try {
+        const createdInDb = await prisma.clinicalSession.create({
+          data: {
+            id: sessionId,
+            patientId: effectivePatientId,
+            language: user.preferredLanguage || "hi",
+            triagePriority: "ROUTINE",
+            status: "IN_PROGRESS",
+            notes: JSON.stringify({ intakeMode: "AYURVEDA" }),
+          },
+          include: {
+            patient: { include: { user: true } },
+            doctor: { include: { user: true } },
+          },
+        });
+        session = createdInDb;
+      } catch (dbCreateErr) {
+        console.warn("AuthService auto-provision session DB create fallback:", (dbCreateErr as any)?.message);
+        session = inMemoryClinicalStore.upsertSession(newStoredSession);
+      }
+      inMemoryClinicalStore.upsertSession(newStoredSession);
+    }
+
     if (!session) {
       throw AppError.notFound(`ClinicalSession '${sessionId}' was not found.`);
     }

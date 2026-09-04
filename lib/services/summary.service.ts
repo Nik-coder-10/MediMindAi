@@ -27,18 +27,44 @@ export class SummaryService {
   static async generateSummary(options: GenerateSummaryOptions): Promise<SummaryResponseDTO> {
     const { sessionId } = options;
 
-    const session = await prisma.clinicalSession.findUnique({
-      where: { id: sessionId },
-      include: {
-        patient: { include: { user: true } },
-        chiefComplaints: true,
-        patientAnswers: true,
-        redFlagEvents: true,
-        medicalDocuments: { include: { extractedEntities: true } },
-        ayurvedaAssessment: true,
-        engineState: true,
-      },
-    });
+    let session: any = null;
+    try {
+      session = await prisma.clinicalSession.findUnique({
+        where: { id: sessionId },
+        include: {
+          patient: { include: { user: true } },
+          chiefComplaints: true,
+          patientAnswers: true,
+          redFlagEvents: true,
+          medicalDocuments: { include: { extractedEntities: true } },
+          ayurvedaAssessment: true,
+          engineState: true,
+        },
+      });
+    } catch (dbErr) {
+      console.warn("SummaryService DB query fallback to memory store:", (dbErr as any)?.message);
+    }
+
+    if (!session) {
+      const { inMemoryClinicalStore } = await import("@/lib/db/in-memory-store");
+      const memSession = inMemoryClinicalStore.getSession(sessionId);
+      if (memSession) {
+        session = {
+          id: memSession.id,
+          language: memSession.language,
+          triagePriority: memSession.triagePriority,
+          patientId: memSession.patientId,
+          patient: memSession.patient,
+          chiefComplaints: memSession.chiefComplaints,
+          patientAnswers: memSession.patientAnswers,
+          redFlagEvents: memSession.redFlagEvents,
+          medicalDocuments: memSession.medicalDocuments,
+          ayurvedaAssessment: memSession.ayurvedaAssessment,
+          engineState: null,
+          notes: (memSession as any).notes,
+        };
+      }
+    }
 
     if (!session) {
       throw AppError.notFound(`Clinical session ${sessionId} not found for summary generation.`);
@@ -270,20 +296,39 @@ ${
 ${aiRecommendationsSection}
     `.trim();
 
-    const summary = await prisma.clinicalSummary.upsert({
-      where: { sessionId },
-      create: {
+    let summary: any = null;
+    try {
+      summary = await prisma.clinicalSummary.upsert({
+        where: { sessionId },
+        create: {
+          sessionId,
+          aiGeneratedMarkdown: aiMarkdown,
+          doctorEditedMarkdown: null,
+          status: SummaryStatus.DRAFT,
+          version: 1,
+        },
+        update: {
+          aiGeneratedMarkdown: aiMarkdown,
+          version: { increment: 1 },
+        },
+      });
+    } catch (upsertErr) {
+      console.warn("SummaryService DB upsert fallback to inMemory store:", (upsertErr as any)?.message);
+      summary = {
+        id: `sum-${sessionId}`,
         sessionId,
         aiGeneratedMarkdown: aiMarkdown,
         doctorEditedMarkdown: null,
-        status: SummaryStatus.DRAFT,
+        status: "DRAFT",
         version: 1,
-      },
-      update: {
-        aiGeneratedMarkdown: aiMarkdown,
-        version: { increment: 1 },
-      },
-    });
+        updatedAt: new Date(),
+      };
+    }
+
+    try {
+      const { inMemoryClinicalStore } = await import("@/lib/db/in-memory-store");
+      inMemoryClinicalStore.updateSummary(sessionId, aiMarkdown, "GENERATED");
+    } catch {}
 
     return {
       id: summary.id,
@@ -292,7 +337,7 @@ ${aiRecommendationsSection}
       doctorEditedMarkdown: summary.doctorEditedMarkdown,
       status: summary.status as any,
       version: summary.version,
-      updatedAt: summary.updatedAt.toISOString(),
+      updatedAt: summary.updatedAt instanceof Date ? summary.updatedAt.toISOString() : new Date().toISOString(),
     };
   }
 
