@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ProgressStepper } from "@/components/ui/patient/ProgressStepper";
 import { AudioPrompt } from "@/components/ui/patient/AudioPrompt";
@@ -42,6 +42,17 @@ export default function PatientDocumentsScanPage({
   const [extractedEntities, setExtractedEntities] = useState<ExtractedEntitiesResult | null>(null);
 
   const isHindi = locale === "hi";
+
+  // Escape key listener to easily dismiss modal
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && showCameraModal) {
+        setShowCameraModal(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [showCameraModal]);
 
   // Process File through OCR endpoint
   const processUploadedFile = async (file: File, previewUrl?: string) => {
@@ -282,9 +293,25 @@ export default function PatientDocumentsScanPage({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-6"
+              onClick={(e) => {
+                if (e.target === e.currentTarget) {
+                  setShowCameraModal(false);
+                }
+              }}
+              className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 overflow-y-auto"
             >
-              <div className="w-full max-w-lg">
+              {/* Floating Escape / Close Button on Top Right */}
+              <button
+                type="button"
+                onClick={() => setShowCameraModal(false)}
+                className="fixed top-4 right-4 z-[60] p-2.5 rounded-full bg-white/15 hover:bg-rose-600/90 text-white border border-white/30 backdrop-blur-md transition-all shadow-xl flex items-center gap-1.5 text-xs font-bold"
+                aria-label="Close modal"
+              >
+                <span className="hidden sm:inline-block">{isHindi ? "बंद करें (Esc)" : "Close (Esc)"}</span>
+                <span className="text-base leading-none">✕</span>
+              </button>
+
+              <div className="w-full max-w-lg my-auto" onClick={(e) => e.stopPropagation()}>
                 <DocumentCameraCapture
                   isHindi={isHindi}
                   onCaptureComplete={handleCameraCapture}

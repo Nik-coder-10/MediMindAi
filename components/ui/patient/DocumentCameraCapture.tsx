@@ -258,21 +258,34 @@ export function DocumentCameraCapture({
       {/* MODE 1: LIVE CAMERA VIEW WITH RECTANGLE GUIDANCE OVERLAY */}
       {mode === "CAMERA" && (
         <div className="relative rounded-3xl overflow-hidden bg-black border-4 border-emerald-400 shadow-2xl">
-          {/* Top Camera Guidance Prompt */}
+          {/* Top Camera Guidance Prompt & Controls */}
           <div className="absolute top-3 left-0 right-0 z-20 flex items-center justify-between px-4">
             <div className="bg-black/70 backdrop-blur-md text-white text-xs font-black px-3 py-1.5 rounded-full border border-white/20 flex items-center gap-1.5">
               <Sparkles className="h-3.5 w-3.5 text-emerald-400" />
               <span>{isHindi ? "पर्चे को फ्रेम के अंदर रखें" : "Place prescription inside frame"}</span>
             </div>
 
-            <button
-              type="button"
-              onClick={toggleCameraFacing}
-              className="p-2 rounded-full bg-black/60 backdrop-blur-md text-white hover:bg-black/80 border border-white/20 transition-all"
-              title="Switch Camera"
-            >
-              <RefreshCw className="h-4 w-4" />
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={toggleCameraFacing}
+                className="p-2 rounded-full bg-black/60 backdrop-blur-md text-white hover:bg-black/80 border border-white/20 transition-all"
+                title="Switch Camera"
+              >
+                <RefreshCw className="h-4 w-4" />
+              </button>
+              {onCancel && (
+                <button
+                  type="button"
+                  onClick={onCancel}
+                  className="p-2 rounded-full bg-black/70 hover:bg-rose-600/90 text-white border border-white/30 transition-all shadow-md"
+                  title={isHindi ? "बंद करें (Close)" : "Close"}
+                  aria-label="Close camera"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Live Video Feed */}
@@ -348,24 +361,37 @@ export function DocumentCameraCapture({
 
       {/* MODE 2: PREVIEW + IMAGE ENHANCEMENT CONTROLS */}
       {mode === "PREVIEW" && (
-        <div className="space-y-4 rounded-3xl border-3 border-emerald-300 p-4 sm:p-6 bg-card shadow-xl">
-          <div className="flex items-center justify-between border-b pb-3">
-            <div className="flex items-center gap-2">
-              <span className="p-1.5 bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 rounded-lg">
+        <div className="space-y-4 rounded-3xl border-3 border-emerald-300 p-4 sm:p-6 bg-card shadow-xl max-h-[90vh] overflow-y-auto">
+          <div className="flex items-center justify-between border-b pb-3 gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="p-1.5 bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 rounded-lg shrink-0">
                 <Sparkles className="h-4 w-4" />
               </span>
-              <div>
-                <h4 className="text-sm font-extrabold text-foreground">
+              <div className="truncate">
+                <h4 className="text-sm font-extrabold text-foreground truncate">
                   {isHindi ? "स्कैन व छवि स्पष्टता (Image Enhancement)" : "Scan & Clarity Enhancement"}
                 </h4>
-                <p className="text-2xs text-muted-foreground font-medium">
+                <p className="text-2xs text-muted-foreground font-medium truncate">
                   {isHindi ? "लिखावट स्पष्ट करने के लिए फ़िल्टर चुनें" : "Select filter to optimize OCR accuracy"}
                 </p>
               </div>
             </div>
-            <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
-              पूर्वावलोकन (Preview)
-            </span>
+            <div className="flex items-center gap-2 shrink-0">
+              <span className="hidden sm:inline-block text-xs font-black px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                पूर्वावलोकन (Preview)
+              </span>
+              {onCancel && (
+                <button
+                  type="button"
+                  onClick={onCancel}
+                  className="p-1.5 rounded-full bg-muted hover:bg-rose-100 hover:text-rose-700 text-foreground border border-border transition-all flex items-center justify-center"
+                  title={isHindi ? "बंद करें (Close)" : "Close"}
+                  aria-label="Close preview"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Image Display */}
@@ -453,21 +479,34 @@ export function DocumentCameraCapture({
             </div>
           </div>
 
-          {/* Action Buttons: Retake vs Confirm */}
+          {/* Action Buttons: Retake vs Confirm vs Cancel */}
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
-            <button
-              type="button"
-              onClick={handleRetake}
-              className="w-full sm:w-auto min-h-[48px] px-6 rounded-2xl border-2 border-border hover:bg-muted font-bold text-xs flex items-center justify-center gap-2"
-            >
-              <RotateCcw className="h-4 w-4" />
-              <span>{isHindi ? "दोबारा फोटो लें (Retake)" : "Retake Photo"}</span>
-            </button>
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <button
+                type="button"
+                onClick={handleRetake}
+                className="flex-1 sm:flex-none min-h-[48px] px-5 rounded-2xl border-2 border-border hover:bg-muted font-bold text-xs flex items-center justify-center gap-2 transition-all"
+              >
+                <RotateCcw className="h-4 w-4" />
+                <span>{isHindi ? "दोबारा फोटो लें (Retake)" : "Retake Photo"}</span>
+              </button>
+
+              {onCancel && (
+                <button
+                  type="button"
+                  onClick={onCancel}
+                  className="flex-1 sm:flex-none min-h-[48px] px-5 rounded-2xl border-2 border-rose-200 dark:border-rose-900/50 hover:bg-rose-50 dark:hover:bg-rose-950/30 text-rose-700 dark:text-rose-400 font-bold text-xs flex items-center justify-center gap-1.5 transition-all"
+                >
+                  <X className="h-4 w-4" />
+                  <span>{isHindi ? "रद्द करें (Cancel)" : "Cancel"}</span>
+                </button>
+              )}
+            </div>
 
             <button
               type="button"
               onClick={handleConfirmAndUse}
-              className="w-full sm:w-auto min-h-[52px] px-8 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-sm flex items-center justify-center gap-2 shadow-lg shadow-emerald-700/20"
+              className="w-full sm:w-auto min-h-[52px] px-8 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-sm flex items-center justify-center gap-2 shadow-lg shadow-emerald-700/20 transition-all"
             >
               <Check className="h-5 w-5" />
               <span>{isHindi ? "इस फोटो का उपयोग करें (Use Photo)" : "Use This Photo"}</span>
@@ -478,7 +517,19 @@ export function DocumentCameraCapture({
 
       {/* MODE 3: FALLBACK FILE UPLOADER */}
       {mode === "FALLBACK_UPLOAD" && (
-        <div className="space-y-4 p-6 rounded-3xl border-3 border-emerald-300 bg-card text-center shadow-xl">
+        <div className="space-y-4 p-6 rounded-3xl border-3 border-emerald-300 bg-card text-center shadow-xl relative">
+          {onCancel && (
+            <button
+              type="button"
+              onClick={onCancel}
+              className="absolute top-4 right-4 p-2 rounded-full bg-muted hover:bg-rose-100 hover:text-rose-700 text-foreground border border-border transition-all"
+              title={isHindi ? "बंद करें (Close)" : "Close"}
+              aria-label="Close upload"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
+
           <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center mx-auto">
             <UploadCloud className="h-8 w-8" />
           </div>
@@ -504,16 +555,28 @@ export function DocumentCameraCapture({
             </div>
           </label>
 
-          <button
-            type="button"
-            onClick={() => {
-              setMode("CAMERA");
-              startCamera();
-            }}
-            className="text-xs font-bold text-emerald-700 underline pt-2 block mx-auto"
-          >
-            {isHindi ? "कैमरा दोबारा चालू करने का प्रयास करें" : "Try opening camera again"}
-          </button>
+          <div className="flex items-center justify-center gap-4 pt-2">
+            <button
+              type="button"
+              onClick={() => {
+                setMode("CAMERA");
+                startCamera();
+              }}
+              className="text-xs font-bold text-emerald-700 hover:underline"
+            >
+              {isHindi ? "कैमरा दोबारा चालू करने का प्रयास करें" : "Try opening camera again"}
+            </button>
+
+            {onCancel && (
+              <button
+                type="button"
+                onClick={onCancel}
+                className="text-xs font-bold text-muted-foreground hover:text-rose-600 hover:underline"
+              >
+                {isHindi ? "रद्द करें" : "Cancel"}
+              </button>
+            )}
+          </div>
         </div>
       )}
     </div>
