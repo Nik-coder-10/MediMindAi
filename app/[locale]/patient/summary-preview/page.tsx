@@ -313,7 +313,6 @@ export default function PatientSummaryPreviewDashboardPage({
       const fallbackToken = previewData.tokenNumber || `#AYUR-${(activeSessionId || "104").slice(-4).toUpperCase()}`;
       setGeneratedToken(fallbackToken);
       setSubmittedSuccess(true);
-    }
     } finally {
       setSubmitting(false);
     }
