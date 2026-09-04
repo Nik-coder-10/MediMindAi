@@ -122,39 +122,70 @@ export default function AdaptiveQuestionsFlowPage({
         }
 
         const activeUserId = user?.id || (typeof window !== "undefined" ? localStorage.getItem("ayursetu_user_id") : null) || "pat-104-demo";
-        const res = await fetch("/api/patient/session/start", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-user-id": activeUserId,
-          },
-          body: JSON.stringify({
-            sessionId: activeId || undefined,
-            chiefComplaint: complaint,
-            language: locale === "hi" ? "hi" : "en",
-            intakeMode: intakeMode,
-          }),
-        });
-        const data = await res.json();
-        if (data.data?.sessionId) {
-          const newSessionId = data.data.sessionId;
-          initializedSessionRef.current = `${newSessionId}_${complaint}_${intakeMode}_${locale}`;
-          setSessionId(newSessionId);
-          if (typeof window !== "undefined") {
-            sessionStorage.setItem("ayursetu_active_session_id", newSessionId);
+        let receivedQuestion: EngineQuestionDefinition | null = null;
+        try {
+          const res = await fetch("/api/patient/session/start", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-user-id": activeUserId,
+            },
+            body: JSON.stringify({
+              sessionId: activeId || undefined,
+              chiefComplaint: complaint,
+              language: locale === "hi" ? "hi" : "en",
+              intakeMode: intakeMode,
+            }),
+          });
+          const data = await res.json();
+          if (data.data?.sessionId) {
+            const newSessionId = data.data.sessionId;
+            initializedSessionRef.current = `${newSessionId}_${complaint}_${intakeMode}_${locale}`;
+            setSessionId(newSessionId);
+            if (typeof window !== "undefined") {
+              sessionStorage.setItem("ayursetu_active_session_id", newSessionId);
+            }
+          } else {
+            initializedSessionRef.current = cacheKey;
           }
-        } else {
-          initializedSessionRef.current = cacheKey;
+
+          if (data.data?.firstQuestion) {
+            receivedQuestion = data.data.firstQuestion;
+          }
+        } catch (fetchErr) {
+          console.warn("Session start network fallback triggered:", fetchErr);
         }
 
-        if (data.data?.firstQuestion) {
-          setCurrentQuestion(data.data.firstQuestion);
+        if (receivedQuestion) {
+          setCurrentQuestion(receivedQuestion);
           if (typeof window !== "undefined") {
-            sessionStorage.setItem("ayursetu_current_question", JSON.stringify(data.data.firstQuestion));
+            sessionStorage.setItem("ayursetu_current_question", JSON.stringify(receivedQuestion));
+          }
+        } else {
+          // Robust client-side fallback question to ensure the patient is never stranded on the loader
+          const isHindi = locale === "hi";
+          const fallbackQuestion: EngineQuestionDefinition = {
+            nodeCode: "FALLBACK_SEVERITY",
+            chiefComplaintCategory: "GENERAL",
+            clinicalDomain: "SOCRATES_SEVERITY",
+            questionText: `How severe is your ${complaint.toLowerCase()} right now on a scale of 1 to 10?`,
+            questionTextHindi: `आपकी समस्या (${complaint}) इस समय 1 से 10 के पैमाने पर कितनी तीव्र है?`,
+            questionType: "SINGLE_CHOICE",
+            options: [
+              { value: "MILD", labelHi: "हल्की (1 - 3) - Mild", labelEn: "Mild (1 - 3)" },
+              { value: "MODERATE", labelHi: "मध्यम (4 - 6) - Moderate", labelEn: "Moderate (4 - 6)" },
+              { value: "SEVERE", labelHi: "तीव्र (7 - 8) - Severe", labelEn: "Severe (7 - 8)" },
+              { value: "VERY_SEVERE", labelHi: "अत्यधिक तीव्र (9 - 10) - Very Severe", labelEn: "Very Severe (9 - 10)" },
+            ],
+            nextRules: [],
+          };
+          setCurrentQuestion(fallbackQuestion);
+          if (typeof window !== "undefined") {
+            sessionStorage.setItem("ayursetu_current_question", JSON.stringify(fallbackQuestion));
           }
         }
-      } catch {
-        // Fallback default node stays in state
+      } catch (err) {
+        console.error("Critical question init error:", err);
       }
     }
 

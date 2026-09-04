@@ -36,10 +36,16 @@ export class AuthService {
 
     // 1. Handle user ID header from browser store or test runner
     if (testUserId) {
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(testUserId);
       try {
         const user = await prisma.user.findFirst({
           where: {
-            OR: [{ id: testUserId }, { supabaseUserId: testUserId }, { email: testUserId }, { phone: testUserId }],
+            OR: [
+              ...(isUuid ? [{ id: testUserId }] : []),
+              { supabaseUserId: testUserId },
+              { email: testUserId },
+              { phone: testUserId },
+            ],
             isActive: true,
             deletedAt: null,
           },
