@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Noto_Sans_Devanagari } from "next/font/google";
 import { Providers } from "@/components/shared/Providers";
 import { Navbar } from "@/components/shared/Navbar";
+import { AyurSetuLogo } from "@/components/shared/AyurSetuLogo";
 import "@/app/globals.css";
 
 const inter = Inter({
@@ -42,9 +43,13 @@ export default function RootLayout({
 
             {/* Premium Footer */}
             <footer className="glass-panel border-t border-white/40 dark:border-white/06 py-5">
-              <div className="container flex flex-col sm:flex-row items-center justify-between gap-2 text-center sm:text-left">
-                <div className="text-[11px] text-muted-foreground font-medium">
-                  Ministry of Ayush / All India Institute of Ayurveda (AIIA) · SIH 2026 Problem ID 26047
+              <div className="container flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
+                <div className="flex items-center gap-3">
+                  <AyurSetuLogo size="sm" />
+                  <div className="text-[11px] text-muted-foreground font-medium leading-tight">
+                    <span className="font-bold text-foreground">AyurSetu</span> · A MediMindAI Project
+                    <div className="text-[10px] text-muted-foreground/80">Ministry of Ayush / AIIA Digital Initiative</div>
+                  </div>
                 </div>
                 <div className="text-[10px] text-muted-foreground font-semibold">
                   WCAG 2.2 AA Compliant · ABDM &amp; Ayush FHIR Ready · DPDP Secured

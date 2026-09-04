@@ -13,6 +13,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { AyurSetuLogo } from "@/components/shared/AyurSetuLogo";
 
 import { speakWithIndianVoice } from "@/lib/voice/tts";
 import { Volume2, VolumeX } from "lucide-react";
@@ -115,6 +116,9 @@ export default function PatientLauncherPage({
 
       {/* Header */}
       <div className="text-center space-y-3">
+        <div className="flex justify-center">
+          <AyurSetuLogo size="md" />
+        </div>
         <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full gov-badge text-[11px] font-black uppercase tracking-wider text-botanical-800 dark:text-botanical-300 border border-botanical-200/60 dark:border-botanical-800/40 shadow-2xs">
           <Sparkles className="h-3.5 w-3.5 text-botanical-600" />
           SIH 2026 · {isHindi ? "अखिल भारतीय आयुर्वेद संस्थान (AIIA)" : "All India Institute of Ayurveda (AIIA)"}

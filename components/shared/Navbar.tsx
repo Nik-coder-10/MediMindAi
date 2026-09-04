@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { useAuthStore } from "@/stores/use-auth-store";
 import { motion } from "framer-motion";
-import { cn } from "@/lib/utils";
+import Image from "next/image";
 import { DoctorNotificationFeed } from "@/components/ui/clinical/DoctorNotificationFeed";
 
 export function Navbar({ locale }: { locale: string }) {
@@ -75,15 +75,22 @@ export function Navbar({ locale }: { locale: string }) {
             className="flex items-center gap-2.5 group"
             aria-label="AyurSetu home"
           >
-            <div className="w-8 h-8 rounded-xl bg-gradient-botanical flex items-center justify-center shadow-sm group-hover:shadow-botanical-glow transition-all duration-300">
-              <Activity className="h-4 w-4 text-white" strokeWidth={2.5} />
+            <div className="w-8 h-8 rounded-xl overflow-hidden shadow-xs border border-botanical-200/80 dark:border-botanical-700/50 group-hover:shadow-botanical-glow transition-all duration-300 bg-white shrink-0">
+              <Image
+                src="/images/ayursetu-logo.jpg"
+                alt="AyurSetu Logo"
+                width={32}
+                height={32}
+                className="w-full h-full object-cover"
+                priority
+              />
             </div>
             <div className="flex flex-col leading-none">
               <span className="text-[15px] font-black tracking-tight text-foreground group-hover:text-botanical-700 dark:group-hover:text-botanical-400 transition-colors">
                 AyurSetu
               </span>
-              <span className="text-[9px] font-extrabold text-muted-foreground uppercase tracking-[0.14em]">
-                {isHindi ? "आयुष मंत्रालय" : "Ministry of Ayush"}
+              <span className="text-[8.5px] font-extrabold text-muted-foreground uppercase tracking-[0.1em]">
+                {isHindi ? "आयुष मंत्रालय • MediMindAI" : "A MediMindAI Project"}
               </span>
             </div>
           </Link>

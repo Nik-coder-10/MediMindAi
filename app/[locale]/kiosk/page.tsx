@@ -16,6 +16,7 @@ import { useRouter } from "next/navigation";
 import { Play, RotateCcw, UserPlus, Clock, ShieldCheck, Hospital } from "lucide-react";
 import { SessionRecoveryStore, DurableIntakeSnapshot } from "@/lib/offline/session-recovery.store";
 import { OfflineBannerSync } from "@/components/ui/patient/OfflineBannerSync";
+import { AyurSetuLogo } from "@/components/shared/AyurSetuLogo";
 
 const KIOSK_INACTIVITY_TIMEOUT_MS = 10 * 60 * 1000; // 10 min
 
@@ -162,8 +163,8 @@ export default function KioskLauncherPage({
 
       {/* Header */}
       <div className="text-center mb-10 space-y-2 z-10">
-        <div className="w-20 h-20 mx-auto rounded-3xl bg-emerald-600 flex items-center justify-center shadow-xl shadow-emerald-900/40 mb-4">
-          <Hospital className="h-10 w-10 text-white" />
+        <div className="flex justify-center mb-4">
+          <AyurSetuLogo size="xl" className="justify-center" />
         </div>
         <h1 className="text-3xl sm:text-4xl font-black text-white">AyurSetu</h1>
         <p className="text-base font-bold text-emerald-300">

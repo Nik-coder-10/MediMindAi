@@ -6,6 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { ExtraLargeButton } from "@/components/ui/patient/ExtraLargeButton";
 import { MedicalTimelineView } from "@/components/ui/clinical/MedicalTimelineView";
 import { speakWithIndianVoice } from "@/lib/voice/tts";
+import { AyurSetuLogo } from "@/components/shared/AyurSetuLogo";
 import {
   Stethoscope,
   AlertTriangle,
@@ -1705,8 +1706,8 @@ export default function IndividualDoctorCaseViewPage({
         <div className="border-b-2 border-emerald-800 pb-3">
           <div className="flex justify-between items-start">
             <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <span className="text-3xl">🌿</span>
+              <div className="flex items-center gap-3">
+                <AyurSetuLogo size="md" />
                 <div>
                   <h1 className="text-xl font-black tracking-tight text-emerald-950 uppercase">
                     {doctorAuth.hospital ? doctorAuth.hospital : "AYURSETU CLINICAL HEALTHCARE DESK"}

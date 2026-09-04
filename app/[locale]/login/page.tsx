@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Stethoscope, User, Shield, KeyRound, Phone, Sparkles, CheckCircle2, ArrowRight, Lock, Building, FileCheck } from "lucide-react";
 import { useAuthStore } from "@/stores/use-auth-store";
+import { AyurSetuLogo } from "@/components/shared/AyurSetuLogo";
 
 export default function LoginPage({
   params: { locale },
@@ -132,9 +133,12 @@ export default function LoginPage({
   return (
     <div className="container max-w-2xl py-12 space-y-8">
       {/* Header */}
-      <div className="text-center space-y-2">
+      <div className="text-center space-y-3">
+        <div className="flex justify-center">
+          <AyurSetuLogo size="lg" />
+        </div>
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300">
-          <span>🌿</span> Ministry of Ayush & AIIA Digital Portal
+          <span>🌿</span> Ministry of Ayush & AIIA Digital Portal · A MediMindAI Project
         </div>
         <h1 className="text-3xl font-extrabold tracking-tight text-foreground">AyurSetu Secure Login</h1>
         <p className="text-sm text-muted-foreground">Select your portal to proceed with ABDM-compliant clinical access.</p>
