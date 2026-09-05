@@ -23,7 +23,8 @@ export async function POST(req: NextRequest) {
       return apiError({ status: 400, message: "sessionId is required" });
     }
 
-    const token = tokenNumber || `#AYUR-${sessionId.replace(/-/g, "").slice(0, 4).toUpperCase()}`;
+    const { formatAyurToken } = await import("@/lib/utils");
+    const token = tokenNumber || formatAyurToken(sessionId);
 
     // 1. Create a CRITICAL real-time notification for doctors
     const notification = await NotificationService.notify({

@@ -8,6 +8,8 @@ import { AppError } from "@/lib/api/errors";
 import { SessionStatus } from "@prisma/client";
 import { AyurvedaAssessmentService } from "@/lib/services/ayurveda.service";
 
+import { formatAyurToken } from "@/lib/utils";
+
 export const dynamic = "force-dynamic";
 
 const submitSessionSchema = z.object({
@@ -17,6 +19,24 @@ const submitSessionSchema = z.object({
   severity: z.string().optional(),
   location: z.string().optional(),
   intakeMode: z.enum(["AYURVEDA", "GENERAL"]).optional(),
+  answers: z
+    .array(
+      z.object({
+        nodeCode: z.string(),
+        questionText: z.string().optional(),
+        questionTextHindi: z.string().nullable().optional(),
+        answerValue: z.any(),
+      })
+    )
+    .optional(),
+  documents: z
+    .array(
+      z.object({
+        fileName: z.string(),
+        type: z.string().optional(),
+      })
+    )
+    .optional(),
 });
 
 /**
@@ -131,15 +151,76 @@ export async function POST(req: NextRequest) {
     // IDEMPOTENCY GUARD: If already submitted, return existing token without re-processing.
     // This prevents duplicate doctor notifications and duplicate clinical sessions.
     if (session.status === "WAITING_FOR_DOCTOR" || session.status === "COMPLETED") {
-      const shortToken = session.id.replace(/-/g, "").slice(0, 4).toUpperCase();
+      const tokenNumber = formatAyurToken(session.id);
       return apiSuccess({
         sessionId: session.id,
-        tokenNumber: `#AYUR-${shortToken}`,
+        tokenNumber,
         status: session.status,
         summary: null,
         message: "Case already submitted. Token returned without reprocessing.",
         idempotent: true,
       });
+    }
+
+    // Persist any client-provided answers (e.g. from intake recovery store or client state)
+    if (validated.answers && validated.answers.length > 0) {
+      for (const ans of validated.answers) {
+        try {
+          inMemoryClinicalStore.addAnswer(session.id, {
+            nodeCode: ans.nodeCode,
+            answerValue: ans.answerValue,
+            questionNode: {
+              nodeCode: ans.nodeCode,
+              questionText: ans.questionText || ans.nodeCode,
+              questionTextHindi: ans.questionTextHindi || null,
+              clinicalDomain: "GENERAL",
+            },
+          });
+          try {
+            const existingAnswer = await prisma.patientAnswer.findFirst({
+              where: {
+                sessionId: session.id,
+                nodeCode: ans.nodeCode,
+              },
+            });
+            if (existingAnswer) {
+              await prisma.patientAnswer.update({
+                where: { id: existingAnswer.id },
+                data: {
+                  answerValue: ans.answerValue,
+                  answeredAt: new Date(),
+                },
+              });
+            } else {
+              await prisma.patientAnswer.create({
+                data: {
+                  sessionId: session.id,
+                  nodeCode: ans.nodeCode,
+                  answerValue: ans.answerValue,
+                  answeredAt: new Date(),
+                },
+              });
+            }
+          } catch (dbAnsErr) {
+            // DB answer persist is non-fatal
+          }
+        } catch {}
+      }
+    }
+
+    // Persist any client-provided documents
+    if (validated.documents && validated.documents.length > 0) {
+      for (const doc of validated.documents) {
+        try {
+          const docId = `doc-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
+          inMemoryClinicalStore.addDocument(session.id, {
+            id: docId,
+            fileName: doc.fileName,
+            type: doc.type || "PRESCRIPTION",
+            fileSize: 1024 * 100,
+          });
+        } catch {}
+      }
     }
 
     // Resilient Database Update for submission
@@ -323,9 +404,8 @@ export async function POST(req: NextRequest) {
       console.warn("Auto-summary synthesis deferred:", sumErr);
     }
 
-    // Deterministic token number
-    const shortToken = session.id.replace(/-/g, "").slice(0, 4).toUpperCase();
-    const tokenNumber = `#AYUR-${shortToken}`;
+    // Deterministic token number #AYUR-SESS-XXXX
+    const tokenNumber = formatAyurToken(session.id);
 
     // 5. Dispatch Real-time Doctor Notification for submitted case
     try {

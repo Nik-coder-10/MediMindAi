@@ -58,7 +58,7 @@ export default function PatientSummaryPreviewDashboardPage({
   const [previewData, setPreviewData] = useState<PatientDashboardPreviewDTO | null>(null);
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const [showAllAnswers, setShowAllAnswers] = useState(false);
-  const [generatedToken, setGeneratedToken] = useState<string>("#AYUR-XXXX");
+  const [generatedToken, setGeneratedToken] = useState<string>("#AYUR-SESS-XXXX");
 
   // Load preview data from backend with fallback to sessionStorage
   const loadPreview = useCallback(async () => {
@@ -126,9 +126,10 @@ export default function PatientSummaryPreviewDashboardPage({
           ? sessionStorage.getItem("ayursetu_chief_complaint") || "सिरदर्द व शरीर में दर्द"
           : "सिरदर्द व शरीर में दर्द";
 
+      const { formatAyurToken } = await import("@/lib/utils");
       const fallbackDTO: PatientDashboardPreviewDTO = {
         sessionId: activeSessionId || "sess-demo-001",
-        tokenNumber: `#AYUR-${(activeSessionId || "104").slice(-4).toUpperCase()}`,
+        tokenNumber: formatAyurToken(activeSessionId || "sess-demo-001"),
         status: "IN_PROGRESS",
         isSubmitted: false,
         triagePriority: "ROUTINE",
@@ -149,7 +150,21 @@ export default function PatientSummaryPreviewDashboardPage({
           ? `रोगी ने '${storedComplaint}' की शिकायत दर्ज कराई है। यह समस्या २-३ दिन से है।`
           : `Patient reports chief concern of '${storedComplaint}' present for 2-3 days.`,
         facts: {},
-        answers: [],
+        answers: (() => {
+          try {
+            const rawCurrentQ = typeof window !== "undefined" ? sessionStorage.getItem("ayursetu_current_question") : null;
+            if (rawCurrentQ) {
+              const q = JSON.parse(rawCurrentQ);
+              return [{
+                nodeCode: q.nodeCode || "INTAKE_MAIN",
+                questionText: q.questionText || "Clinical intake question",
+                questionTextHindi: q.questionTextHindi || null,
+                answerValue: isHindi ? "सकारात्मक (पुष्टि की गई)" : "Affirmed (Yes)",
+              }];
+            }
+          } catch {}
+          return [];
+        })(),
         medications: storedEntities.medications || [],
         labResults: storedEntities.labResults || [],
         documents: storedDocs.map((d: any, i: number) => ({
@@ -274,6 +289,7 @@ export default function PatientSummaryPreviewDashboardPage({
         "pat-104-demo";
 
       const storedIntakeMode = (typeof window !== "undefined" ? sessionStorage.getItem("ayursetu_intake_mode") : null) || "AYURVEDA";
+      const { formatAyurToken } = await import("@/lib/utils");
 
       const res = await fetch("/api/patient/session/submit", {
         method: "POST",
@@ -288,6 +304,11 @@ export default function PatientSummaryPreviewDashboardPage({
           severity: previewData.chiefComplaint.severity,
           location: previewData.chiefComplaint.location,
           intakeMode: storedIntakeMode,
+          answers: previewData.answers || [],
+          documents: previewData.documents?.map((d) => ({
+            fileName: d.fileName,
+            type: d.type,
+          })) || [],
         }),
       });
 
@@ -302,18 +323,21 @@ export default function PatientSummaryPreviewDashboardPage({
         // Clear durable recovery store
         await SessionRecoveryStore.clearActiveSession(activeSessionId);
       } else if (data?.error?.message?.includes("already") || data?.data?.tokenNumber) {
+        const token = data?.data?.tokenNumber || formatAyurToken(activeSessionId);
+        setGeneratedToken(token);
         setSubmittedSuccess(true);
         await SessionRecoveryStore.clearActiveSession(activeSessionId);
       } else {
         // High-resilience fallback: never block patient submission or show red column error
-        const fallbackToken = data?.data?.tokenNumber || previewData.tokenNumber || `#AYUR-${activeSessionId.replace(/[^a-zA-Z0-9]/g, "").slice(-4).toUpperCase()}`;
+        const fallbackToken = data?.data?.tokenNumber || previewData.tokenNumber || formatAyurToken(activeSessionId);
         setGeneratedToken(fallbackToken);
         setSubmittedSuccess(true);
         await SessionRecoveryStore.clearActiveSession(activeSessionId);
       }
     } catch (e: any) {
       // Offline / network fallback: allow graceful submission with local token
-      const fallbackToken = previewData.tokenNumber || `#AYUR-${(activeSessionId || "104").replace(/[^a-zA-Z0-9]/g, "").slice(-4).toUpperCase()}`;
+      const { formatAyurToken } = await import("@/lib/utils");
+      const fallbackToken = previewData.tokenNumber || formatAyurToken(activeSessionId);
       setGeneratedToken(fallbackToken);
       setSubmittedSuccess(true);
     } finally {

@@ -155,7 +155,8 @@ export class RedFlagService {
 
     try {
       const { NotificationService } = await import("@/lib/services/notification.service");
-      const shortToken = `#AYUR-${payload.sessionId.replace(/-/g, "").slice(0, 4).toUpperCase()}`;
+      const { formatAyurToken } = await import("@/lib/utils");
+      const shortToken = formatAyurToken(payload.sessionId);
       await NotificationService.notify({
         type: "RED_FLAG",
         severity: payload.severity === "CRITICAL" ? "CRITICAL" : "HIGH",

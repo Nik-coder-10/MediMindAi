@@ -115,9 +115,11 @@ export class AyurvedaAssessmentService {
       text.includes("ghutn") ||
       text.includes("घुटने") ||
       text.includes("घुटना") ||
+      text.includes("घुटनों") ||
       text.includes("joint") ||
       text.includes("jod") ||
       text.includes("जोड़") ||
+      text.includes("जोड़ों") ||
       text.includes("back") ||
       text.includes("kamar") ||
       text.includes("कमर") ||

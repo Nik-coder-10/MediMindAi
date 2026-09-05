@@ -73,8 +73,8 @@ export async function GET(
     }
 
     // 3. Deterministic token calculation
-    const shortToken = session.id.replace(/-/g, "").slice(0, 4).toUpperCase();
-    const tokenNumber = `#AYUR-${shortToken}`;
+    const { formatAyurToken } = await import("@/lib/utils");
+    const tokenNumber = formatAyurToken(session.id);
 
     // 4. Transform documents with extracted entities
     const documents = (session.medicalDocuments || []).map((doc: any) => ({

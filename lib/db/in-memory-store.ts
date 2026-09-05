@@ -317,6 +317,34 @@ class InMemoryClinicalStore {
     }
   }
 
+  public addDocument(
+    sessionId: string,
+    doc: {
+      id?: string;
+      fileName: string;
+      type: string;
+      fileSize?: number;
+      originalFileUrl?: string | null;
+      ocrRawText?: string | null;
+      extractedEntities?: any[];
+    }
+  ) {
+    const s = this.sessions.get(sessionId);
+    if (!s) return;
+    s.medicalDocuments = s.medicalDocuments || [];
+    s.medicalDocuments.push({
+      id: doc.id || `doc-${Date.now()}`,
+      sessionId,
+      fileName: doc.fileName,
+      type: doc.type,
+      fileSize: doc.fileSize || 1024 * 100,
+      originalFileUrl: doc.originalFileUrl || null,
+      ocrRawText: doc.ocrRawText || null,
+      uploadedAt: new Date(),
+      extractedEntities: doc.extractedEntities || [],
+    });
+  }
+
   public getAnswers(sessionId: string) {
     const s = this.sessions.get(sessionId);
     return s ? s.patientAnswers : [];

@@ -759,12 +759,13 @@ async function runMasterTestSuite() {
   );
 
   // PAT-005: Token number format consistency across patient & doctor views
-  const computeToken = (sId: string) => `#AYUR-${sId.replace(/-/g, "").slice(0, 4).toUpperCase()}`;
+  const { formatAyurToken } = await import("@/lib/utils");
+  const computeToken = (sId: string) => formatAyurToken(sId);
   const patientToken = computeToken(sessionA_Id);
   const doctorToken = computeToken(sessionA_Id);
   assert(
-    patientToken === doctorToken && patientToken.startsWith("#AYUR-"),
-    "PAT-005: Token numbers are deterministic and consistent between patient portal and doctor triage desk"
+    patientToken === doctorToken && /^#AYUR-SESS-\d{4}$/.test(patientToken),
+    "PAT-005: Token numbers are deterministic and consistent between patient portal and doctor triage desk in #AYUR-SESS-XXXX format"
   );
 
   // SUITE 14: Doctor Dashboard & Case Dossier E2E Data Integrity (DOC-001 - DOC-005)

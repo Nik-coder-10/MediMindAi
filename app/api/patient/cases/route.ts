@@ -73,10 +73,9 @@ export async function GET(req: NextRequest) {
       (a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime()
     );
 
+    const { formatAyurToken } = await import("@/lib/utils");
     const formattedCases = finalSessions.map((session) => {
-      // Deterministic token number based on session ID slice
-      const shortToken = session.id.replace(/-/g, "").slice(0, 4).toUpperCase();
-      const tokenNumber = `#AYUR-${shortToken}`;
+      const tokenNumber = formatAyurToken(session.id);
 
       return {
         id: session.id,

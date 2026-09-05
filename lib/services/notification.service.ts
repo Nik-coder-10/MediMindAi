@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db/prisma";
 import { AuditService } from "@/lib/services/audit.service";
+import { formatAyurToken } from "@/lib/utils";
 import crypto from "crypto";
 
 export type NotificationType = "RED_FLAG" | "NEW_CASE" | "SAFETY_ALERT" | "SYSTEM";
@@ -129,7 +130,7 @@ class NotificationStore {
       severity: dto.severity,
       sessionId: dto.sessionId,
       patientName: dto.patientName || "Patient",
-      tokenNumber: dto.tokenNumber || (dto.sessionId ? `#AYUR-${dto.sessionId.replace(/-/g, "").slice(0, 4).toUpperCase()}` : undefined),
+      tokenNumber: dto.tokenNumber || (dto.sessionId ? formatAyurToken(dto.sessionId) : undefined),
       chiefComplaint: dto.chiefComplaint,
       title: dto.title,
       message: dto.message,

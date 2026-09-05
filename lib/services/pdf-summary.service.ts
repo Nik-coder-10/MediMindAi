@@ -66,8 +66,9 @@ export class PdfSummaryService {
     const currentYear = new Date().getFullYear();
     const approxAge = currentYear - birthYear;
     const ageGender = `${approxAge > 0 ? approxAge : 40}Y / ${session.patient?.gender || "MALE"}`;
-    const abhaId = session.patient?.user?.abhaId || "ABHA-सत्यापित";
-    const tokenNumber = `#AYUR-${session.id.replace(/-/g, "").slice(0, 4).toUpperCase()}`;
+    const { formatAyurToken } = await import("@/lib/utils");
+    const tokenNumber = formatAyurToken(session.id);
+    const abhaId = session.patient?.abhaAddress || session.patient?.nationalHealthId || "ABHA-NOT-LINKED";
 
     const chiefComplaintText = session.chiefComplaints?.[0]?.symptomName || "Consultation Intake";
     const durationText = session.chiefComplaints?.[0]?.duration || "Acute (2-3 days)";

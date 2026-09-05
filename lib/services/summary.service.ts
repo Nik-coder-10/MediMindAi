@@ -123,7 +123,8 @@ export class SummaryService {
       try {
         const { NotificationService } = await import("@/lib/services/notification.service");
         const topAlert = criticalSafetyAlerts[0];
-        const shortToken = `#AYUR-${sessionId.replace(/-/g, "").slice(0, 4).toUpperCase()}`;
+        const { formatAyurToken } = await import("@/lib/utils");
+        const shortToken = formatAyurToken(sessionId);
         await NotificationService.notify({
           type: "SAFETY_ALERT",
           severity: topAlert.severity === "CRITICAL" ? "CRITICAL" : "HIGH",

@@ -62,8 +62,8 @@ export async function GET(
     }
 
     // Deterministic token matching patient portal
-    const shortToken = session.id.replace(/-/g, "").slice(0, 4).toUpperCase();
-    const tokenNumber = `#AYUR-${shortToken}`;
+    const { formatAyurToken } = await import("@/lib/utils");
+    const tokenNumber = formatAyurToken(session.id);
 
     // 2. Fetch or Generate Summary
     let summary = session.clinicalSummary;

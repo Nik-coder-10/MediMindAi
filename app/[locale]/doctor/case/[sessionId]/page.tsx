@@ -33,6 +33,7 @@ import {
 import { motion } from "framer-motion";
 import { useAuthStore } from "@/stores/use-auth-store";
 import { ClinicalMarkdownRenderer } from "@/components/ui/clinical/ClinicalMarkdownRenderer";
+import { formatAyurToken, formatDateTime } from "@/lib/utils";
 
 export default function IndividualDoctorCaseViewPage({
   params,
@@ -265,11 +266,17 @@ export default function IndividualDoctorCaseViewPage({
             </p>
           </div>
 
-          {/* ABDM & Consent Pill */}
-          <div className="text-right space-y-1">
+          {/* ABDM & Consent Pill + Registration Time */}
+          <div className="text-right space-y-1.5">
             <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 inline-flex items-center gap-1">
               <ShieldCheck className="h-3.5 w-3.5" /> ABDM सक्रिय सहमति (Consent Granted)
             </span>
+            {caseData?.encounter?.startedAt && (
+              <div className="text-xs font-bold text-muted-foreground inline-flex items-center gap-1">
+                <Calendar className="h-3.5 w-3.5 text-emerald-700" />
+                <span>पंजीकरण (Registered): {formatDateTime(caseData.encounter.startedAt)}</span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -2060,10 +2067,10 @@ export default function IndividualDoctorCaseViewPage({
               OUTPATIENT (OPD) SLIP • पर्ची
             </span>
             <div className="font-mono font-bold text-xs text-slate-900">
-              CR / OPD No: #{caseData?.tokenNumber || "SMS-OPD-9214"}
+              CR / OPD No: {caseData?.tokenNumber || formatAyurToken(sessionId)}
             </div>
             <div className="text-[9.5px] text-slate-600 font-medium">
-              Date: {new Date().toLocaleDateString("en-IN")} | Unit: IV (Room 12)
+              Date: {formatDateTime(caseData?.encounter?.startedAt || new Date())} | Unit: IV (Room 12)
             </div>
             <div className="text-[9px] text-slate-500 font-mono">
               Encounter: {sessionId.slice(0, 12)}

@@ -228,8 +228,8 @@ export class PreviewService {
       session = stubSession as any;
     }
 
-    const shortToken = session.id.replace(/-/g, "").slice(0, 4).toUpperCase();
-    const tokenNumber = `#AYUR-${shortToken}`;
+    const { formatAyurToken } = await import("@/lib/utils");
+    const tokenNumber = formatAyurToken(session.id);
 
     const isSubmitted = session.status === SessionStatus.WAITING_FOR_DOCTOR || session.status === SessionStatus.COMPLETED;
 
