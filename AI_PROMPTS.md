@@ -1,6 +1,6 @@
 # AI Prompt Engineering, Safety Guardrails & Golden Benchmark
 
-**Smart India Hackathon 2026 – Problem ID 26047 (Ministry of Ayush / AIIA)**
+**Ministry of Ayush / AIIA Clinical Platform**
 
 ---
 

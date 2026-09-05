@@ -1,5 +1,5 @@
 # Phase 6 — Uncertainty-Driven Adaptive Question Engine
-## AyurSetu / MediMindAi (SIH 2026 — Problem Statement 26047)
+## AyurSetu / MediMindAi (Clinical Case-Taking & Triage)
 
 ---
 

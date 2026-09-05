@@ -1,7 +1,7 @@
 /**
  * Uncertainty-Driven Adaptive Question Engine Orchestrator
- * Phase 6: Uncertainty-Driven Adaptive Question Engine
- * SIH 2026 Problem Statement 26047 - AyurSetu / MediMindAi
+ * Uncertainty-Driven Adaptive Question Engine
+ * AyurSetu / MediMindAi Clinical Platform
  *
  * Coordinates:
  * Patient Case State -> Uncertainty Analysis -> Redundancy Filter -> Fatigue Check -> Ranked Next Question

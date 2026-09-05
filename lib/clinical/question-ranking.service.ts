@@ -1,7 +1,7 @@
 /**
  * Question Ranking & Value Scoring Service
- * Phase 6: Uncertainty-Driven Adaptive Question Engine
- * SIH 2026 Problem Statement 26047 - AyurSetu / MediMindAi
+ * Uncertainty-Driven Adaptive Question Engine
+ * AyurSetu / MediMindAi Clinical Platform
  *
  * Implements deterministic scoring of candidate questions based on:
  * - SafetyPriority: Urgent screening outranks general history

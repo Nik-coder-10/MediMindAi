@@ -1,11 +1,11 @@
 # 🏆 Official Feature Traceability Matrix
 
-**Smart India Hackathon 2026 – Problem ID 26047**
+**AyurSetu Clinical Platform**
 **Ministry of Ayush / All India Institute of Ayurveda (AIIA)**
 
 ---
 
-| # | Official Problem 26047 Requirement | AyurSetu Implementation | Location in Codebase | Implementation Status |
+| # | Official Clinical Requirement | AyurSetu Implementation | Location in Codebase | Implementation Status |
 |---|---|---|---|---|
 | **1** | **Bilingual / Multilingual Voice Intake** | Speech-to-Text (Bhashini/Whisper) & Neural TTS in Hindi, English, and Marathi with 80px touch target. | [`lib/voice/`](file:///c:/Users/Hp/OneDrive/Desktop/SIH_2026/lib/voice/), [`messages/`](file:///c:/Users/Hp/OneDrive/Desktop/SIH_2026/messages/) | `[x] FULLY IMPLEMENTED` |
 | **2** | **Adaptive Clinical Question Engine** | Dynamic state machine traversing SOCRATES question trees (Duration, Severity, Character, Radiation). | [`lib/engine/question-provider.ts`](file:///c:/Users/Hp/OneDrive/Desktop/SIH_2026/lib/engine/question-provider.ts) | `[x] FULLY IMPLEMENTED` |

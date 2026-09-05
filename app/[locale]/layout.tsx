@@ -23,8 +23,8 @@ const notoSansDevanagari = Noto_Sans_Devanagari({
 export const metadata: Metadata = {
   title: "AyurSetu — Next-Gen Ayush Clinical Platform | Ministry of Ayush",
   description:
-    "AI-powered Ayush clinical case-taking, Dashavidha Pariksha, Prakriti evaluation, multilingual voice triage, and ABDM interoperable PHR. SIH 2026 · Problem ID 26047.",
-  keywords: "Ayurveda, ABDM, ABHA, clinical case-taking, Prakriti, Ministry of Ayush, AIIA, SIH 2026",
+    "AI-powered Ayush clinical case-taking, Dashavidha Pariksha, Prakriti evaluation, multilingual voice triage, and ABDM interoperable PHR.",
+  keywords: "Ayurveda, ABDM, ABHA, clinical case-taking, Prakriti, Ministry of Ayush, AIIA",
 };
 
 export default function RootLayout({

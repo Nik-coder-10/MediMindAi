@@ -11,7 +11,7 @@ interface GoldenTestCase {
 
 export async function runGoldenEvaluationHarness() {
   console.log("==================================================================");
-  console.log("🧪 RUNNING SIH 2026 AI PROMPT & CLINICAL GUARDRAIL GOLDEN EVALUATION");
+  console.log("🧪 RUNNING AI PROMPT & CLINICAL GUARDRAIL GOLDEN EVALUATION");
   console.log("==================================================================\n");
 
   const testCases: GoldenTestCase[] = [

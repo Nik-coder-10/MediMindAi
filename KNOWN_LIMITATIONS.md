@@ -1,5 +1,5 @@
 # 🔍 Known Limitations & Production Scaling Roadmap
-### Smart India Hackathon 2026 – Problem ID 26047
+### AyurSetu Clinical Platform
 
 ---
 

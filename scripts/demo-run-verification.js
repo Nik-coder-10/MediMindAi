@@ -1,6 +1,6 @@
 /**
  * Test Demo Run for 30 Specialized Categories, Questions, Multi-Language & Voice
- * SIH 2026 Problem 26047 - AyurSetu
+ * AyurSetu Clinical Platform
  */
 
 const { AdaptiveQuestionGenerator } = require('../lib/engine/adaptive-question-generator');

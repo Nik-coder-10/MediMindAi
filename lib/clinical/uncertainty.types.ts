@@ -1,7 +1,7 @@
 /**
  * Uncertainty & Information Completeness Domain Types
- * Phase 6: Uncertainty-Driven Adaptive Question Engine
- * SIH 2026 Problem Statement 26047 - AyurSetu / MediMindAi
+ * Uncertainty-Driven Adaptive Question Engine
+ * AyurSetu / MediMindAi Clinical Platform
  *
  * Strictly models Case Information Gaps and Clinical Information Completeness.
  * DOES NOT calculate disease probabilities or make autonomous diagnostic claims.

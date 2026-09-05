@@ -1,7 +1,7 @@
 /**
  * Uncertainty & Case Completeness Analysis Service
- * Phase 6: Uncertainty-Driven Adaptive Question Engine
- * SIH 2026 Problem Statement 26047 - AyurSetu / MediMindAi
+ * Uncertainty-Driven Adaptive Question Engine
+ * AyurSetu / MediMindAi Clinical Platform
  *
  * Implements deterministic CaseCompletenessAnalyzer and InformationGapDetector.
  * Quantifies CASE INFORMATION COMPLETENESS across 19 canonical uncertainty dimensions.

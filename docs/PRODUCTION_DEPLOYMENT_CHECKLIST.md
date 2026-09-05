@@ -1,5 +1,5 @@
 # 📋 PRODUCTION SUPABASE & DEPLOYMENT CHECKLIST
-**SIH 2026 Problem ID 26047 — Ministry of Ayush / AIIA Case-Taking Software**
+**Ministry of Ayush / AIIA Case-Taking Software**
 *Date: August 2026 | Infrastructure, Storage, Auth & Vercel Checklist*
 
 ---

@@ -1,5 +1,5 @@
 # 📊 PRODUCTION DATA INVENTORY — AYURSETU (MediMindAi)
-**SIH 2026 Problem ID 26047 — Ministry of Ayush / AIIA Case-Taking Software**
+**Ministry of Ayush / AIIA Case-Taking Software**
 *Date: August 2026 | Phase 5: Production Data Integrity & Mock Fallback Elimination*
 
 ---

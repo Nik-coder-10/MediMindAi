@@ -1,6 +1,6 @@
 # Doctor Dashboard & Clinical Decision Workspace Documentation
 
-**Smart India Hackathon 2026 – Problem ID 26047 (Ministry of Ayush / AIIA)**
+**Ministry of Ayush / AIIA Clinical Platform**
 
 ---
 

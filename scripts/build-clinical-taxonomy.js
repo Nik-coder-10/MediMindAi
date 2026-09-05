@@ -1,6 +1,6 @@
 /**
  * Clinical Category Profiles Builder Script
- * SIH 2026 - Problem 26047
+ * AyurSetu Clinical Platform
  * Generates 28 specialized clinical category modules with exactly 10 questions each
  */
 

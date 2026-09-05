@@ -1,6 +1,6 @@
 # Automated Testing Suite & CI Verification
 
-**Smart India Hackathon 2026 – Problem ID 26047**
+**AyurSetu Clinical Platform**
 
 ---
 

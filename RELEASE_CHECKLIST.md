@@ -1,11 +1,11 @@
-# 🏆 SIH 2026 Problem ID 26047 – Official Release & Verification Checklist
+# 🏆 AyurSetu Clinical Platform – Official Release & Verification Checklist
 ### AyurSetu / MediMind AI • Ministry of Ayush / AIIA
 
 ---
 
 ## 📋 Comprehensive Requirements Gate
 
-| # | SIH Problem 26047 Requirement | Status | Verification Reference |
+| # | Clinical Case-Taking Platform Requirement | Status | Verification Reference |
 |---|---|---|---|
 | **1** | **Multilingual Voice Intake** (Hindi, English, Marathi) | `[x] COMPLETE` | [`lib/voice/`](file:///c:/Users/Hp/OneDrive/Desktop/SIH_2026/lib/voice/), [`VOICE.md`](file:///c:/Users/Hp/OneDrive/Desktop/SIH_2026/VOICE.md) |
 | **2** | **SOCRATES Question Engine** (Chest Pain, Headache, Fever, Abdomen, Joints, General) | `[x] COMPLETE` | [`lib/engine/question-provider.ts`](file:///c:/Users/Hp/OneDrive/Desktop/SIH_2026/lib/engine/question-provider.ts) |
@@ -29,4 +29,4 @@
 - Master Automated Test Harness: **24 PASSED | 0 FAILED (100% Pass Rate)**.
 - TypeScript Static Analysis: **0 Errors**.
 - Production Next.js Build: **All 28 static & dynamic routes compiled**.
-- Result: **CERTIFIED SUBMISSION READY FOR SIH 2026 EVALUATION**.
+- Result: **CERTIFIED SUBMISSION READY FOR AyurSetu EVALUATION**.

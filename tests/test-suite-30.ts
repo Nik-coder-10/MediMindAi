@@ -1,5 +1,5 @@
 /**
- * PHASE 8 TEST SUITE — Live Production Validation & SIH Demo Readiness
+ * PHASE 8 TEST SUITE — Live Production Validation & Demo Readiness
  *
  * P8-001 to P8-050
  *
@@ -820,10 +820,10 @@ async function section19_clinicalSafetyUx() {
   );
 }
 
-// ─── SECTION 20: SIH Demo Scenario ─────────────────────────────────────────
+// ─── SECTION 20: Clinical Demo Scenario ─────────────────────────────────────────
 
 async function section20_sihDemoScenario() {
-  console.log("\n--- P8 SECTION 20: SIH Demo Scenario ---");
+  console.log("\n--- P8 SECTION 20: Clinical Demo Scenario ---");
 
   // P8-DEMO: Verify demo seed script and walkthrough exist or note BLOCKED
   const demoSeedPath = path.join(ROOT, "prisma", "demo-seed.ts");
@@ -833,14 +833,14 @@ async function section20_sihDemoScenario() {
   if (!fs.existsSync(demoWalkthroughPath)) {
     blockedP8(
       "P8-DEMO-001",
-      "SIH Demo Walkthrough document exists at docs/SIH_DEMO_WALKTHROUGH.md",
+      "Clinical Demo Walkthrough document exists at docs/SIH_DEMO_WALKTHROUGH.md",
       "Will be created by Phase 8 implementation"
     );
   } else {
     assertP8(
       fs.existsSync(demoWalkthroughPath),
       "P8-DEMO-001",
-      "SIH Demo Walkthrough document exists"
+      "Clinical Demo Walkthrough document exists"
     );
   }
 
@@ -914,7 +914,7 @@ async function section22_cryptoIntegrity() {
 
 async function runPhase8Suite() {
   console.log("\n==================================================================");
-  console.log("PHASE 8 — LIVE PRODUCTION VALIDATION & SIH DEMO READINESS");
+  console.log("PHASE 8 — LIVE PRODUCTION VALIDATION & DEMO READINESS");
   console.log("==================================================================");
 
   try { await section1_repositoryBaseline(); } catch {}

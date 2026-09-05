@@ -1,7 +1,7 @@
 # AYUSH & Ayurveda Clinical Mode Specification (Charaka Samhita Model)
 
 **Ministry of Ayush / All India Institute of Ayurveda (AIIA)**
-**Smart India Hackathon 2026 – Problem ID 26047**
+**AyurSetu Clinical Platform**
 
 ---
 

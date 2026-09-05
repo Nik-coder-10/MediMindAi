@@ -1,6 +1,6 @@
 # 📦 Technical Handover & Architecture Extension Package
 
-**AyurSetu / MediMind AI • SIH 2026 Problem ID 26047**
+**AyurSetu / MediMind AI • AyurSetu Clinical Platform**
 
 ---
 

@@ -1,5 +1,5 @@
 # 🏥 AYURSETU (MediMindAi) — PRODUCTION MIGRATION AUDIT
-**SIH 2026 Problem ID 26047 — Ministry of Ayush / AIIA Case-Taking Software**
+**Ministry of Ayush / AIIA Case-Taking Software**
 *Repository: `Nik-coder-10/MediMindAi`*
 *Date: August 2026 | Version: 1.0.0-PROD-AUDIT*
 

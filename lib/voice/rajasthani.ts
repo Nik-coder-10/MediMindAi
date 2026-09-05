@@ -1,6 +1,6 @@
 /**
  * Rajasthani (मारवाड़ी / ढूंढाड़ी / मेवाती) Vernacular Localization & Audio Helper
- * SIH 2026 Problem 26047 - AyurSetu
+ * AyurSetu Clinical Platform
  *
  * Converts standard Hindi medical prompts and text into natural, warm, respectful Rajasthani phrasing.
  */

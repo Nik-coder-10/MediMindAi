@@ -1,6 +1,6 @@
 # 🔍 FINAL PRODUCTION DEPLOYMENT AUDIT: AYURSETU
 **Repository**: `Nik-coder-10/MediMindAi`  
-**Application Name**: **AyurSetu** (SIH 2026 Problem ID 26047 - Ministry of Ayush / AIIA)  
+**Application Name**: **AyurSetu** (AyurSetu Clinical Platform - Ministry of Ayush / AIIA)  
 **Target Hosting Architecture**: Vercel (Next.js 14 App Router) + Supabase (PostgreSQL, Auth, Private Storage)
 
 ---

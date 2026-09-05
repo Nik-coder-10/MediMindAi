@@ -1,9 +1,8 @@
 /**
- * Dynamic Adaptive Question Generator Service
- * SIH 2026 Problem 26047 - AyurSetu
+ * Adaptive Clinical Question Generator
+ * AyurSetu Clinical Platform
  *
- * Dynamically synthesizes 5-8 clinically relevant, SOCRATES/Dashavidha-aligned
- * follow-up questions from patient chief complaint free text (Hindi, English, Hinglish).
+ * Dynamically selects, ranks, and sequences clinical follow-up questions
  */
 
 export {

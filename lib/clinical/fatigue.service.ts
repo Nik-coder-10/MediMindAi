@@ -1,7 +1,7 @@
 /**
  * Question Fatigue & Budget Guard Service
- * Phase 6: Uncertainty-Driven Adaptive Question Engine
- * SIH 2026 Problem Statement 26047 - AyurSetu / MediMindAi
+ * Uncertainty-Driven Adaptive Question Engine
+ * AyurSetu / MediMindAi Clinical Platform
  *
  * Prevents conversational fatigue, limits consecutive questions from the same domain,
  * and deterministically evaluates when to stop questioning while guaranteeing clinical safety.

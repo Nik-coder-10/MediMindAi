@@ -1,6 +1,6 @@
 /**
- * Core Adaptive Question and Clinical Category Types
- * SIH 2026 Problem 26047 - AyurSetu
+ * Adaptive Clinical Question Types & Definitions
+ * AyurSetu Clinical Platform
  */
 
 export type ClinicalCategory =

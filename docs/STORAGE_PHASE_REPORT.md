@@ -2,7 +2,7 @@
 
 **Date**: August 2026  
 **Repository**: `Nik-coder-10/MediMindAi`  
-**Application Name**: AyurSetu (SIH 2026 Problem ID 26047)  
+**Application Name**: AyurSetu (AyurSetu Clinical Platform)  
 **Phase**: Phase 4 — Persistent Private Document Storage & Multimodal Ingestion Hardening  
 **Status**: **COMPLETED & VERIFIED**  
 

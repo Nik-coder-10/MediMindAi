@@ -697,7 +697,7 @@ console.log("Categories loaded in memory:", categoriesData.length);
 // Let's generate the comprehensive taxonomy module
 let fileContent = `/**
  * Comprehensive Clinical Category & Symptom Taxonomy for AyurSetu
- * SIH 2026 Problem 26047 - Ministry of Ayush & Health Informatics
+ * Ministry of Ayush & Health Informatics
  * 
  * Expands triage coverage to 30 targeted clinical categories with exactly 10 dedicated
  * SOCRATES, Dashavidha, and Red-Flag questions per category.

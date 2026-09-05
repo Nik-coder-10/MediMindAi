@@ -1,7 +1,7 @@
 # 🏛️ Phase 1 Architecture Baseline & Production Audit Report
 
 **Project**: AyurSetu / MediMindAi  
-**Problem Statement**: SIH 2026 Problem ID 26047 — Patient Case-Taking Software for Ayurvedic and Homeopathic Physicians  
+**Problem Statement**: AyurSetu Clinical Platform — AyurSetu Patient Case-Taking Platform  
 **Date**: September 2, 2026  
 **Auditor**: Principal Software Engineer & AI Systems Architect  
 

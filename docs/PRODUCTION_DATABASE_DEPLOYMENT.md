@@ -1,5 +1,5 @@
 # 🗄️ PRODUCTION DATABASE DEPLOYMENT SPECIFICATION
-**AYURSETU (MediMindAi) — SIH 2026 Problem ID 26047 (Ministry of Ayush / AIIA)**
+**AYURSETU (MediMindAi) — Ministry of Ayush / AIIA Clinical Platform**
 *Database Engine: PostgreSQL 16 (Supabase Managed) | ORM: Prisma 5.22.0*
 
 ---
@@ -111,7 +111,7 @@ Response:
 ```json
 {
   "status": "healthy",
-  "service": "AyurSetu Clinical Platform (SIH 2026 Problem ID 26047)",
+  "service": "AyurSetu Clinical Platform (AyurSetu Clinical Platform)",
   "version": "1.0.0",
   "database": "connected",
   "abdmInteroperability": "ready",

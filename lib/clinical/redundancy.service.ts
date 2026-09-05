@@ -1,7 +1,7 @@
 /**
  * Question Redundancy & Contradiction Detector Service
- * Phase 6: Uncertainty-Driven Adaptive Question Engine
- * SIH 2026 Problem Statement 26047 - AyurSetu / MediMindAi
+ * Uncertainty-Driven Adaptive Question Engine
+ * AyurSetu / MediMindAi Clinical Platform
  *
  * Prevents redundant clinical questions by inspecting:
  * 1. Discrete ClinicalObservation records

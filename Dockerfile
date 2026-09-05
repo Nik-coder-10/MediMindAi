@@ -1,5 +1,5 @@
 # ==============================================================================
-# Multi-Stage Production Dockerfile for AyurSetu / MediMind AI (SIH 2026 #26047)
+# Multi-Stage Production Dockerfile for AyurSetu / MediMind AI
 # ==============================================================================
 
 # 1. Base Image

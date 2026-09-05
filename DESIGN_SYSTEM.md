@@ -1,5 +1,5 @@
 # AyurSetu Premium Design System
-## SIH 2026 · Problem ID 26047 · Ministry of Ayush
+## AyurSetu · AyurSetu Clinical Platform · Ministry of Ayush
 
 > **Indigo-Glass × Teal-Ayush × Claymorphism × Editorial**
 > A government-premium clinical design language built for national-scale digital health.
@@ -263,4 +263,4 @@ All animations respect `prefers-reduced-motion: reduce`.
 
 ---
 
-*AyurSetu Design System v2.0 · SIH 2026 · Ministry of Ayush / AIIA*
+*AyurSetu Design System v2.0 · AyurSetu · Ministry of Ayush / AIIA*

@@ -2,7 +2,7 @@
 
 **Date**: August 2026  
 **Repository**: `Nik-coder-10/MediMindAi`  
-**Application Name**: AyurSetu (SIH 2026 Problem ID 26047)  
+**Application Name**: AyurSetu (AyurSetu Clinical Platform)  
 **Phase**: Phase 3 — Production Authentication, Session Handling, RBAC, and Route Protection  
 **Status**: **COMPLETED & VERIFIED**  
 

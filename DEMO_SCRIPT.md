@@ -1,7 +1,7 @@
-# ⏱️ SIH 2026 Problem 26047 — Winning Live Demonstration Script
+# ⏱️ AyurSetu Clinical Platform — Winning Live Demonstration Script
 ### AyurSetu / MediMind AI • Ministry of Ayush & AIIA Case-Taking Software
 
-**Target Duration**: 4–6 Minutes | **Target Audience**: SIH Evaluators & Medical Jury
+**Target Duration**: 4–6 Minutes | **Target Audience**: Clinical Evaluators & Medical Jury
 
 ---
 

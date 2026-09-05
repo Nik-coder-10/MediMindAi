@@ -1,7 +1,7 @@
 # AyurSetu (MediMindAi) — Authorization & RBAC Architecture
 
 **Application**: AyurSetu (Smart Multilingual Patient Case-Taking & Clinical Decision Support)  
-**SIH 2026 Problem ID**: 26047 (Ministry of Ayush / AIIA)  
+**Organization**: Ministry of Ayush / AIIA  
 **Specification Level**: Production Enterprise Healthcare Grade  
 
 ---

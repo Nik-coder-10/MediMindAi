@@ -1,6 +1,6 @@
 # Administrative Morbidity & Operational Analytics
 
-**Smart India Hackathon 2026 – Problem ID 26047**
+**AyurSetu Clinical Platform**
 **Ministry of Ayush / All India Institute of Ayurveda (AIIA)**
 
 ---

@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
   return NextResponse.json(
     {
       status: overallStatus,
-      service: "AyurSetu Clinical Platform (SIH 2026 Problem ID 26047)",
+      service: "AyurSetu Clinical Platform",
       version: "1.0.0",
       timestamp: new Date().toISOString(),
       environment: process.env.NODE_ENV || "development",

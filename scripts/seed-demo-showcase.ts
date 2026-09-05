@@ -11,7 +11,7 @@ export async function seedDemoShowcase() {
   }
 
   console.log("==================================================================");
-  console.log("🎭 SEEDING SIH 2026 REALISTIC CLINICAL DEMO SHOWCASE DATASET (DEV ONLY)");
+  console.log("🎭 SEEDING REALISTIC CLINICAL DEMO SHOWCASE DATASET (DEV ONLY)");
   console.log("==================================================================\n");
 
 

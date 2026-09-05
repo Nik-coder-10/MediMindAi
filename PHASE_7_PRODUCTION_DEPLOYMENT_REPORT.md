@@ -11,7 +11,7 @@
 
 ## Section 1 - Executive Deployment Summary
 
-AyurSetu / MediMindAI has successfully completed all Phase 7 production deployment and end-to-end verification objectives. The application is a multilingual, AYUSH-aligned clinical case-taking platform designed for Smart India Hackathon 2026, providing adaptive patient intake, rule-based red-flag escalation, OCR-powered document processing, and role-isolated doctor review workflows - all without autonomous AI diagnosis.
+AyurSetu / MediMindAI has successfully completed all Phase 7 production deployment and end-to-end verification objectives. The application is a multilingual, AYUSH-aligned clinical case-taking platform designed for AyurSetu Clinical Platform, providing adaptive patient intake, rule-based red-flag escalation, OCR-powered document processing, and role-isolated doctor review workflows - all without autonomous AI diagnosis.
 
 ### Deployment Outcome
 

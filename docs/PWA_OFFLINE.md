@@ -1,6 +1,6 @@
 # 📶 PWA Offline & Session Recovery
 
-**AyurSetu / MediMindAi (SIH 2026 Problem ID 26047)**
+**AyurSetu / MediMindAi (AyurSetu Clinical Platform)**
 
 ---
 

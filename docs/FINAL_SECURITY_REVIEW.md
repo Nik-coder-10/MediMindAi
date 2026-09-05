@@ -1,5 +1,5 @@
 # 🔒 FINAL ADVERSARIAL SECURITY REVIEW
-**AYURSETU (MediMindAi) — SIH 2026 Problem ID 26047 (Ministry of Ayush / AIIA)**
+**AYURSETU (MediMindAi) — Ministry of Ayush / AIIA Clinical Platform**
 *Evaluation Type: Pre-Deployment Adversarial Penetration Assessment & Security Review*
 
 ---

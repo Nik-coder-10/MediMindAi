@@ -1,6 +1,6 @@
 # 📄 Medical Document Intelligence & Handwritten Prescription Processing
 
-**Smart India Hackathon 2026 – Problem ID 26047**  
+**AyurSetu Clinical Platform**  
 **AyurSetu / MediMindAi Clinical Platform**
 
 ---

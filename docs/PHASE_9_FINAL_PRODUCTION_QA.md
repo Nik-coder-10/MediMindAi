@@ -1,5 +1,5 @@
 # 🛡️ PHASE 9 FINAL PRODUCTION QA, SECURITY VALIDATION & RELEASE SIGN-OFF
-**AYURSETU (MediMindAi) — SIH 2026 Problem ID 26047 (Ministry of Ayush / AIIA)**
+**AYURSETU (MediMindAi) — Ministry of Ayush / AIIA Clinical Platform**
 *Date: August 2026 | Version: 1.0.0-PROD-RELEASE-SIGN-OFF*
 
 ---

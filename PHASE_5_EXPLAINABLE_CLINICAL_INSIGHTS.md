@@ -1,5 +1,5 @@
 # PHASE 5 — EXPLAINABLE CLINICAL INSIGHTS ENGINE
-## AyurSetu / MediMindAi (SIH 2026 — Problem Statement 26047)
+## AyurSetu / MediMindAi (Clinical Case-Taking & Triage)
 
 ### 1. Executive Summary & Architectural Overview
 Phase 5 introduces the **Explainable Clinical Insights Engine**, transforming raw clinical observations, longitudinal trajectories, and curated AYUSH knowledge graphs into structured, explainable, and clinician-reviewable insights for attending Ayurvedic and Homeopathic physicians.

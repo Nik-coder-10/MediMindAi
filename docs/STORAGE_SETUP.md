@@ -1,7 +1,7 @@
 # 🏥 AyurSetu — Private Storage Architecture & Bucket Setup
 
 **Application**: AyurSetu (Multilingual Patient Case-Taking & Clinical Decision Support)  
-**SIH 2026 Problem ID**: 26047 (Ministry of Ayush / AIIA)  
+**Organization**: Ministry of Ayush / AIIA  
 **Specification Level**: Production Enterprise Healthcare Grade  
 **Governing Laws**: India DPDP Act 2023, ABDM Health Data Management Policy  
 

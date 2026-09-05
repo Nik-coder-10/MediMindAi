@@ -40,7 +40,7 @@ function assert(condition: boolean, testName: string) {
 
 async function runMasterTestSuite() {
   console.log("==================================================================");
-  console.log("🧪 RUNNING COMPREHENSIVE SIH 2026 CLINICAL TEST HARNESS");
+  console.log("🧪 RUNNING COMPREHENSIVE CLINICAL TEST HARNESS");
   console.log("==================================================================\n");
 
   // SUITE 1: Adaptive Question Engine State Machine

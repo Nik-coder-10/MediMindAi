@@ -1,6 +1,6 @@
 # Multilingual Support & Regional Voice Localization
 
-**Smart India Hackathon 2026 – Problem ID 26047 (Ministry of Ayush / AIIA)**
+**Ministry of Ayush / AIIA Clinical Platform**
 
 ---
 

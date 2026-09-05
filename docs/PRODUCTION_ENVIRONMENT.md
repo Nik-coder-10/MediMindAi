@@ -1,5 +1,5 @@
 # 🔐 PRODUCTION ENVIRONMENT VARIABLES — AYURSETU (MediMindAi)
-**SIH 2026 Problem ID 26047 — Ministry of Ayush / AIIA Clinical Platform**
+**Ministry of Ayush / AIIA Clinical Platform**
 *Date: August 2026 | Phase 6 Security & Deployment Specification*
 
 ---

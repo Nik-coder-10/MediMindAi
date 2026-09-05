@@ -1,7 +1,7 @@
 # 🌿 Phase 3 Longitudinal Patient Intelligence Baseline
 
 **Project**: AyurSetu / MediMindAi  
-**Problem Statement**: SIH 2026 Problem ID 26047 — Patient Case-Taking Software for Ayurvedic and Homeopathic Physicians  
+**Problem Statement**: AyurSetu Clinical Platform — AyurSetu Patient Case-Taking Platform  
 **Date**: September 2, 2026  
 **Role**: Principal Software Engineer, Clinical Data Architect & Product Engineer  
 

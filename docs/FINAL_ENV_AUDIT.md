@@ -1,5 +1,5 @@
 # 🔍 FINAL PRE-DEPLOYMENT ENVIRONMENT & DEPENDENCY AUDIT
-**AYURSETU (MediMindAi) — SIH 2026 Problem ID 26047 (Ministry of Ayush / AIIA)**
+**AYURSETU (MediMindAi) — Ministry of Ayush / AIIA Clinical Platform**
 *Audit Date: August 2026 | Engine: Prisma 5.22.0 / Next.js 14 / PostgreSQL 16*
 
 ---

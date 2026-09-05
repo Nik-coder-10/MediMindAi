@@ -1,5 +1,5 @@
 # 🧪 PRODUCTION SMOKE TEST PLAN — AYURSETU (MediMindAi)
-**SIH 2026 Problem ID 26047 — Ministry of Ayush / AIIA Case-Taking Software**
+**Ministry of Ayush / AIIA Case-Taking Software**
 *Date: August 2026 | Version: 1.0.0-PROD-SMOKE-SPEC*
 
 ---

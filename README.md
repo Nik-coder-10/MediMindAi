@@ -1,4 +1,4 @@
-# 🌿 AyurSetu / MediMind AI (SIH 2026 Problem ID 26047)
+# 🌿 AyurSetu / MediMind AI (AyurSetu Clinical Platform)
 ### Intelligent Multilingual Patient Case-Taking & Clinical Decision Support System
 **Ministry of Ayush / All India Institute of Ayurveda (AIIA)**
 

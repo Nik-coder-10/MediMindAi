@@ -1,6 +1,6 @@
 # Application Security & Threat Model
 
-**Smart India Hackathon 2026 – Problem ID 26047**
+**AyurSetu Clinical Platform**
 **Ministry of Ayush / AIIA Healthcare Information Security Policy**
 
 ---

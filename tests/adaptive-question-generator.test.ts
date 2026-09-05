@@ -16,7 +16,7 @@ function assert(condition: boolean, testName: string) {
 
 async function runAdaptiveGeneratorTestSuite() {
   console.log("==================================================================");
-  console.log("🧪 RUNNING ADAPTIVE QUESTION GENERATOR (SIH 2026) SUITE");
+  console.log("🧪 RUNNING ADAPTIVE QUESTION GENERATOR TEST SUITE");
   console.log("==================================================================\n");
 
   // TEST 1: Knee pain in English & Hindi

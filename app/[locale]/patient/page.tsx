@@ -136,7 +136,7 @@ export default function PatientLauncherPage({
         </div>
         <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full gov-badge text-[11px] font-black uppercase tracking-wider text-botanical-800 dark:text-botanical-300 border border-botanical-200/60 dark:border-botanical-800/40 shadow-2xs">
           <Sparkles className="h-3.5 w-3.5 text-botanical-600" />
-          SIH 2026 · {isRajasthani || isHindi ? "अखिल भारतीय आयुर्वेद संस्थान (AIIA)" : "All India Institute of Ayurveda (AIIA)"}
+          {isRajasthani || isHindi ? "अखिल भारतीय आयुर्वेद संस्थान (AIIA)" : "All India Institute of Ayurveda (AIIA)"}
         </div>
         <h1 className="text-[28px] sm:text-[34px] font-black text-foreground tracking-tight leading-tight">
           {isRajasthani ? "रोगी परामर्श सेवा" : isHindi ? "रोगी परामर्श सेवा" : "Patient Consultation"}

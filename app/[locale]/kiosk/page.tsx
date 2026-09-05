@@ -243,7 +243,7 @@ export default function KioskLauncherPage({
       {/* Footer */}
       <div className="mt-12 text-center text-xs text-slate-500 z-10 space-y-1">
         <p>{isRaj ? "ईं कियोस्क नै छोड़ो मती — अगला मरीज खातिर आप ही रीसेट हो ज्यावैगो" : isHindi ? "इस कियोस्क को छोड़ें नहीं — अगले मरीज़ के लिए अपने आप रीसेट होगा" : "Kiosk auto-resets after 10 min of inactivity for next patient"}</p>
-        <p>SIH 2026 · Problem 26047 · AyurSetu v2.0</p>
+        <p>AyurSetu v2.0 · Clinical Case-Taking Platform</p>
       </div>
     </div>
   );

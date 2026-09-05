@@ -1,6 +1,6 @@
 # 📄 Doctor Dashboard & Printable PDF Clinical Summary
 
-**AyurSetu / MediMindAi (SIH 2026 Problem ID 26047)**
+**AyurSetu / MediMindAi (AyurSetu Clinical Platform)**
 **Ministry of Ayush / All India Institute of Ayurveda (AIIA)**
 
 ---
@@ -31,7 +31,7 @@ Every generated PDF follows official hospital record standards:
 7. **AYUSH Dashavidha Pariksha Findings**: Constitutional *Prakriti*, *Vikriti*, and digestive *Agni* profile.
 8. **Consultation Note & Treatment Plan**: Formatted, readable doctor-reviewed clinical note.
 9. **Physician Sign-Off & Attestation**: Legal verification disclaimer, attending doctor name, signature/seal line, and date.
-10. **Document Footer**: Page numbering (`Page X`), confidentiality notice, and AyurSetu SIH 2026 digital stamp.
+10. **Document Footer**: Page numbering (`Page X`), confidentiality notice, and AyurSetu AyurSetu digital stamp.
 
 ---
 

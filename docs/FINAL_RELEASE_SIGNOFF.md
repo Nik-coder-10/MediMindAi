@@ -1,5 +1,5 @@
 # 🏁 FINAL RELEASE SIGN-OFF: AYURSETU
-**Smart India Hackathon 2026 – Problem ID 26047 (Ministry of Ayush / AIIA)**  
+**Ministry of Ayush / AIIA Clinical Platform**  
 **Repository**: `Nik-coder-10/MediMindAi`  
 **Application Name**: **AYURSETU**  
 **Production Release Version**: `1.0.0-PROD-SIGNOFF`  

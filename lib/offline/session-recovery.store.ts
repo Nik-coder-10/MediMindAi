@@ -1,6 +1,6 @@
 /**
  * Durable Patient Session Recovery & Offline Resilience Store
- * AyurSetu / MediMindAi (SIH 2026 Problem 26047)
+ * AyurSetu / MediMindAi Clinical Platform
  * 
  * Provides client-side persistence (IndexedDB + localStorage fallback) to guarantee:
  * 1. Zero data loss across device power failures, browser restarts, or page refreshes.

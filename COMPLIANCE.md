@@ -1,7 +1,7 @@
 # ABDM Interoperability, HL7 FHIR R4 & Regulatory Compliance
 
 **National Digital Health Ecosystem Integration**
-**Ministry of Ayush / AIIA – Smart India Hackathon 2026 (Problem ID 26047)**
+**Ministry of Ayush / AIIA – AyurSetu Clinical Platform (AyurSetu Clinical Platform)**
 
 ---
 
