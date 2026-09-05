@@ -23,43 +23,48 @@ export async function GET(req: NextRequest) {
     }
 
     if (!patientId) {
-      // Find patient profile if exists
-      const patient = await prisma.patientProfile.findFirst({
-        where: { userId: user.id },
-      });
-      patientId = patient?.id;
+      try {
+        const patient = await prisma.patientProfile.findFirst({
+          where: { userId: user.id },
+        });
+        patientId = patient?.id;
+      } catch (profileErr) {
+        console.warn("Patient cases profile DB fallback:", (profileErr as any)?.message);
+      }
     }
 
     if (!patientId) {
-      return apiSuccess({
-        totalCount: 0,
-        cases: [],
-      });
+      patientId = `pat-prof-${user.id}`;
     }
 
-    // Find all clinical sessions for this patient from PostgreSQL
-    const sessions = await prisma.clinicalSession.findMany({
-      where: {
-        OR: [
-          { patientId },
-          { patient: { userId: user.id } },
-        ],
-        deletedAt: null,
-      },
-      include: {
-        chiefComplaints: true,
-        clinicalSummary: true,
-        redFlagEvents: true,
-        doctor: {
-          include: {
-            user: true,
+    // Find all clinical sessions for this patient from PostgreSQL (with resilient fallback)
+    let sessions: any[] = [];
+    try {
+      sessions = await prisma.clinicalSession.findMany({
+        where: {
+          OR: [
+            { patientId },
+            { patient: { userId: user.id } },
+          ],
+          deletedAt: null,
+        },
+        include: {
+          chiefComplaints: true,
+          clinicalSummary: true,
+          redFlagEvents: true,
+          doctor: {
+            include: {
+              user: true,
+            },
           },
         },
-      },
-      orderBy: {
-        startedAt: "desc",
-      },
-    });
+        orderBy: {
+          startedAt: "desc",
+        },
+      });
+    } catch (dbErr) {
+      console.warn("Patient cases fetch DB fallback to memory store:", (dbErr as any)?.message);
+    }
 
     // Merge in-memory sessions if database is offline or local
     const { inMemoryClinicalStore } = await import("@/lib/db/in-memory-store");
@@ -77,16 +82,20 @@ export async function GET(req: NextRequest) {
     const formattedCases = finalSessions.map((session) => {
       const tokenNumber = formatAyurToken(session.id);
 
+      const startDate = session.startedAt instanceof Date ? session.startedAt : new Date(session.startedAt || Date.now());
+      const updateDate = session.updatedAt instanceof Date ? session.updatedAt : new Date(session.updatedAt || Date.now());
+      const completeDate = session.completedAt ? (session.completedAt instanceof Date ? session.completedAt : new Date(session.completedAt)) : null;
+
       return {
         id: session.id,
         tokenNumber,
         status: session.status,
         triagePriority: session.triagePriority,
-        startedAt: session.startedAt.toISOString(),
-        updatedAt: session.updatedAt.toISOString(),
-        completedAt: session.completedAt ? session.completedAt.toISOString() : null,
+        startedAt: startDate.toISOString(),
+        updatedAt: updateDate.toISOString(),
+        completedAt: completeDate ? completeDate.toISOString() : null,
         chiefComplaint: session.chiefComplaints?.[0]?.symptomName || "Consultation Intake",
-        redFlagCount: session.redFlagEvents.length,
+        redFlagCount: session.redFlagEvents?.length || 0,
         hasSummary: !!session.clinicalSummary,
         summaryStatus: session.clinicalSummary?.status || null,
         doctorName: session.doctor

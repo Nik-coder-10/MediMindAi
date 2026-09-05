@@ -6,62 +6,25 @@
  * follow-up questions from patient chief complaint free text (Hindi, English, Hinglish).
  */
 
-export type ClinicalCategory =
-  | "Musculoskeletal"
-  | "Chest Pain"
-  | "Headache"
-  | "Abdominal Pain"
-  | "Fever"
-  | "Respiratory"
-  | "General"
-  | "Other";
+export {
+  type ClinicalCategory,
+  type QuestionType,
+  type QuestionPriority,
+  type ClinicalPurpose,
+  type QuestionOptionItem,
+  type AdaptiveQuestion,
+  type AdaptiveQuestionGeneratorInput,
+  type AdaptiveQuestionGeneratorOutput,
+} from "./adaptive-question-types";
 
-export type QuestionType = "text" | "scale" | "yes_no" | "single_choice" | "multi_choice";
-export type QuestionPriority = "high" | "medium";
-export type ClinicalPurpose =
-  | "onset"
-  | "location"
-  | "severity"
-  | "character"
-  | "aggravating"
-  | "relieving"
-  | "associated"
-  | "red_flag"
-  | "history"
-  | "family_history"
-  | "social_history";
+import {
+  ClinicalCategory,
+  AdaptiveQuestion,
+  AdaptiveQuestionGeneratorInput,
+  AdaptiveQuestionGeneratorOutput,
+} from "./adaptive-question-types";
+import { EXTENDED_CLINICAL_CATEGORIES, ExtendedCategoryProfile } from "./clinical-categories-taxonomy";
 
-export interface QuestionOptionItem {
-  value: string;
-  labelHi: string;
-  labelEn: string;
-  isRedFlag?: boolean;
-}
-
-export interface AdaptiveQuestion {
-  id: string;
-  text: string;
-  textEn: string;
-  type: QuestionType;
-  options?: Array<QuestionOptionItem | string>;
-  priority: QuestionPriority;
-  clinicalPurpose: ClinicalPurpose;
-}
-
-export interface AdaptiveQuestionGeneratorInput {
-  chiefComplaint: string;
-  language?: "hi" | "en";
-  intakeMode?: "AYURVEDA" | "GENERAL";
-  sessionId?: string;
-  alreadyCollectedFacts?: Record<string, unknown>;
-}
-
-export interface AdaptiveQuestionGeneratorOutput {
-  detectedProblems: string[];
-  category: ClinicalCategory;
-  questions: AdaptiveQuestion[];
-  redFlagHints: string[];
-}
 
 interface CategoryProfile {
   category: ClinicalCategory;
@@ -71,7 +34,7 @@ interface CategoryProfile {
   redFlagHints: string[];
 }
 
-const CATEGORY_PROFILES: Record<ClinicalCategory, CategoryProfile> = {
+const CATEGORY_PROFILES: Partial<Record<ClinicalCategory, CategoryProfile>> = {
   Musculoskeletal: {
     category: "Musculoskeletal",
     keywords: [
@@ -1031,6 +994,29 @@ export class AdaptiveQuestionGenerator {
 
     const normalized = text.toLowerCase().trim();
 
+    // 1. Highest Priority: Check the 30 specialized clinical categories first
+    // This immediately routes complaints like "kandhe mai dard", "lower back pain", "neck pain", etc.
+    let bestExtCategory: ClinicalCategory | null = null;
+    let maxExtScore = 0;
+
+    for (const [key, extProfile] of Object.entries(EXTENDED_CLINICAL_CATEGORIES)) {
+      let score = 0;
+      for (const kw of extProfile.keywords) {
+        const kwLower = kw.toLowerCase();
+        if (normalized.includes(kwLower) || text.includes(kw)) {
+          score += kwLower.length >= 5 ? 4 : 2;
+        }
+      }
+      if (score > maxExtScore) {
+        maxExtScore = score;
+        bestExtCategory = extProfile.category as ClinicalCategory;
+      }
+    }
+
+    if (bestExtCategory && maxExtScore >= 2) {
+      return bestExtCategory;
+    }
+
     // Priority evaluation with specific anatomical keyword checks
     const categories: ClinicalCategory[] = [
       "Chest Pain",
@@ -1227,7 +1213,24 @@ export class AdaptiveQuestionGenerator {
     const lang = input.language === "en" ? "en" : "hi";
 
     const category = this.classifyChiefComplaint(rawText);
-    const profile = CATEGORY_PROFILES[category] || CATEGORY_PROFILES.General;
+
+    // If the complaint matches one of our 30 specialized categories, return its 10 defined questions directly
+    const extProfile = Object.values(EXTENDED_CLINICAL_CATEGORIES).find(
+      (ep) => ep.category === category
+    );
+
+    if (extProfile) {
+      const detectedProblems = extProfile.problemsDetector(rawText);
+      const questions = extProfile.questionTemplates(lang);
+      return {
+        detectedProblems,
+        category,
+        questions, // exactly 10 clinically curated questions direct to doctor
+        redFlagHints: extProfile.redFlagHints,
+      };
+    }
+
+    const profile = CATEGORY_PROFILES[category] || CATEGORY_PROFILES.General!;
 
     const detectedProblems = profile.problemsDetector(rawText);
     if (detectedProblems.length === 0) {

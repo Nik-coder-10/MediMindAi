@@ -18,12 +18,27 @@ const inMemoryEngineStates: Map<string, EngineStateDTO> = new Map();
 function mapCategoryToDTO(cat: string): ComplaintCategory {
   switch (cat) {
     case "Musculoskeletal":
+    case "Shoulder Pain":
+    case "Lower Back Pain":
+    case "Neck Pain":
+    case "Knee Pain":
+    case "Hip Pain":
+    case "Ankle & Heel Pain":
+    case "Small Joint Pain":
+    case "Muscle Pain & Cramps":
+    case "Gout & Uric Acid Arthritis (वातरक्त)":
       return "JOINT_PAIN";
     case "Chest Pain":
+    case "Hypertension & Cardiovascular (उच्च रक्तचाप)":
       return "CHEST_PAIN";
     case "Headache":
+    case "Vertigo, Dizziness & Vestibular (भ्रम / चक्कर)":
       return "HEADACHE";
     case "Abdominal Pain":
+    case "Acidity & GERD":
+    case "Constipation & Bowel Issues":
+    case "Piles & Anorectal Disorders":
+    case "Liver & Metabolic Health (यकृत् विकार)":
       return "ABDOMINAL_PAIN";
     case "Fever":
       return "FEVER";
@@ -122,7 +137,7 @@ export class AdaptiveEngineService {
           collectedFacts: initialFacts as any,
           questionHistory: [] as any,
           questionCount: 0,
-          maxQuestions: 10,
+          maxQuestions: Math.max(questions.length, 10),
           triageLevel: TriagePriority.ROUTINE,
           isPaused: false,
           completed: false,
@@ -131,6 +146,7 @@ export class AdaptiveEngineService {
           category,
           currentNodeId: firstNode?.nodeCode || null,
           collectedFacts: initialFacts as any,
+          maxQuestions: Math.max(questions.length, 10),
           isPaused: false,
           completed: false,
         },

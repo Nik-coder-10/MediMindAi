@@ -26,9 +26,18 @@ export async function POST(req: NextRequest) {
     // Save answer to in-memory store for doctor case dossier view
     try {
       const { inMemoryClinicalStore } = await import("@/lib/db/in-memory-store");
+      const { defaultQuestionProvider } = await import("@/lib/engine/question-provider");
+      const questionNode = await defaultQuestionProvider.getNodeByCode(validated.nodeCode);
+
       inMemoryClinicalStore.addAnswer(validated.sessionId, {
         nodeCode: validated.nodeCode,
         answerValue: validated.answerValue,
+        questionNode: questionNode ? {
+          nodeCode: questionNode.nodeCode,
+          questionText: questionNode.questionText,
+          questionTextHindi: questionNode.questionTextHindi,
+          clinicalDomain: questionNode.clinicalDomain,
+        } : undefined,
       });
     } catch {}
 
