@@ -20,6 +20,8 @@ const require = createRequire(import.meta.url);
  */
 
 const OCR_TIMEOUT_MS = Number(process.env.OCR_TIMEOUT_MS || 45000);
+// Outer races must not fire before the inner provider can report where it stalled.
+const ORCHESTRATOR_TIMEOUT_MS = OCR_TIMEOUT_MS + 20000;
 const MAX_PDF_PAGES = Number(process.env.OCR_PDF_PAGES || 2);
 
 function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise<T> {
@@ -457,7 +459,7 @@ export class IntelligentDocumentOCRProvider implements OCRProvider {
     // 2. Cloud OCR if configured (best quality for handwritten & dense layouts)
     if (this.cloud.isConfigured) {
       try {
-        return await withTimeout(this.cloud.extractText(fileBuffer, mimeType), OCR_TIMEOUT_MS, "cloud-ocr");
+        return await withTimeout(this.cloud.extractText(fileBuffer, mimeType), ORCHESTRATOR_TIMEOUT_MS, "cloud-ocr");
       } catch (e) {
         failures.push(`cloud: ${(e as Error).message}`);
         console.warn(`[OCR] Cloud OCR unavailable, falling back: ${(e as Error).message}`);
@@ -470,7 +472,7 @@ export class IntelligentDocumentOCRProvider implements OCRProvider {
       fileBuffer.slice(0, 5).toString("latin1").startsWith("%PDF")
     ) {
       try {
-        return await withTimeout(this.pdf.extractText(fileBuffer, mimeType), OCR_TIMEOUT_MS, "pdf");
+        return await withTimeout(this.pdf.extractText(fileBuffer, mimeType), ORCHESTRATOR_TIMEOUT_MS, "pdf");
       } catch (e) {
         failures.push(`pdf: ${(e as Error).message}`);
         console.warn(`[OCR] PDF OCR failed: ${(e as Error).message}`);
@@ -481,7 +483,7 @@ export class IntelligentDocumentOCRProvider implements OCRProvider {
     try {
       const imageResult = await withTimeout(
         this.tesseract.extractText(fileBuffer, mimeType),
-        OCR_TIMEOUT_MS,
+        ORCHESTRATOR_TIMEOUT_MS,
         "tesseract"
       );
       if (imageResult.rawText?.trim()) return imageResult;
