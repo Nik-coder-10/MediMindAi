@@ -243,25 +243,60 @@ export class TesseractImageProvider implements OCRProvider {
 export class PdfDocumentProvider implements OCRProvider {
   constructor(private image = new TesseractImageProvider(process.env.OCR_LANGS || "eng+hin")) {}
 
-  async extractText(fileBuffer: Buffer, mimeType: string): Promise<OCRResult> {
-    const pdfjs: any = await import("pdfjs-dist/legacy/build/pdf.mjs");
+  private cleanText(text: string): string {
+    // Keep line breaks: the clinical entity extractor is line-oriented and
+    // medications/labs are parsed per line. Only collapse horizontal whitespace.
+    return text
+      .replace(/[ \t]+/g, " ")
+      .replace(/\n[ \t]+/g, "\n")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim();
+  }
 
-    // In Node/serverless pdf.js runs in "fake worker" mode and dynamically
-    // imports workerSrc. The worker file is not reliably traced into a Vercel
-    // bundle, so provide the worker module in-process instead.
+  async extractText(fileBuffer: Buffer, mimeType: string): Promise<OCRResult> {
+    // 1. Scanned PDFs: OCR the embedded page images first. This avoids pdf.js
+    // entirely — its fake-worker setup can hang inside a serverless bundle.
+    const images = await extractPdfImages(fileBuffer);
+    if (images.length > 0) {
+      let text = "";
+      let confidence = 0;
+      const layout: any[] = [];
+      for (const image of images) {
+        try {
+          const ocr = await this.image.extractText(image.bytes, image.mimeType);
+          if (ocr.rawText && ocr.rawText.length > text.length) {
+            text = ocr.rawText;
+            confidence = ocr.confidence;
+            layout.push(...((ocr.layoutHints as any)?.lines || []));
+          }
+        } catch (ocrErr) {
+          console.warn("[OCR] Embedded page OCR skipped:", (ocrErr as any)?.message);
+        }
+      }
+      if (text.trim()) {
+        return {
+          rawText: this.cleanText(text),
+          confidence,
+          detectedLanguage: "en",
+          pageCount: images.length,
+          provider: "pdf-image-ocr",
+          layoutHints: layout.length ? { lines: layout } : undefined,
+        };
+      }
+    }
+
+    // 2. Digital PDFs: pdf.js text layer.
+    const pdfjs: any = await import("pdfjs-dist/legacy/build/pdf.mjs");
     (globalThis as any).pdfjsWorker ||= pdfjsWorker;
 
     const doc: any = await withTimeout(
       pdfjs.getDocument({ data: new Uint8Array(fileBuffer), useSystemFonts: true }).promise,
-      OCR_TIMEOUT_MS,
+      Math.min(OCR_TIMEOUT_MS, 20000),
       "pdf-parse"
     );
 
     const maxPages = Math.min(doc.numPages, MAX_PDF_PAGES);
     let text = "";
-    const layout: any[] = [];
-    let avgConfidence = 0.92;
-
     for (let p = 1; p <= maxPages; p++) {
       const page = await doc.getPage(p);
       const content = await page.getTextContent();
@@ -277,44 +312,18 @@ export class PdfDocumentProvider implements OCRProvider {
       }
       pageText = pageText.replace(/[ \t]+/g, " ").replace(/\n /g, "\n").trim();
       if (pageText) text += `\n${pageText}`;
-
     }
 
-    // Scanned / image-only PDFs: OCR the embedded page images directly.
-    // (Rendering pages via pdf.js + native canvas is unreliable in serverless.)
-    if (text.trim().length < 40) {
-      const images = await extractPdfImages(fileBuffer);
-      for (const image of images) {
-        try {
-          const ocr = await this.image.extractText(image.bytes, image.mimeType);
-          if (ocr.rawText && ocr.rawText.trim().length > text.trim().length) {
-            text = ocr.rawText;
-            avgConfidence = ocr.confidence;
-            layout.push(...((ocr.layoutHints as any)?.lines || []));
-          }
-        } catch (ocrErr) {
-          console.warn("[OCR] Embedded page image OCR skipped:", (ocrErr as any)?.message);
-        }
-      }
-    }
-
-    // Keep line breaks: the clinical entity extractor is line-oriented and
-    // medications/labs are parsed per line. Only collapse horizontal whitespace.
-    const clean = text
-      .replace(/[ \t]+/g, " ")
-      .replace(/\n[ \t]+/g, "\n")
-      .replace(/\n{3,}/g, "\n\n")
-      .trim();
+    const clean = this.cleanText(text);
     if (!clean) {
-      throw new Error("PDF has no extractable text layer and rasterisation produced nothing");
+      throw new Error("PDF has no extractable text layer or readable embedded images");
     }
     return {
       rawText: clean,
-      confidence: avgConfidence,
+      confidence: 0.92,
       detectedLanguage: "en",
       pageCount: maxPages,
       provider: "pdfjs-dist",
-      layoutHints: layout.length ? { lines: layout } : undefined,
     };
   }
 }
