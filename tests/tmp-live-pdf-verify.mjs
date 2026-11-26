@@ -1,0 +1,15 @@
+import { readFileSync } from "node:fs";
+const base = "https://medi-mind-ai-eight.vercel.app";
+const h = { "x-user-id": "pat-104-demo", "Content-Type": "application/json" };
+const sr = await fetch(base + "/api/patient/session/start", { method: "POST", headers: h, body: JSON.stringify({ chiefComplaint: "Scanned PDF verify 2", language: "hi", intakeMode: "AYURVEDA" }) });
+const sid = (await sr.json()).data.sessionId;
+const form = new FormData();
+form.append("file", new Blob([readFileSync("C:/Users/Hp/AppData/Local/Temp/opencode/user-report.pdf")], { type: "application/pdf" }), "medical_report.pdf");
+form.append("sessionId", sid);
+form.append("type", "PRESCRIPTION");
+const uj = await (await fetch(base + "/api/patient/documents/upload", { method: "POST", headers: { "x-user-id": "pat-104-demo" }, body: form })).json();
+console.log("session:", sid);
+console.log("ocr:", JSON.stringify({ provider: uj.data?.ocr?.provider, len: uj.data?.ocr?.rawText?.length || 0, error: uj.data?.ocr?.error, head: (uj.data?.ocr?.rawText || "").slice(0, 200) }));
+console.log("entities:", JSON.stringify({ meds: uj.data?.entities?.medications?.length, labs: uj.data?.entities?.labResults?.length, diagnoses: uj.data?.entities?.diagnoses?.length }));
+const pj = await (await fetch(base + `/api/patient/session/${sid}/preview`, { headers: { "x-user-id": "pat-104-demo" } })).json();
+console.log("preview:", JSON.stringify({ docs: pj.data?.documents?.length, meds: pj.data?.medications?.length, labs: pj.data?.labResults?.length, insightMeds: pj.data?.reportInsights?.medications?.length }));

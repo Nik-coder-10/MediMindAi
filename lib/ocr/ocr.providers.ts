@@ -450,7 +450,13 @@ export class IntelligentDocumentOCRProvider implements OCRProvider {
 
     // 4. Image → Tesseract with handwritten contrast enhancements
     try {
-      return await withTimeout(this.tesseract.extractText(fileBuffer, mimeType), OCR_TIMEOUT_MS, "tesseract");
+      const imageResult = await withTimeout(
+        this.tesseract.extractText(fileBuffer, mimeType),
+        OCR_TIMEOUT_MS,
+        "tesseract"
+      );
+      if (imageResult.rawText?.trim()) return imageResult;
+      if (imageResult.error) failures.push(`image: ${imageResult.error}`);
     } catch (e) {
       failures.push(`image: ${(e as Error).message}`);
       console.warn(`[OCR] Tesseract OCR failed: ${(e as Error).message}`);
