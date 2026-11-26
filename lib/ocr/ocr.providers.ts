@@ -192,7 +192,12 @@ export class TesseractImageProvider implements OCRProvider {
     try {
       // Serve language data locally instead of relying on Tesseract's public
       // CDN — the CDN fetch is unreliable/slow inside Vercel functions.
-      const recognizeOptions: any = { logger: () => {} };
+      let lastTesseractStatus = "not-started";
+      const recognizeOptions: any = {
+        logger: (m: any) => {
+          if (m?.status) lastTesseractStatus = m.status;
+        },
+      };
       if (process.env.VERCEL_URL) {
         recognizeOptions.langPath = `https://${process.env.VERCEL_URL}/tessdata`;
         recognizeOptions.gzip = false;
@@ -208,7 +213,11 @@ export class TesseractImageProvider implements OCRProvider {
         Tesseract.recognize(tmp, this.langs, recognizeOptions),
         OCR_TIMEOUT_MS,
         "tesseract"
-      );
+      ).catch((e: any) => {
+        throw new Error(
+          `${e.message} (last status: ${lastTesseractStatus}, langs: ${this.langs}, langPath: ${recognizeOptions.langPath || "default"})`
+        );
+      });
 
       const rawText = (res.data.text || "")
         .split("\n")
