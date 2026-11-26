@@ -1,4 +1,7 @@
 import { createRequire } from "module";
+import { inflateSync } from "node:zlib";
+import { PDFArray, PDFDocument, PDFName, PDFRawStream } from "pdf-lib";
+import * as pdfjsWorker from "pdfjs-dist/legacy/build/pdf.worker.mjs";
 import type { OCRResult, OCRProvider } from "./ocr.service";
 
 const require = createRequire(import.meta.url);
@@ -39,6 +42,78 @@ function looksLikePlainText(buf: Buffer): boolean {
   } catch {
     return false;
   }
+}
+
+/**
+ * Extracts embedded page images directly from a PDF's XObjects. Scanned
+ * prescriptions are image-only, and rendering a page with pdf.js + native
+ * canvas is unreliable inside a serverless bundle. Pulling the embedded JPEG
+ * (or Flate-wrapped JPEG / raw RGB bitmap) is deterministic and needs no
+ * rendering step.
+ */
+async function extractPdfImages(fileBuffer: Buffer): Promise<Array<{ bytes: Buffer; mimeType: string }>> {
+  const images: Array<{ bytes: Buffer; mimeType: string }> = [];
+  try {
+    const { createCanvas, ImageData } = await import("@napi-rs/canvas");
+    const pdf = await PDFDocument.load(fileBuffer, { ignoreEncryption: true });
+    const pages = pdf.getPages();
+
+    for (let p = 0; p < Math.min(pages.length, MAX_PDF_PAGES); p++) {
+      const resources = pages[p].node.Resources();
+      if (!resources) continue;
+      const xobjects: any = resources.lookup(PDFName.of("XObject"));
+      if (!xobjects) continue;
+
+      for (const key of xobjects.keys()) {
+        try {
+          const obj: any = pdf.context.lookup(xobjects.get(key));
+          if (!(obj instanceof PDFRawStream)) continue;
+          if (obj.dict.get(PDFName.of("Subtype"))?.toString() !== "/Image") continue;
+
+          const filterValue: any = obj.dict.get(PDFName.of("Filter"));
+          const filters = filterValue instanceof PDFArray
+            ? filterValue.asArray().map((f: any) => String(f?.toString?.() || ""))
+            : filterValue
+              ? [String(filterValue.toString())]
+              : [];
+          const raw = obj.contents instanceof Uint8Array ? Buffer.from(obj.contents) : null;
+          if (!raw?.length) continue;
+
+          const isJpeg = filters.some((f) => f === "/DCTDecode" || f === "/DCT");
+          if (isJpeg) {
+            let bytes = raw;
+            // Some scanners wrap the JPEG stream in FlateDecode.
+            if (filters.includes("/FlateDecode")) {
+              try { bytes = inflateSync(raw); } catch { continue; }
+            }
+            if (bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) {
+              images.push({ bytes, mimeType: "image/jpeg" });
+              continue;
+            }
+          }
+
+          const isFlate = filters.includes("/FlateDecode");
+          if (isFlate) {
+            const widthObj: any = obj.dict.get(PDFName.of("Width"));
+            const heightObj: any = obj.dict.get(PDFName.of("Height"));
+            const width = Number(widthObj?.numberValue ?? widthObj?.toString?.() ?? 0);
+            const height = Number(heightObj?.numberValue ?? heightObj?.toString?.() ?? 0);
+            if (!width || !height || width > 8000 || height > 8000) continue;
+            const pixels = inflateSync(raw);
+            const canvas = createCanvas(width, height);
+            const ctx = canvas.getContext("2d");
+            ctx.putImageData(new ImageData(new Uint8ClampedArray(pixels), width, height), 0, 0);
+            images.push({ bytes: canvas.toBuffer("image/png"), mimeType: "image/png" });
+          }
+        } catch {
+          // Skip unreadable image objects; other pages may still be usable.
+        }
+      }
+    }
+  } catch (error) {
+    console.warn("[OCR] PDF image extraction unavailable:", (error as any)?.message);
+  }
+  return images;
 }
 
 /* ============================================================================
@@ -168,13 +243,11 @@ export class PdfDocumentProvider implements OCRProvider {
 
   async extractText(fileBuffer: Buffer, mimeType: string): Promise<OCRResult> {
     const pdfjs: any = await import("pdfjs-dist/legacy/build/pdf.mjs");
-    try {
-      const { pathToFileURL } = require("url");
-      const workerSrc = pathToFileURL(require.resolve("pdfjs-dist/legacy/build/pdf.worker.mjs")).href;
-      pdfjs.GlobalWorkerOptions.workerSrc = workerSrc;
-    } catch {
-      /* worker resolution is best-effort */
-    }
+
+    // In Node/serverless pdf.js runs in "fake worker" mode and dynamically
+    // imports workerSrc. The worker file is not reliably traced into a Vercel
+    // bundle, so provide the worker module in-process instead.
+    (globalThis as any).pdfjsWorker ||= pdfjsWorker;
 
     const doc: any = await withTimeout(
       pdfjs.getDocument({ data: new Uint8Array(fileBuffer), useSystemFonts: true }).promise,
@@ -203,28 +276,33 @@ export class PdfDocumentProvider implements OCRProvider {
       pageText = pageText.replace(/[ \t]+/g, " ").replace(/\n /g, "\n").trim();
       if (pageText) text += `\n${pageText}`;
 
-      // Rasterisation for scanned/handwritten image-only PDFs
-      if (text.trim().length < 40) {
+    }
+
+    // Scanned / image-only PDFs: OCR the embedded page images directly.
+    // (Rendering pages via pdf.js + native canvas is unreliable in serverless.)
+    if (text.trim().length < 40) {
+      const images = await extractPdfImages(fileBuffer);
+      for (const image of images) {
         try {
-          const { createCanvas } = await import("@napi-rs/canvas");
-          const viewport = page.getViewport({ scale: 2 });
-          const canvas = createCanvas(Math.floor(viewport.width), Math.floor(viewport.height));
-          const ctx = canvas.getContext("2d");
-          await page.render({ canvasContext: ctx as any, viewport }).promise;
-          const png = canvas.toBuffer("image/png");
-          const ocr = await this.image.extractText(png, "image/png");
-          if (ocr.rawText.trim().length > text.trim().length) {
+          const ocr = await this.image.extractText(image.bytes, image.mimeType);
+          if (ocr.rawText && ocr.rawText.trim().length > text.trim().length) {
             text = ocr.rawText;
             avgConfidence = ocr.confidence;
             layout.push(...((ocr.layoutHints as any)?.lines || []));
           }
-        } catch {
-          /* rasterisation unavailable — keep text-layer result */
+        } catch (ocrErr) {
+          console.warn("[OCR] Embedded page image OCR skipped:", (ocrErr as any)?.message);
         }
       }
     }
 
-    const clean = text.replace(/\s+/g, " ").trim();
+    // Keep line breaks: the clinical entity extractor is line-oriented and
+    // medications/labs are parsed per line. Only collapse horizontal whitespace.
+    const clean = text
+      .replace(/[ \t]+/g, " ")
+      .replace(/\n[ \t]+/g, "\n")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim();
     if (!clean) {
       throw new Error("PDF has no extractable text layer and rasterisation produced nothing");
     }
