@@ -54,7 +54,6 @@ function looksLikePlainText(buf: Buffer): boolean {
 async function extractPdfImages(fileBuffer: Buffer): Promise<Array<{ bytes: Buffer; mimeType: string }>> {
   const images: Array<{ bytes: Buffer; mimeType: string }> = [];
   try {
-    const { createCanvas, ImageData } = await import("@napi-rs/canvas");
     const pdf = await PDFDocument.load(fileBuffer, { ignoreEncryption: true });
     const pages = pdf.getPages();
 
@@ -100,6 +99,9 @@ async function extractPdfImages(fileBuffer: Buffer): Promise<Array<{ bytes: Buff
             const height = Number(heightObj?.numberValue ?? heightObj?.toString?.() ?? 0);
             if (!width || !height || width > 8000 || height > 8000) continue;
             const pixels = inflateSync(raw);
+            // Canvas is only needed for uncompressed RGB bitmaps; JPEG pages
+            // never reach this branch and work without any native module.
+            const { createCanvas, ImageData } = await import("@napi-rs/canvas");
             const canvas = createCanvas(width, height);
             const ctx = canvas.getContext("2d");
             ctx.putImageData(new ImageData(new Uint8ClampedArray(pixels), width, height), 0, 0);
@@ -406,6 +408,8 @@ export class IntelligentDocumentOCRProvider implements OCRProvider {
   private cloud = new CloudDocIntelligenceProvider();
 
   async extractText(fileBuffer: Buffer, mimeType: string): Promise<OCRResult> {
+    const failures: string[] = [];
+
     // 1. Genuine plain-text file (pasted/exported .txt)
     if (mimeType === "text/plain" || looksLikePlainText(fileBuffer)) {
       const decoded = fileBuffer.toString("utf-8").trim();
@@ -426,6 +430,7 @@ export class IntelligentDocumentOCRProvider implements OCRProvider {
       try {
         return await withTimeout(this.cloud.extractText(fileBuffer, mimeType), OCR_TIMEOUT_MS, "cloud-ocr");
       } catch (e) {
+        failures.push(`cloud: ${(e as Error).message}`);
         console.warn(`[OCR] Cloud OCR unavailable, falling back: ${(e as Error).message}`);
       }
     }
@@ -438,6 +443,7 @@ export class IntelligentDocumentOCRProvider implements OCRProvider {
       try {
         return await withTimeout(this.pdf.extractText(fileBuffer, mimeType), OCR_TIMEOUT_MS, "pdf");
       } catch (e) {
+        failures.push(`pdf: ${(e as Error).message}`);
         console.warn(`[OCR] PDF OCR failed: ${(e as Error).message}`);
       }
     }
@@ -446,14 +452,16 @@ export class IntelligentDocumentOCRProvider implements OCRProvider {
     try {
       return await withTimeout(this.tesseract.extractText(fileBuffer, mimeType), OCR_TIMEOUT_MS, "tesseract");
     } catch (e) {
+      failures.push(`image: ${(e as Error).message}`);
       console.warn(`[OCR] Tesseract OCR failed: ${(e as Error).message}`);
     }
 
-    // 5. Total failure — empty + error flag.
+    // 5. Total failure — empty + error flag. Surface provider diagnostics so
+    // failures are debuggable in serverless logs and upload responses.
     return {
       rawText: "",
       confidence: 0,
-      error: "OCR could not read this file (unsupported, corrupt, or unreadable).",
+      error: `OCR could not read this file (unsupported, corrupt, or unreadable).${failures.length ? ` Details: ${failures.join(" | ")}` : ""}`,
       provider: "none",
     };
   }
