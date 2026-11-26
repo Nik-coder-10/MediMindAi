@@ -40,7 +40,15 @@ const nextConfig = {
   ],
 
   experimental: {
-    serverComponentsExternalPackages: ["@napi-rs/canvas", "canvas", "pdfjs-dist", "tesseract.js"],
+    serverComponentsExternalPackages: [
+      "@napi-rs/canvas",
+      "canvas",
+      "pdfjs-dist",
+      "tesseract.js",
+      "tesseract.js-core",
+      "wasm-feature-detect",
+      "node-fetch",
+    ],
   },
 
   webpack: (config, { dev, isServer }) => {
