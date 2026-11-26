@@ -190,11 +190,22 @@ export class TesseractImageProvider implements OCRProvider {
     fs.writeFileSync(tmp, processedBuffer);
 
     try {
-      // Configure Tesseract with Page Segmentation Mode 6 (Assume a single uniform block of text) for prescriptions
+      // Serve language data locally instead of relying on Tesseract's public
+      // CDN — the CDN fetch is unreliable/slow inside Vercel functions.
+      const recognizeOptions: any = { logger: () => {} };
+      if (process.env.VERCEL_URL) {
+        recognizeOptions.langPath = `https://${process.env.VERCEL_URL}/tessdata`;
+        recognizeOptions.gzip = false;
+      } else {
+        const localLangPath = path.join(process.cwd(), "public", "tessdata");
+        if (fs.existsSync(localLangPath)) {
+          recognizeOptions.langPath = localLangPath;
+          recognizeOptions.gzip = false;
+        }
+      }
+
       const res: any = await withTimeout(
-        Tesseract.recognize(tmp, this.langs, {
-          logger: () => {},
-        }),
+        Tesseract.recognize(tmp, this.langs, recognizeOptions),
         OCR_TIMEOUT_MS,
         "tesseract"
       );
