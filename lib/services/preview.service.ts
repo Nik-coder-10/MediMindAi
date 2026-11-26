@@ -61,6 +61,24 @@ export interface PatientDashboardPreviewDTO {
     hasEntities: boolean;
   }>;
 
+  /** Plain-language findings distilled from previously uploaded medical reports. */
+  reportInsights?: {
+    documentCount: number;
+    medications: string[];
+    abnormalLabs: Array<{
+      testName: string;
+      value: string;
+      unit?: string;
+      flag?: string;
+      referenceRange?: string;
+    }>;
+    diagnoses: string[];
+    allergies: string[];
+    vitals: Array<{ name: string; value: string }>;
+    summaryHi: string;
+    summaryEn: string;
+  } | null;
+
   timeline: Array<{
     id: string;
     patientId: string;
@@ -315,6 +333,64 @@ export class PreviewService {
       hasEntities: d.extractedEntities.length > 0,
     }));
 
+    // Distil clinically relevant findings from the old reports so the patient
+    // (and the doctor) can see at a glance what was actually extracted.
+    const diagnoses: string[] = [];
+    const allergies: string[] = [];
+    const vitals: Array<{ name: string; value: string }> = [];
+    session.medicalDocuments.forEach((doc: any) => {
+      (doc.extractedEntities || []).forEach((ent: any) => {
+        const sd = ent.structuredData as any;
+        const label = String(sd?.normalisedValue || ent.rawText || "").trim();
+        if (!label) return;
+        if (ent.type === "DIAGNOSIS" && !diagnoses.includes(label)) {
+          diagnoses.push(label);
+        } else if (ent.type === "ALLERGY" && !allergies.includes(label)) {
+          allergies.push(label);
+        } else if (ent.type === "VITAL") {
+          const name = String(sd?.vital || "Vital");
+          const value = String(sd?.value || ent.rawText || "");
+          if (!vitals.some((v) => v.name === name && v.value === value)) {
+            vitals.push({ name, value });
+          }
+        }
+      });
+    });
+
+    const abnormalLabs = labResults.filter(
+      (l) => l.flag && l.flag !== "NORMAL"
+    );
+    const medicationLabels = medications
+      .map((m) => [m.name, m.dosage, m.frequency].filter(Boolean).join(" "))
+      .filter(Boolean);
+
+    const hiParts: string[] = [];
+    if (documents.length) hiParts.push(`आपकी ${documents.length} पुरानी रिपोर्टें जोड़ी गई हैं`);
+    if (diagnoses.length) hiParts.push(`इनमें ${diagnoses.join(", ")} का उल्लेख है`);
+    if (medicationLabels.length) hiParts.push(`${medicationLabels.length} पहले से ली जा रही दवाइयां मिली हैं`);
+    if (abnormalLabs.length) hiParts.push(`${abnormalLabs.length} जांच परिणाम सामान्य सीमा से बाहर हैं`);
+    if (allergies.length) hiParts.push(`एलर्जी की जानकारी भी मिली है`);
+
+    const enParts: string[] = [];
+    if (documents.length) enParts.push(`${documents.length} previous report(s) attached`);
+    if (diagnoses.length) enParts.push(`mentions ${diagnoses.join(", ")}`);
+    if (medicationLabels.length) enParts.push(`${medicationLabels.length} current medications identified`);
+    if (abnormalLabs.length) enParts.push(`${abnormalLabs.length} lab value(s) outside the normal range`);
+    if (allergies.length) enParts.push(`allergy information recorded`);
+
+    const reportInsights = documents.length
+      ? {
+          documentCount: documents.length,
+          medications: medicationLabels,
+          abnormalLabs,
+          diagnoses,
+          allergies,
+          vitals,
+          summaryHi: hiParts.length ? `${hiParts.join("। ")}। कृपया डॉक्टर को यह जानकारी अवश्य दिखाएं।` : "",
+          summaryEn: enParts.length ? `${enParts.join("; ")}. Please share this with your doctor.` : "",
+        }
+      : null;
+
     const timeline = (session.patient?.timelineEvents || []).map((te: any) => ({
       id: te.id,
       patientId: session.patientId,
@@ -422,6 +498,7 @@ export class PreviewService {
       medications,
       labResults,
       documents,
+      reportInsights,
       timeline,
       redFlags,
       ayurveda,

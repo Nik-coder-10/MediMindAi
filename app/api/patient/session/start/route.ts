@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { apiSuccess, apiError } from "@/lib/api/response";
 import { AdaptiveEngineService } from "@/lib/engine/adaptive-engine.service";
@@ -9,6 +10,9 @@ import { SessionStatus, TriagePriority } from "@prisma/client";
 import { AyurvedaAssessmentService } from "@/lib/services/ayurveda.service";
 
 export const dynamic = "force-dynamic";
+
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const isValidSessionId = (id?: string | null): boolean => !!id && UUID_PATTERN.test(id);
 
 const startEngineSchema = z.object({
   sessionId: z.string().optional(),
@@ -60,22 +64,28 @@ export async function POST(req: NextRequest) {
     let session: any = null;
     const effectivePatientId = patientProfile?.id || `pat-prof-${user.id}`;
 
-    if (validated.sessionId) {
+    // Database ID columns are UUIDs. Legacy / offline-generated IDs such as
+    // "sess-..." cannot be persisted relationally; treat them as a new session.
+    const requestedSessionId = isValidSessionId(validated.sessionId) ? validated.sessionId : undefined;
+
+    if (requestedSessionId) {
       try {
-        session = await prisma.clinicalSession.findUnique({ where: { id: validated.sessionId } });
+        session = await prisma.clinicalSession.findUnique({ where: { id: requestedSessionId } });
       } catch (lookupErr) {
         console.warn("ClinicalSession findUnique DB lookup warning:", (lookupErr as any)?.message);
       }
       if (!session) {
+        const { hydrateCaseSnapshot } = await import("@/lib/db/case-snapshot-store");
+        await hydrateCaseSnapshot(requestedSessionId);
         const { inMemoryClinicalStore } = await import("@/lib/db/in-memory-store");
-        session = inMemoryClinicalStore.getSession(validated.sessionId);
+        session = inMemoryClinicalStore.getSession(requestedSessionId);
       }
     }
 
     const intakeMode = validated.intakeMode || "AYURVEDA";
 
     if (!session) {
-      const generatedSessionId = validated.sessionId || `sess-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+      const generatedSessionId = requestedSessionId || randomUUID();
       try {
         session = await prisma.clinicalSession.create({
           data: {

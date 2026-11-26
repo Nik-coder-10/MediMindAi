@@ -74,6 +74,19 @@ export async function GET(req: NextRequest) {
     memSessions.forEach((s) => mergedMap.set(s.id, s));
     sessions.forEach((s) => mergedMap.set(s.id, s));
 
+    // Merge durable snapshots of submitted cases. On serverless platforms the
+    // in-memory store is per-instance and is lost on cold starts, so this mirror
+    // is required for a patient to see a case registered on a previous request.
+    const { loadAllCaseSnapshots } = await import("@/lib/db/case-snapshot-store");
+    const snapshots = await loadAllCaseSnapshots();
+    snapshots.forEach((s) => {
+      const ownerProfileId = s.patientId || s.patient?.id;
+      const ownerUserId = s.patient?.userId || s.patient?.user?.id;
+      if (ownerProfileId === patientId || ownerUserId === user.id) {
+        if (!mergedMap.has(s.id)) mergedMap.set(s.id, s);
+      }
+    });
+
     const finalSessions = Array.from(mergedMap.values()).sort(
       (a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime()
     );

@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { apiSuccess, apiError } from "@/lib/api/response";
 import { prisma } from "@/lib/db/prisma";
@@ -9,6 +10,7 @@ import { SessionStatus } from "@prisma/client";
 import { AyurvedaAssessmentService } from "@/lib/services/ayurveda.service";
 
 import { formatAyurToken } from "@/lib/utils";
+import { saveCaseSnapshot } from "@/lib/db/case-snapshot-store";
 
 export const dynamic = "force-dynamic";
 
@@ -55,12 +57,24 @@ export async function POST(req: NextRequest) {
     // Pre-resolve user and guarantee session exists in database and memory store
     const user = await AuthService.requireUser(req);
     const { inMemoryClinicalStore } = await import("@/lib/db/in-memory-store");
+    const { hydrateCaseSnapshot } = await import("@/lib/db/case-snapshot-store");
     const effectivePatientId = user.patientProfile?.id || `pat-prof-${user.id}`;
+
+    // If intake started on another serverless instance, restore its snapshot
+    // before looking the session up (keeps the original registration time).
+    await hydrateCaseSnapshot(validated.sessionId);
+
+    // Relational tables use UUID primary/foreign keys. Offline-generated IDs
+    // ("sess-...") cannot host documents/answers, so remap them to a UUID here.
+    const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const effectiveSessionId = UUID_PATTERN.test(validated.sessionId)
+      ? validated.sessionId
+      : randomUUID();
 
     let session: any = null;
     try {
       session = await prisma.clinicalSession.findUnique({
-        where: { id: validated.sessionId, deletedAt: null },
+        where: { id: effectiveSessionId, deletedAt: null },
         include: {
           patient: { include: { user: true } },
           doctor: { include: { user: true } },
@@ -71,14 +85,14 @@ export async function POST(req: NextRequest) {
     }
 
     if (!session) {
-      session = inMemoryClinicalStore.getSession(validated.sessionId);
+      session = inMemoryClinicalStore.getSession(effectiveSessionId);
     }
 
     // If session doesn't exist anywhere yet (e.g. fast-forward or offline-first entry), provision it now
     if (!session) {
       const intakeMode = validated.intakeMode || "AYURVEDA";
       const newSessionRecord = {
-        id: validated.sessionId,
+        id: effectiveSessionId,
         patientId: effectivePatientId,
         doctorId: null,
         status: "IN_PROGRESS" as const,
@@ -110,7 +124,7 @@ export async function POST(req: NextRequest) {
         chiefComplaints: [
           {
             id: `cc-${Date.now()}`,
-            sessionId: validated.sessionId,
+            sessionId: effectiveSessionId,
             symptomName: validated.chiefComplaint || "Consultation Intake",
             duration: validated.duration || "2-3 days",
             severity: validated.severity || "MODERATE",
@@ -128,7 +142,7 @@ export async function POST(req: NextRequest) {
       try {
         const createdInDb = await prisma.clinicalSession.create({
           data: {
-            id: validated.sessionId,
+            id: effectiveSessionId,
             patientId: effectivePatientId,
             language: user.preferredLanguage || "hi",
             triagePriority: "ROUTINE",
@@ -154,6 +168,8 @@ export async function POST(req: NextRequest) {
       const tokenNumber = formatAyurToken(session.id);
       return apiSuccess({
         sessionId: session.id,
+        previousSessionId: validated.sessionId,
+        sessionIdRemapped: session.id !== validated.sessionId,
         tokenNumber,
         status: session.status,
         summary: null,
@@ -404,6 +420,15 @@ export async function POST(req: NextRequest) {
       console.warn("Auto-summary synthesis deferred:", sumErr);
     }
 
+    // Mirror the submitted case into durable storage so it stays visible in
+    // "My Cases" and the doctor queue even when PostgreSQL is unavailable or
+    // the request is handled by a different serverless instance.
+    await saveCaseSnapshot({
+      ...session,
+      status: SessionStatus.WAITING_FOR_DOCTOR,
+      clinicalSummary: summary || session.clinicalSummary,
+    });
+
     // Deterministic token number #AYUR-SESS-XXXX
     const tokenNumber = formatAyurToken(session.id);
 
@@ -433,6 +458,8 @@ export async function POST(req: NextRequest) {
 
     return apiSuccess({
       sessionId: session.id,
+      previousSessionId: validated.sessionId,
+      sessionIdRemapped: session.id !== validated.sessionId,
       tokenNumber,
       status: updatedStatus,
       summary,

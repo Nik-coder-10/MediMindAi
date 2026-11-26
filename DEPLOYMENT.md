@@ -49,3 +49,36 @@ npm run typecheck
 # Build production bundle
 npm run build
 ```
+
+---
+
+## 🩺 4. Troubleshooting: submitted cases missing from "My Cases" / Doctor Queue
+
+If `/api/health` returns `"database": "unavailable"` (HTTP 503), PostgreSQL is not
+reachable from the runtime. In that state all clinical sessions fall back to a
+process-local in-memory store, which is not durable on Vercel: a case submitted
+by one request can be missing from the next request handled by another instance.
+
+Checklist:
+
+1. In **Vercel → Project → Settings → Environment Variables**, replace any
+   `localhost:5432` value with the Supabase connection strings:
+   - `DATABASE_URL` = Supabase **Transaction Pooler** URI (port `6543`,
+     `?pgbouncer=true`)
+   - `DIRECT_URL` = Supabase **Direct** URI (port `5432`)
+2. Apply the schema once with `npx prisma migrate deploy` (or set
+   `DIRECT_URL` correctly and re-deploy).
+3. Confirm `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` and
+   `SUPABASE_SERVICE_ROLE_KEY` are present for the Production environment.
+
+As a resilience layer, submitted cases are also mirrored to
+`case-snapshots/*.json` in the Supabase document bucket and re-merged into the
+patient case list and doctor queue, so the demo remains usable even when the
+Postgres connection fails. PostgreSQL is still the source of truth once restored.
+
+Clinical session IDs must be **UUIDs**: every relational child table
+(`medical_documents`, `extracted_medical_entities`, `patient_answers`, …) has a
+UUID foreign key to `clinical_sessions.id`. Hand-made IDs such as `sess-…`
+silently fail those inserts, which is why uploaded reports could be stored in
+Supabase Storage but never appeared in the patient summary preview. Session
+creation now mints UUIDs, and legacy IDs are remapped on submission.

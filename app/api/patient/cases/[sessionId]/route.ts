@@ -22,6 +22,10 @@ export async function GET(
       throw AppError.badRequest("sessionId is required");
     }
 
+    // Restore a durable snapshot first when the DB / original lambda instance is unavailable.
+    const { hydrateCaseSnapshot } = await import("@/lib/db/case-snapshot-store");
+    await hydrateCaseSnapshot(sessionId);
+
     // 1. Strict ownership authorization check (returns 401/403 if user does not own session)
     const { session: authSession } = await AuthService.requireSessionAccess(req, sessionId);
 

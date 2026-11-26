@@ -148,8 +148,8 @@ export default function DoctorDashboardQueuePage({
     if (filter === "EMERGENCY" && item.triagePriority !== "EMERGENCY") return false;
     if (filter === "URGENT" && item.triagePriority !== "URGENT") return false;
     if (searchQuery) {
-      const name = `${item.patient.firstName} ${item.patient.lastName}`.toLowerCase();
-      const abha = (item.patient.user?.abhaId || "").toLowerCase();
+      const name = `${item.patient?.firstName || ""} ${item.patient?.lastName || ""}`.toLowerCase();
+      const abha = (item.patient?.user?.abhaId || "").toLowerCase();
       return name.includes(searchQuery.toLowerCase()) || abha.includes(searchQuery.toLowerCase());
     }
     return true;
@@ -261,8 +261,8 @@ export default function DoctorDashboardQueuePage({
 
         {filteredQueue.map((item, idx) => {
           const isEmergency = item.triagePriority === "EMERGENCY";
-          const patientName = `${item.patient.firstName} ${item.patient.lastName}`;
-          const abhaId = item.patient.user?.abhaId || "ABHA-PENDING";
+          const patientName = `${item.patient?.firstName || "Patient"} ${item.patient?.lastName || ""}`.trim();
+          const abhaId = item.patient?.user?.abhaId || "ABHA-PENDING";
 
           return (
             <motion.div
@@ -305,7 +305,7 @@ export default function DoctorDashboardQueuePage({
                       </div>
 
                       <h3 className="text-lg font-extrabold text-foreground group-hover:text-emerald-700 transition-colors">
-                        {patientName} • {item.patient.gender} ({item.patient.bloodGroup || "O+"})
+                        {patientName} • {item.patient?.gender || "OTHER"} ({item.patient?.bloodGroup || "O+"})
                       </h3>
 
                       <p className="text-xs sm:text-sm font-semibold text-foreground">

@@ -20,6 +20,9 @@ export async function GET(
       throw AppError.badRequest("sessionId is required");
     }
 
+    const { hydrateCaseSnapshot } = await import("@/lib/db/case-snapshot-store");
+    await hydrateCaseSnapshot(sessionId);
+
     await AuthService.requireSessionAccess(req, sessionId);
 
     const preview = await PreviewService.getPatientPreview(sessionId);

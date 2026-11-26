@@ -40,6 +40,55 @@ import { OfflineBannerSync } from "@/components/ui/patient/OfflineBannerSync";
 import { AlertStaffButton } from "@/components/ui/patient/AlertStaffButton";
 import { AyurvedaAssessmentService } from "@/lib/services/ayurveda.service";
 
+type ReportInsights = NonNullable<PatientDashboardPreviewDTO["reportInsights"]>;
+
+/** Builds report insights from the data cached by the document upload screen. */
+function buildClientReportInsights(docs: any[], entities: any, isHindi: boolean): ReportInsights {
+  const medications = (entities?.medications || [])
+    .map((m: any) => [m.name, m.dosage, m.frequency].filter(Boolean).join(" "))
+    .filter(Boolean);
+  const abnormalLabs = (entities?.labResults || [])
+    .filter((l: any) => l.flag && l.flag !== "NORMAL")
+    .map((l: any) => ({
+      testName: String(l.testName || ""),
+      value: String(l.value ?? ""),
+      unit: l.unit || "",
+      flag: l.flag,
+      referenceRange: l.referenceRange || "",
+    }));
+  const diagnoses: string[] = entities?.diagnoses || [];
+  const allergies: string[] = entities?.allergies || [];
+  const vitals = Object.entries(entities?.vitals || {}).map(([name, value]) => ({
+    name,
+    value: String(value),
+  }));
+
+  const hi: string[] = [];
+  if (docs.length) hi.push(`आपकी ${docs.length} पुरानी रिपोर्टें जोड़ी गई हैं`);
+  if (diagnoses.length) hi.push(`इनमें ${diagnoses.join(", ")} का उल्लेख है`);
+  if (medications.length) hi.push(`${medications.length} पहले से ली जा रही दवाइयां मिली हैं`);
+  if (abnormalLabs.length) hi.push(`${abnormalLabs.length} जांच परिणाम सामान्य सीमा से बाहर हैं`);
+  if (allergies.length) hi.push("एलर्जी की जानकारी भी मिली है");
+
+  const en: string[] = [];
+  if (docs.length) en.push(`${docs.length} previous report(s) attached`);
+  if (diagnoses.length) en.push(`mentions ${diagnoses.join(", ")}`);
+  if (medications.length) en.push(`${medications.length} current medications identified`);
+  if (abnormalLabs.length) en.push(`${abnormalLabs.length} lab value(s) outside the normal range`);
+  if (allergies.length) en.push("allergy information recorded");
+
+  return {
+    documentCount: docs.length,
+    medications,
+    abnormalLabs,
+    diagnoses,
+    allergies,
+    vitals,
+    summaryHi: hi.length ? `${hi.join("। ")}। कृपया डॉक्टर को यह जानकारी अवश्य दिखाएं।` : "",
+    summaryEn: en.length ? `${en.join("; ")}. Please share this with your doctor.` : "",
+  };
+}
+
 export default function PatientSummaryPreviewDashboardPage({
   params: { locale },
 }: {
@@ -98,7 +147,53 @@ export default function PatientSummaryPreviewDashboardPage({
         });
         const data = await res.json();
         if (res.ok && data.data) {
-          setPreviewData(data.data);
+          let preview: PatientDashboardPreviewDTO = data.data;
+
+          // If relational persistence lagged or failed, still show the reports
+          // the upload screen already cached in this browser.
+          if ((preview.documents?.length || 0) === 0 && typeof window !== "undefined") {
+            try {
+              const cachedDocs = JSON.parse(sessionStorage.getItem("ayush_uploaded_docs") || "[]");
+              const cachedEntities = JSON.parse(sessionStorage.getItem("ayush_extracted_entities") || "{}");
+              if (cachedDocs.length > 0 || Object.keys(cachedEntities).length > 0) {
+                preview = {
+                  ...preview,
+                  documents: cachedDocs.map((d: any, i: number) => ({
+                    id: d.id || `doc-${i}`,
+                    fileName: d.name || "medical-report",
+                    fileSize: 1024 * 100,
+                    uploadedAt: new Date().toISOString(),
+                    type: "PRESCRIPTION",
+                    hasEntities: true,
+                  })),
+                  medications: [
+                    ...(preview.medications || []),
+                    ...(cachedEntities.medications || []).map((m: any) => ({
+                      name: m.name,
+                      dosage: m.dosage || "",
+                      frequency: m.frequency || "",
+                      duration: m.duration || "",
+                    })),
+                  ],
+                  labResults: [
+                    ...(preview.labResults || []),
+                    ...(cachedEntities.labResults || []).map((l: any) => ({
+                      testName: l.testName,
+                      value: String(l.value ?? ""),
+                      unit: l.unit || "",
+                      referenceRange: l.referenceRange || "",
+                      flag: l.flag || "NORMAL",
+                    })),
+                  ],
+                  reportInsights: buildClientReportInsights(cachedDocs, cachedEntities, isHindi),
+                };
+              }
+            } catch (cacheErr) {
+              console.warn("Cached report merge skipped:", cacheErr);
+            }
+          }
+
+          setPreviewData(preview);
           setGeneratedToken(data.data.tokenNumber);
           if (data.data.isSubmitted) {
             setSubmittedSuccess(true);
@@ -215,6 +310,7 @@ export default function PatientSummaryPreviewDashboardPage({
         })(),
         canSubmit: true,
         canEdit: true,
+        reportInsights: buildClientReportInsights(storedDocs, storedEntities, isHindi),
       };
 
       setPreviewData(fallbackDTO);
@@ -246,9 +342,9 @@ export default function PatientSummaryPreviewDashboardPage({
     if (isRajasthani) {
       narrative = `ओ आपरी दी गई जानकारी रो पूरो ब्यौरो है जो डॉक्टर साब कनै भेजीजेगो सा। आपरी मुख्य तकलीफ है: ${previewData.chiefComplaint.symptomName}। अवधि है: ${previewData.chiefComplaint.duration}। ${previewData.medications.length > 0 ? `पुरानी परची सूं ${previewData.medications.length} दवाइयां मिली है।` : ""} डॉक्टर साब कनै भेजण खातर नीचै दियोड़ो लीलो बटन दाबो सा।`;
     } else if (isHindi) {
-      narrative = `यह आपके द्वारा दी गई जानकारी का सारांश है जो डॉक्टर को भेजा जाएगा। आपकी मुख्य समस्या है: ${previewData.chiefComplaint.symptomName}। अवधि है: ${previewData.chiefComplaint.duration}। ${previewData.medications.length > 0 ? `पुराने पर्चे से ${previewData.medications.length} दवाइयां पाई गई हैं।` : ""} डॉक्टर को भेजने के लिए नीचे हरा बटन दबाएं।`;
+      narrative = `यह आपके द्वारा दी गई जानकारी का सारांश है जो डॉक्टर को भेजा जाएगा। आपकी मुख्य समस्या है: ${previewData.chiefComplaint.symptomName}। अवधि है: ${previewData.chiefComplaint.duration}। ${previewData.medications.length > 0 ? `पुराने पर्चे से ${previewData.medications.length} दवाइयां पाई गई हैं।` : ""}${previewData.reportInsights?.diagnoses?.length ? `पुरानी रिपोर्ट में ${previewData.reportInsights.diagnoses.join(", ")} का उल्लेख है।` : ""}${previewData.reportInsights?.abnormalLabs?.length ? `${previewData.reportInsights.abnormalLabs.length} जांच परिणाम सामान्य सीमा से बाहर हैं।` : ""}${previewData.reportInsights?.allergies?.length ? "एलर्जी की जानकारी भी जोड़ी गई है।" : ""} डॉक्टर को भेजने के लिए नीचे हरा बटन दबाएं।`;
     } else {
-      narrative = `This is the summary of information that will be shared with the doctor. Your primary concern is: ${previewData.chiefComplaint.symptomName}, duration: ${previewData.chiefComplaint.duration}. ${previewData.medications.length > 0 ? `${previewData.medications.length} medications identified from previous prescription.` : ""} To send this to the doctor, please tap the green submit button below.`;
+      narrative = `This is the summary of information that will be shared with the doctor. Your primary concern is: ${previewData.chiefComplaint.symptomName}, duration: ${previewData.chiefComplaint.duration}. ${previewData.medications.length > 0 ? `${previewData.medications.length} medications identified from previous prescription.` : ""}${previewData.reportInsights?.diagnoses?.length ? `Your old reports mention ${previewData.reportInsights.diagnoses.join(", ")}.` : ""}${previewData.reportInsights?.abnormalLabs?.length ? `${previewData.reportInsights.abnormalLabs.length} lab values are outside the normal range.` : ""}${previewData.reportInsights?.allergies?.length ? "Allergy information is included." : ""} To send this to the doctor, please tap the green submit button below.`;
     }
 
     setIsPlayingAudio(true);
@@ -289,7 +385,6 @@ export default function PatientSummaryPreviewDashboardPage({
         "pat-104-demo";
 
       const storedIntakeMode = (typeof window !== "undefined" ? sessionStorage.getItem("ayursetu_intake_mode") : null) || "AYURVEDA";
-      const { formatAyurToken } = await import("@/lib/utils");
 
       const res = await fetch("/api/patient/session/submit", {
         method: "POST",
@@ -320,26 +415,31 @@ export default function PatientSummaryPreviewDashboardPage({
       if (res.ok && data?.data?.tokenNumber) {
         setGeneratedToken(data.data.tokenNumber);
         setSubmittedSuccess(true);
-        // Clear durable recovery store
-        await SessionRecoveryStore.clearActiveSession(activeSessionId);
-      } else if (data?.error?.message?.includes("already") || data?.data?.tokenNumber) {
-        const token = data?.data?.tokenNumber || formatAyurToken(activeSessionId);
-        setGeneratedToken(token);
-        setSubmittedSuccess(true);
+        // A legacy/offline session ID may have been remapped to a database UUID.
+        // Adopt it so the case detail links keep working after submission.
+        const confirmedSessionId = data.data.sessionId || activeSessionId;
+        if (confirmedSessionId !== activeSessionId && typeof window !== "undefined") {
+          sessionStorage.setItem("ayursetu_active_session_id", confirmedSessionId);
+          await SessionRecoveryStore.clearActiveSession(confirmedSessionId);
+        }
+        // Only clear local recovery data after the server confirmed registration.
         await SessionRecoveryStore.clearActiveSession(activeSessionId);
       } else {
-        // High-resilience fallback: never block patient submission or show red column error
-        const fallbackToken = data?.data?.tokenNumber || previewData.tokenNumber || formatAyurToken(activeSessionId);
-        setGeneratedToken(fallbackToken);
-        setSubmittedSuccess(true);
-        await SessionRecoveryStore.clearActiveSession(activeSessionId);
+        // Never invent a token: a locally generated ID would not exist in
+        // "My Cases" or in the doctor queue and would mislead the patient.
+        setError(
+          data?.error?.message ||
+            (isHindi
+              ? "केस दर्ज नहीं हो सका। कृपया पुनः प्रयास करें।"
+              : "Your case could not be registered with the clinical queue. Please retry.")
+        );
       }
     } catch (e: any) {
-      // Offline / network fallback: allow graceful submission with local token
-      const { formatAyurToken } = await import("@/lib/utils");
-      const fallbackToken = previewData.tokenNumber || formatAyurToken(activeSessionId);
-      setGeneratedToken(fallbackToken);
-      setSubmittedSuccess(true);
+      setError(
+        isHindi
+          ? "नेटवर्क त्रुटि के कारण केस दर्ज नहीं हो सका। कृपया पुनः प्रयास करें।"
+          : "A network error prevented your case from being registered. Please retry."
+      );
     } finally {
       setSubmitting(false);
     }
@@ -543,6 +643,84 @@ export default function PatientSummaryPreviewDashboardPage({
             </div>
           )}
         </div>
+
+        {/* Key clinical insights distilled from previously uploaded reports */}
+        {d?.reportInsights && (
+          <div className="p-4 rounded-2xl bg-amber-50/80 dark:bg-amber-950/20 border-2 border-amber-300/80 space-y-3 shadow-sm">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="text-xs font-black text-amber-950 dark:text-amber-200 uppercase tracking-wider flex items-center gap-1.5">
+                <Sparkles className="h-4 w-4 text-amber-700" />
+                {isHindi
+                  ? "पुरानी रिपोर्टों से मुख्य जानकारी (Report Insights)"
+                  : "Key Insights From Your Old Reports"}
+              </span>
+              <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-200 dark:bg-amber-900/60 text-amber-900 dark:text-amber-100">
+                {isHindi
+                  ? `${d.reportInsights.documentCount} दस्तावेज़ जोड़े गए`
+                  : `${d.reportInsights.documentCount} report(s) attached`}
+              </span>
+            </div>
+
+            <p className="text-xs font-bold text-amber-950 dark:text-amber-100 leading-relaxed">
+              {isHindi ? d.reportInsights.summaryHi : d.reportInsights.summaryEn}
+            </p>
+
+            {d.reportInsights.diagnoses.length > 0 && (
+              <div className="space-y-1">
+                <span className="text-[11px] font-extrabold text-muted-foreground uppercase">
+                  {isHindi ? "पहले बताए गए रोग / स्थितियां:" : "Previously documented conditions:"}
+                </span>
+                <div className="flex flex-wrap gap-1.5">
+                  {d.reportInsights.diagnoses.map((dx, i) => (
+                    <span key={i} className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-white dark:bg-slate-900 border text-foreground">
+                      {dx}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {d.reportInsights.allergies.length > 0 && (
+              <div className="flex flex-wrap items-center gap-1.5 text-[11px] font-extrabold text-rose-800 dark:text-rose-300">
+                <AlertTriangle className="h-3.5 w-3.5" />
+                <span>{isHindi ? "एलर्जी:" : "Allergies:"}</span>
+                {d.reportInsights.allergies.map((a, i) => (
+                  <span key={i} className="px-2 py-0.5 rounded-full bg-rose-100 dark:bg-rose-950/50 border border-rose-300 dark:border-rose-800">
+                    {a}
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {d.reportInsights.abnormalLabs.length > 0 && (
+              <div className="space-y-1.5 pt-1 border-t border-amber-300/70">
+                <span className="text-[11px] font-extrabold text-muted-foreground uppercase">
+                  {isHindi ? "जांच रिपोर्ट में असामान्य मान (डॉक्टर को दिखाएं):" : "Abnormal lab values (show your doctor):"}
+                </span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {d.reportInsights.abnormalLabs.map((lab, i) => (
+                    <div key={i} className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border text-xs flex justify-between items-center shadow-2xs">
+                      <span className="font-extrabold text-foreground">{lab.testName}</span>
+                      <span className="font-black text-amber-800 dark:text-amber-300">
+                        {lab.value} {lab.unit} <span className="text-[10px]">({lab.flag})</span>
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {d.reportInsights.vitals.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 text-[11px] font-bold text-muted-foreground">
+                {d.reportInsights.vitals.map((v, i) => (
+                  <span key={i} className="px-2 py-0.5 rounded-lg bg-white dark:bg-slate-900 border">
+                    {v.name}: <span className="font-extrabold text-foreground">{v.value}</span>
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* 5. Uploaded Documents List with Thumbnails & Status */}
         {d?.documents && d.documents.length > 0 && (

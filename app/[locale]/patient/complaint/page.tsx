@@ -71,7 +71,10 @@ export default function PatientComplaintVoicePage({
 
     // Persist durable session snapshot
     await SessionRecoveryStore.saveActiveSessionSnapshot({
-      sessionId: `sess_${Date.now()}`,
+      sessionId:
+        typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+          ? crypto.randomUUID()
+          : `sess_${Date.now()}`,
       language: locale,
       chiefComplaint: complaintText,
       collectedAnswers: [],

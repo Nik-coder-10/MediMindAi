@@ -15,6 +15,10 @@ export async function GET(
 ) {
   try {
     const sessionId = params.sessionId;
+    // Restore a durable snapshot first when the DB / original lambda instance is unavailable.
+    const { hydrateCaseSnapshot } = await import("@/lib/db/case-snapshot-store");
+    await hydrateCaseSnapshot(sessionId);
+
     await AuthService.requireSessionAccess(req, sessionId);
 
     // 1. Fetch Session with full relational graph
