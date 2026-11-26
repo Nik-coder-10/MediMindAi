@@ -28,6 +28,48 @@ import {
   EnhancedDocumentResult,
 } from "@/components/ui/patient/DocumentCameraCapture";
 
+/**
+ * Browser-side OCR. Serverless functions cannot reliably start Tesseract's
+ * worker thread, but browsers can. For PDFs we render the first page to a
+ * canvas first; the resulting text is sent to the API for clinical parsing.
+ */
+async function extractTextInBrowser(file: File): Promise<string | null> {
+  try {
+    let imageBlob: Blob = file;
+    if (file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf")) {
+      const pdfjs: any = await import("pdfjs-dist/legacy/build/pdf.mjs");
+      pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.mjs";
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      const doc = await pdfjs.getDocument({ data: bytes }).promise;
+      const page = await doc.getPage(1);
+      const viewport = page.getViewport({ scale: 2 });
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.floor(viewport.width);
+      canvas.height = Math.floor(viewport.height);
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return null;
+      await page.render({ canvasContext: ctx as any, viewport }).promise;
+      const blob = await new Promise<Blob | null>((resolve) =>
+        canvas.toBlob(resolve, "image/jpeg", 0.92)
+      );
+      if (!blob) return null;
+      imageBlob = blob;
+    }
+
+    const { createWorker } = await import("tesseract.js");
+    const worker = await createWorker("eng+hin", 1, {
+      langPath: "/tessdata",
+      gzip: false,
+    } as any);
+    const { data } = await worker.recognize(imageBlob as any);
+    await worker.terminate();
+    return data?.text || null;
+  } catch (error) {
+    console.warn("Browser OCR unavailable:", error);
+    return null;
+  }
+}
+
 export default function PatientDocumentsScanPage({
   params: { locale },
 }: {
@@ -66,6 +108,11 @@ export default function PatientDocumentsScanPage({
     formData.append("file", file);
     formData.append("sessionId", activeSessionId);
     formData.append("type", "PRESCRIPTION");
+
+    const browserOcrText = await extractTextInBrowser(file);
+    if (browserOcrText?.trim()) {
+      formData.append("ocrText", browserOcrText);
+    }
 
     try {
       const activeUserId =

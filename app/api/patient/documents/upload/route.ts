@@ -19,6 +19,9 @@ export async function POST(req: NextRequest) {
     const file = formData.get("file") as File | null;
     const sessionId = formData.get("sessionId") as string;
     const documentType = (formData.get("type") as any) || "PRESCRIPTION";
+    // Browser-side OCR result (Web Workers work reliably in browsers, unlike
+    // serverless functions). Still accepted as plain text and re-parsed here.
+    const clientOcrText = formData.get("ocrText") as string | null;
 
     if (!sessionId) {
       throw AppError.badRequest("sessionId is required for document upload.");
@@ -54,12 +57,23 @@ export async function POST(req: NextRequest) {
     let ocrResult: any = { rawText: "", confidence: 0 };
     let entitiesResult: any = { medications: [], labResults: [], diagnoses: [], vitals: {}, procedures: [], allergies: [] };
 
-    try {
-      const { ocr, entities } = await OCRService.processDocument(fileBuffer, mimeType);
-      ocrResult = ocr;
-      entitiesResult = entities;
-    } catch (ocrErr) {
-      console.warn("OCR processing encountered warning (preserving original file):", ocrErr);
+    if (clientOcrText?.trim()) {
+      // Trust the browser's OCR text but always re-run clinical entity parsing
+      // on the server so extraction rules stay authoritative.
+      ocrResult = {
+        rawText: clientOcrText,
+        confidence: 0.9,
+        provider: "browser-tesseract",
+      };
+      entitiesResult = MedicalEntityExtractor.extractEntities(clientOcrText);
+    } else {
+      try {
+        const { ocr, entities } = await OCRService.processDocument(fileBuffer, mimeType);
+        ocrResult = ocr;
+        entitiesResult = entities;
+      } catch (ocrErr) {
+        console.warn("OCR processing encountered warning (preserving original file):", ocrErr);
+      }
     }
 
     // 6. Register Document in DB with persistent storage reference
